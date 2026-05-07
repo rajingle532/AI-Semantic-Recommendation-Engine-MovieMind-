@@ -175,7 +175,11 @@ const Navbar: React.FC = () => {
                     <Link to="/profile" onClick={() => setShowProfileMenu(false)}>
                       <User size={16} /> Profile
                     </Link>
-                    <button onClick={() => { logout(); setShowProfileMenu(false); }}>
+                    <button onClick={() => { 
+                      logout(); 
+                      setShowProfileMenu(false);
+                      navigate('/login');
+                    }}>
                       <LogOut size={16} /> Logout
                     </button>
                   </motion.div>
