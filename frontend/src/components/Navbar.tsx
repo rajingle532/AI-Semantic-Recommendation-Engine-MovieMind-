@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, User, LogOut, Film, Loader2, Sun, Moon } from 'lucide-react';
+import { Search, User, LogOut, Film, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -11,10 +11,30 @@ const Navbar: React.FC = () => {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  
+  const searchRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+  
   const { user, logout, isAuthenticated, loading } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearchSuggestions(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const fetchSuggestions = async (val: string) => {
     if (val.length < 2) {
@@ -24,7 +44,7 @@ const Navbar: React.FC = () => {
     setIsSearching(true);
     try {
       const { data } = await api.get(`/movies/search?q=${encodeURIComponent(val)}`);
-      setSuggestions((data.results || []).slice(0, 6)); // Show top 6
+      setSuggestions((data.results || []).slice(0, 6));
     } catch (err) {
       console.error(err);
     } finally {
@@ -36,7 +56,7 @@ const Navbar: React.FC = () => {
     const val = e.target.value;
     setQuery(val);
     fetchSuggestions(val);
-    setShowDropdown(true);
+    setShowSearchSuggestions(true);
   };
 
   if (loading) return null;
@@ -45,7 +65,7 @@ const Navbar: React.FC = () => {
     e.preventDefault();
     if (query.trim()) {
       navigate(`/search?q=${encodeURIComponent(query)}`);
-      setShowDropdown(false);
+      setShowSearchSuggestions(false);
     }
   };
 
@@ -53,7 +73,7 @@ const Navbar: React.FC = () => {
     navigate(`/movie/${id}`);
     setQuery('');
     setSuggestions([]);
-    setShowDropdown(false);
+    setShowSearchSuggestions(false);
   };
 
   return (
@@ -69,7 +89,7 @@ const Navbar: React.FC = () => {
           <span>MovieMind</span>
         </Link>
 
-        <div className={styles.searchWrapper}>
+        <div className={styles.searchWrapper} ref={searchRef}>
           <form className={styles.searchBar} onSubmit={handleSearch}>
             <Search size={18} className={styles.searchIcon} />
             <input
@@ -77,13 +97,13 @@ const Navbar: React.FC = () => {
               placeholder="Search movies, actors, or genres..."
               value={query}
               onChange={handleInputChange}
-              onFocus={() => query.length >= 2 && setShowDropdown(true)}
+              onFocus={() => query.length >= 2 && setShowSearchSuggestions(true)}
             />
             {isSearching && <div className={styles.searchLoader}></div>}
           </form>
 
           <AnimatePresence>
-            {showDropdown && suggestions.length > 0 && (
+            {showSearchSuggestions && suggestions.length > 0 && (
               <motion.div 
                 className={styles.searchSuggestions}
                 initial={{ opacity: 0, y: 10 }}
@@ -130,10 +150,10 @@ const Navbar: React.FC = () => {
           </button>
 
           {isAuthenticated ? (
-            <div className={styles.profileWrapper}>
+            <div className={styles.profileWrapper} ref={profileRef}>
               <div 
                 style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
-                onClick={() => setShowDropdown(!showDropdown)}
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
               >
                 <span style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '0.9rem' }}>
                   {user?.name}
@@ -144,7 +164,7 @@ const Navbar: React.FC = () => {
               </div>
               
               <AnimatePresence>
-                {showDropdown && (
+                {showProfileMenu && (
                   <motion.div 
                     className={styles.dropdown}
                     initial={{ opacity: 0, scale: 0.95, y: -10 }}
@@ -152,10 +172,10 @@ const Navbar: React.FC = () => {
                     exit={{ opacity: 0, scale: 0.95, y: -10 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <Link to="/profile" onClick={() => setShowDropdown(false)}>
+                    <Link to="/profile" onClick={() => setShowProfileMenu(false)}>
                       <User size={16} /> Profile
                     </Link>
-                    <button onClick={() => { logout(); setShowDropdown(false); }}>
+                    <button onClick={() => { logout(); setShowProfileMenu(false); }}>
                       <LogOut size={16} /> Logout
                     </button>
                   </motion.div>
