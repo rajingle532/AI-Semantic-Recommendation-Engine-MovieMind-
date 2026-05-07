@@ -68,6 +68,8 @@ def api_health():
     """Detailed health check with feature status."""
     return {
         "status": "healthy",
+        "version": "2.5.0",
+        "filters_status": "unified_and_robust",
         "features": {
             "auth": "JWT + bcrypt",
             "recommendations": "Content-based + Hybrid",
