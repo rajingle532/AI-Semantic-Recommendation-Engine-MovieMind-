@@ -21,10 +21,19 @@ def _make_request(endpoint: str, params: dict = None) -> dict:
         default_params.update(params)
 
     max_retries = 3
+    if not settings.TMDB_API_KEY:
+        print("TMDB_API_ERROR: TMDB_API_KEY is not set in environment variables!")
+        return {}
+
     for attempt in range(max_retries):
         try:
-            response = _session.get(url, params=default_params, timeout=15)
-            response.raise_for_status()
+            full_params = {"api_key": settings.TMDB_API_KEY, **(params or {})}
+            response = requests.get(f"{settings.TMDB_BASE_URL}{endpoint}", params=full_params, timeout=10)
+            
+            if response.status_code != 200:
+                print(f"TMDB_API_ERROR: {endpoint} returned {response.status_code}. Response: {response.text}")
+                return {}
+                
             return response.json()
         except (requests.RequestException, ConnectionResetError) as e:
             if attempt == max_retries - 1:
