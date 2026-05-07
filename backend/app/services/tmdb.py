@@ -56,7 +56,8 @@ def get_movie_details(movie_id: int) -> dict:
         "runtime": data.get("runtime"),
         "genres": [g["name"] for g in data.get("genres", [])],
         "tagline": data.get("tagline"),
-        "trailer_key": get_movie_videos(movie_id)
+        "trailer_key": get_movie_videos(movie_id),
+        "watch_providers": get_watch_providers(movie_id)
     }
     
     _details_cache[movie_id] = details
@@ -77,10 +78,36 @@ def get_movie_videos(movie_id: int) -> Optional[str]:
     
     # Fallback to any YouTube video if no official trailer
     for video in videos:
-        if video.get("site") == "YouTube":
-            return video.get("key")
-            
     return None
+
+
+def get_watch_providers(movie_id: int):
+    """Fetch streaming providers (Netflix, Prime, etc.) for a movie."""
+    try:
+        data = _make_request(f"/movie/{movie_id}/watch/providers")
+        results = data.get("results", {})
+        
+        # Get providers for India (IN) - fallback to US if not available
+        country_data = results.get("IN") or results.get("US") or {}
+        
+        # Format logos with full URL
+        def format_logos(items):
+            return [{
+                "provider_id": item.get("provider_id"),
+                "provider_name": item.get("provider_name"),
+                "logo_path": f"{settings.TMDB_IMAGE_URL}{item['logo_path']}" if item.get("logo_path") else None
+            } for item in items]
+
+        providers = {
+            "flatrate": format_logos(country_data.get("flatrate", [])), # Streaming
+            "rent": format_logos(country_data.get("rent", [])),
+            "buy": format_logos(country_data.get("buy", [])),
+            "link": country_data.get("link", "") # TMDB Link to providers
+        }
+        return providers
+    except Exception as e:
+        print(f"Error fetching watch providers: {e}")
+        return None
 
 
 def get_movie_poster(movie_id: int) -> Optional[str]:
