@@ -93,36 +93,40 @@
 
 .urlInput {
   flex: 1;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   padding: 0.75rem 1rem;
   overflow: hidden;
+  display: flex;
+  align-items: center;
 }
 
 .urlInput input {
   width: 100%;
   background: none;
   border: none;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
+  color: #aaa;
+  font-size: 0.85rem;
   outline: none;
+  text-overflow: ellipsis;
 }
 
 .copyBtn {
-  background: var(--accent);
+  background: #ff0000; /* Bright Red as per screenshot preference */
   border: none;
   color: #fff;
-  padding: 0 1.25rem;
+  padding: 0 1.5rem;
   border-radius: 12px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .copyBtn:hover {
-  filter: brightness(1.2);
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
 }

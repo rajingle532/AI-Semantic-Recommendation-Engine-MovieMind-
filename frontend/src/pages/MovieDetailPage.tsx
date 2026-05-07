@@ -212,7 +212,8 @@ const MovieDetailPage: React.FC = () => {
                     onClick={() => setShowShareModal(true)}
                     title="Share Movie"
                   >
-                    <Share2 size={20} /> Share
+                    <Share2 size={20} color="var(--accent)" /> 
+                    <span>Share</span>
                   </button>
                 </div>
 
