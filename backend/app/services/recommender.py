@@ -7,8 +7,10 @@ import pickle
 import numpy as np
 from typing import List
 from app.config import settings
-from app.services.tmdb import get_movie_poster, get_movie_details, get_similar_movies
+from app.services.tmdb import get_movie_poster, get_movie_details, get_similar_movies, search_movies_tmdb
 from app.database import get_collection
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
 
 # Path to saved models
 MODELS_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'saved_models')
@@ -16,6 +18,8 @@ MODELS_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'saved_models')
 # Global model cache
 _movies_df = None
 _similarity_matrix = None
+_bert_model = None
+_bert_embeddings = None
 
 
 def _load_models():
@@ -36,18 +40,51 @@ def _load_models():
         return
 
     try:
-        with open(movie_list_path, 'rb') as f:
-            _movies_df = pickle.load(f)
-        print("Successfully loaded movie_list.pkl")
+        if _movies_df is None:
+            with open(movie_list_path, 'rb') as f:
+                _movies_df = pickle.load(f)
+            print("Successfully loaded movie_list.pkl")
 
-        with open(similarity_path, 'rb') as f:
-            _similarity_matrix = pickle.load(f)
-        print(f"Successfully loaded similarity.pkl. Shape: {_similarity_matrix.shape}")
+        if _similarity_matrix is None:
+            with open(similarity_path, 'rb') as f:
+                _similarity_matrix = pickle.load(f)
+            print(f"Successfully loaded similarity.pkl. Shape: {_similarity_matrix.shape}")
         
     except Exception as e:
         print(f"ERROR loading models: {str(e)}")
-        _movies_df = None
-        _similarity_matrix = None
+
+
+def _load_bert_model():
+    """Load BERT model and embeddings (lazy loading)."""
+    global _bert_model, _bert_embeddings, _movies_df
+
+    if _bert_model is not None:
+        return
+
+    _load_models() # Ensure movies_df is loaded
+
+    embeddings_path = os.path.join(MODELS_DIR, 'bert_embeddings.pkl')
+    
+    try:
+        print("Loading SentenceTransformer (all-MiniLM-L6-v2)...")
+        _bert_model = SentenceTransformer('all-MiniLM-L6-v2')
+        
+        if os.path.exists(embeddings_path):
+            with open(embeddings_path, 'rb') as f:
+                _bert_embeddings = pickle.load(f)
+            print("Loaded pre-computed BERT embeddings")
+        else:
+            print("Generating BERT embeddings (first time)...")
+            # Generate embeddings for all movies in DF
+            overviews = _movies_df['tags'].tolist() # Using 'tags' which has overview + keywords
+            _bert_embeddings = _bert_model.encode(overviews, show_progress_bar=True)
+            
+            with open(embeddings_path, 'wb') as f:
+                pickle.dump(_bert_embeddings, f)
+            print("Saved BERT embeddings")
+            
+    except Exception as e:
+        print(f"ERROR loading BERT model: {str(e)}")
 
 
 def get_content_recommendations(movie_id: int, n: int = 10) -> list:
@@ -158,3 +195,39 @@ def get_hybrid_recommendations(user_id: str, n: int = 10) -> list:
         }
         for r in results[:n]
     ]
+
+
+def get_semantic_search_results(query: str, n: int = 15) -> list:
+    """
+    Find movies based on natural language description using BERT embeddings.
+    """
+    _load_bert_model()
+
+    if _bert_model is None or _bert_embeddings is None or _movies_df is None:
+        # Fallback to basic search
+        return search_movies_tmdb(query)
+
+    # Encode user query
+    query_vector = _bert_model.encode([query])
+    
+    # Calculate cosine similarity between query and all movies
+    similarities = cosine_similarity(query_vector, _bert_embeddings)[0]
+    
+    # Get top N indices
+    top_indices = np.argsort(similarities)[::-1][:n]
+    
+    results = []
+    for idx in top_indices:
+        movie = _movies_df.iloc[idx]
+        movie_id = int(movie['movie_id'])
+        
+        results.append({
+            "id": movie_id,
+            "movie_id": movie_id,
+            "title": movie['title'],
+            "poster_path": get_movie_poster(movie_id),
+            "similarity_score": round(float(similarities[idx]), 4),
+            "overview": movie.get('overview', '')[:120] + "..."
+        })
+        
+    return results
