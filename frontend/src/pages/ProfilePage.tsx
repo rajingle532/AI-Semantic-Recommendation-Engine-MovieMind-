@@ -12,7 +12,7 @@ const ProfilePage: React.FC = () => {
   const [watchlist, setWatchlist] = useState<any[]>([]);
   const [ratings, setRatings] = useState<any[]>([]);
   const [recommendations, setRecommendations] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'watchlist' | 'ratings' | 'ai'>('watchlist');
+  const [activeTab, setActiveTab] = useState<'watchlist' | 'ratings' | 'ai' | 'account'>('ai');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -148,9 +148,44 @@ const ProfilePage: React.FC = () => {
           >
             AI Recommendations 🤖
           </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'account' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('account')}
+          >
+            Account Details 👤
+          </button>
         </div>
 
         <div className={styles.tabContent}>
+          {activeTab === 'account' && (
+            <section className={styles.section}>
+              <div className={styles.accountCard}>
+                <div className={styles.accountHeader}>
+                  <h3>Account Information</h3>
+                  <button className={styles.editBtn}>Edit Profile</button>
+                </div>
+                <div className={styles.accountGrid}>
+                  <div className={styles.accountItem}>
+                    <label>Full Name</label>
+                    <p>{user?.name}</p>
+                  </div>
+                  <div className={styles.accountItem}>
+                    <label>Email Address</label>
+                    <p>{user?.email}</p>
+                  </div>
+                  <div className={styles.accountItem}>
+                    <label>Account Status</label>
+                    <p className={styles.statusActive}>● Active</p>
+                  </div>
+                  <div className={styles.accountItem}>
+                    <label>Membership</label>
+                    <p>Free Tier</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
           {activeTab === 'watchlist' && (
             <section className={styles.section}>
               <MovieGrid 
