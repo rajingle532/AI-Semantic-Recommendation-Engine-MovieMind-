@@ -13,6 +13,7 @@ import styles from './HomePage.module.css';
 const HomePage: React.FC = () => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [heroMovie, setHeroMovie] = useState<Movie | null>(null);
+  const [heroVideo, setHeroVideo] = useState<string | null>(null);
   const [genres, setGenres] = useState<{id: number, name: string}[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -35,7 +36,20 @@ const HomePage: React.FC = () => {
         ]);
         const trendingMovies = trendingRes.data.results || trendingRes.data || [];
         setMovies(trendingMovies);
-        if (trendingMovies.length > 0) setHeroMovie(trendingMovies[0]);
+        if (trendingMovies.length > 0) {
+          const firstMovie = trendingMovies[0];
+          setHeroMovie(firstMovie);
+          
+          // Fetch trailer for hero movie
+          try {
+            const { data: details } = await api.get(`/movies/${firstMovie.id}`);
+            if (details.trailer_key) {
+              setHeroVideo(details.trailer_key);
+            }
+          } catch (vErr) {
+            console.error("Failed to fetch hero trailer", vErr);
+          }
+        }
         const genreData = genresRes.data;
         setGenres(Array.isArray(genreData) ? genreData : (genreData.genres || []));
       } catch (err) {
@@ -169,7 +183,19 @@ const HomePage: React.FC = () => {
         {heroMovie && !activeGenre && !activeMood && filters.language === 'all' && !filters.year && filters.minRating === '0' && (
           <section className={styles.hero}>
             <div className={styles.heroBg}>
-              <img src={heroMovie.poster_path || ''} alt={heroMovie.title} />
+              {heroVideo ? (
+                <div className={styles.videoWrapper}>
+                  <iframe
+                    src={`https://www.youtube.com/embed/${heroVideo}?autoplay=1&mute=1&controls=0&loop=1&playlist=${heroVideo}&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1`}
+                    title="Hero Trailer"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                </div>
+              ) : (
+                <img src={heroMovie.poster_path || ''} alt={heroMovie.title} />
+              )}
               <div className={styles.heroOverlay}></div>
             </div>
             <div className={`${styles.heroContent} container`}>

@@ -49,7 +49,7 @@ def get_movie_details(movie_id: int) -> dict:
     if movie_id in _details_cache:
         return _details_cache[movie_id]
 
-    data = _make_request(f"/movie/{movie_id}", {"append_to_response": "credits"})
+    data = _make_request(f"/movie/{movie_id}", {"append_to_response": "credits,videos"})
     if not data:
         return {}
 

@@ -26,6 +26,26 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: 0.6;
+}
+
+.videoWrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.videoWrapper iframe {
+  width: 300%;
+  height: 100%;
+  margin-left: -100%;
+  border: none;
+  opacity: 0.5;
+  transform: scale(1.2);
 }
 
 .heroOverlay {
