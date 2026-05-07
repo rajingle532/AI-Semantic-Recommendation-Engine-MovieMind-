@@ -53,6 +53,8 @@ def _load_models():
         if _similarity_matrix is None:
             with open(similarity_path, 'rb') as f:
                 _similarity_matrix = pickle.load(f)
+            if hasattr(_similarity_matrix, 'astype'):
+                _similarity_matrix = _similarity_matrix.astype('float32') # Save 50% RAM
             print(f"Successfully loaded similarity.pkl. Shape: {_similarity_matrix.shape}")
         
     except Exception as e:
@@ -87,8 +89,10 @@ def _load_bert_model():
     embeddings_path = os.path.join(MODELS_DIR, 'bert_embeddings.pkl')
     
     try:
-        print("Loading SentenceTransformer (all-MiniLM-L6-v2)...")
-        _bert_model = SentenceTransformer('all-MiniLM-L6-v2')
+        print("Loading SentenceTransformer (LITE MODE)...")
+        # Use a very small model and ensure it doesn't use too much RAM
+        _bert_model = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
+        _bert_model.max_seq_length = 128 # Reduce context window to save RAM
         
         if os.path.exists(embeddings_path):
             with open(embeddings_path, 'rb') as f:
