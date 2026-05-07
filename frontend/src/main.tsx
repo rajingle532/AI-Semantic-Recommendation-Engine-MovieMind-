@@ -2,6 +2,7 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { ThemeProvider } from './context/ThemeContext'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import App from './App'
 import './index.css'
@@ -15,9 +16,11 @@ root.render(
   <React.StrictMode>
     <BrowserRouter>
       <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </ThemeProvider>
       </GoogleOAuthProvider>
     </BrowserRouter>
   </React.StrictMode>,

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, User, LogOut, Film, Loader2 } from 'lucide-react';
+import { Search, User, LogOut, Film, Loader2, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import styles from './Navbar.module.css';
 
@@ -12,6 +13,7 @@ const Navbar: React.FC = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const { user, logout, isAuthenticated, loading } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const fetchSuggestions = async (val: string) => {
@@ -119,6 +121,14 @@ const Navbar: React.FC = () => {
         </div>
 
         <div className={styles.actions}>
+          <button 
+            className={styles.themeToggle} 
+            onClick={toggleTheme}
+            title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+          >
+            {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+          </button>
+
           {isAuthenticated ? (
             <div className={styles.profileWrapper}>
               <div 
