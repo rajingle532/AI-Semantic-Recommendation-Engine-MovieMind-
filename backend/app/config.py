@@ -28,6 +28,9 @@ class Settings:
     # Google Auth
     GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")
 
+    # Affiliate Marketing
+    AFFILIATE_TAG: str = os.getenv("AFFILIATE_TAG", "your-affiliate-id")
+
     # CORS
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
 

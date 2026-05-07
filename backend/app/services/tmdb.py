@@ -108,7 +108,7 @@ def get_watch_providers(movie_id: int):
             "flatrate": format_logos(country_data.get("flatrate", [])), # Streaming
             "rent": format_logos(country_data.get("rent", [])),
             "buy": format_logos(country_data.get("buy", [])),
-            "link": country_data.get("link", "") # TMDB Link to providers
+            "link": country_data.get("link", "") + f"?tag={settings.AFFILIATE_TAG}" # TMDB Link with Affiliate Tag
         }
         return providers
     except Exception as e:

@@ -214,7 +214,7 @@ const MovieDetailPage: React.FC = () => {
                       (movie as any).watch_providers.flatrate.map((p: any) => (
                         <a 
                           key={p.provider_id} 
-                          href={(movie as any).watch_providers.link + "?tag=your-affiliate-id"}
+                          href={(movie as any).watch_providers.link}
                           target="_blank" 
                           rel="noopener noreferrer"
                           className={styles.providerLogo}
