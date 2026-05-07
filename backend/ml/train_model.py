@@ -15,7 +15,11 @@ from nltk.stem.porter import PorterStemmer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from app.services.tmdb import get_movie_details, get_trending_movies, _make_request
-from sentence_transformers import SentenceTransformer
+try:
+    from sentence_transformers import SentenceTransformer
+    HAS_BERT = True
+except ImportError:
+    HAS_BERT = False
 
 # Download NLTK data
 nltk.download('punkt', quiet=True)
@@ -217,6 +221,10 @@ def train():
 
 def train_bert_only(movies_df):
     """Specifically train and save BERT embeddings."""
+    if not HAS_BERT:
+        print("Skipping BERT training: Libraries not installed.")
+        return
+
     print("Generating BERT embeddings...")
     model = SentenceTransformer('all-MiniLM-L6-v2')
     embeddings = model.encode(movies_df['tags'].tolist(), show_progress_bar=True)
@@ -247,8 +255,13 @@ def full_retrain(use_live_data=False):
     # 3. Content Similarity
     similarity = compute_similarity(movies_processed)
     
-    # 4. BERT Embeddings
-    train_bert_only(movies_processed)
+    # 4. BERT Training
+    if HAS_BERT:
+        train_bert_only(movies_processed)
+    else:
+        print("Skipping BERT step in full_retrain.")
+        
+    print("Full re-train completed successfully!")
     
     # 5. Save everything
     save_models(movies_processed, similarity)
