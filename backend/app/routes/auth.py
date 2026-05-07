@@ -16,9 +16,10 @@ router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 def signup(user_data: UserSignup):
     """Register a new user account."""
     users = get_collection("users")
+    email = user_data.email.lower().strip()
 
     # Check if email already exists
-    if users.find_one({"email": user_data.email}):
+    if users.find_one({"email": email}):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
@@ -27,7 +28,7 @@ def signup(user_data: UserSignup):
     # Hash password and save user
     user_doc = {
         "name": user_data.name,
-        "email": user_data.email,
+        "email": email,
         "password_hash": hash_password(user_data.password),
     }
     result = users.insert_one(user_doc)
@@ -48,7 +49,8 @@ def login(credentials: UserLogin):
     users = get_collection("users")
 
     # Find user by email
-    user = users.find_one({"email": credentials.email})
+    email = credentials.email.lower().strip()
+    user = users.find_one({"email": email})
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -134,7 +136,7 @@ def google_auth(data: GoogleLogin):
 @router.post("/forgot-password")
 def forgot_password(data: dict):
     """Handle password reset request."""
-    email = data.get("email")
+    email = data.get("email", "").lower().strip()
     if not email:
         raise HTTPException(status_code=400, detail="Email is required")
     
