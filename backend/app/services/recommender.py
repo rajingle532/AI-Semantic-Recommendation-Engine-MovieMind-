@@ -9,8 +9,13 @@ from typing import List
 from app.config import settings
 from app.services.tmdb import get_movie_poster, get_movie_details, get_similar_movies, search_movies_tmdb
 from app.database import get_collection
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
+try:
+    from sentence_transformers import SentenceTransformer
+    from sklearn.metrics.pairwise import cosine_similarity
+    HAS_ML_LIBS = True
+except ImportError:
+    print("WARNING: ML libraries (sentence-transformers/sklearn) not found. Semantic search will be disabled.")
+    HAS_ML_LIBS = False
 
 # Path to saved models
 MODELS_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'saved_models')
@@ -69,6 +74,10 @@ def reload_models():
 def _load_bert_model():
     """Load BERT model and embeddings (lazy loading)."""
     global _bert_model, _bert_embeddings, _movies_df
+
+    if not HAS_ML_LIBS:
+        print("RECOMMANDER: Skipping BERT load — ML libraries missing.")
+        return
 
     if _bert_model is not None:
         return
@@ -213,6 +222,9 @@ def get_semantic_search_results(query: str, n: int = 15) -> list:
     """
     Find movies based on natural language description using BERT embeddings.
     """
+    if not HAS_ML_LIBS:
+        return search_movies_tmdb(query)
+
     _load_bert_model()
 
     if _bert_model is None or _bert_embeddings is None or _movies_df is None:
