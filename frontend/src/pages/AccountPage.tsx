@@ -48,6 +48,14 @@ const AccountPage: React.FC = () => {
               </div>
 
               <div className={styles.detailItem}>
+                <div className={styles.itemIcon}><Settings size={20} /></div>
+                <div className={styles.itemContent}>
+                  <label>Mobile Number</label>
+                  <p>{user?.phone || 'Not provided'}</p>
+                </div>
+              </div>
+
+              <div className={styles.detailItem}>
                 <div className={styles.itemIcon}><Shield size={20} /></div>
                 <div className={styles.itemContent}>
                   <label>Account Status</label>

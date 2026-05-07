@@ -10,6 +10,7 @@ class UserSignup(BaseModel):
     name: str
     email: EmailStr
     password: str
+    phone: Optional[str] = None
 
 
 class UserLogin(BaseModel):
@@ -28,6 +29,7 @@ class UserResponse(BaseModel):
     id: str
     name: str
     email: str
+    phone: Optional[str] = None
 
 
 class TokenResponse(BaseModel):

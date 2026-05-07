@@ -10,8 +10,13 @@ import styles from './Auth.module.css';
 const SignupPage: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const validatePhone = (phone: string) => {
+    return /^\d{10}$/.test(phone);
+  };
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -32,6 +37,11 @@ const SignupPage: React.FC = () => {
       return;
     }
 
+    if (!validatePhone(phone)) {
+      toast.error('Please enter a valid 10-digit mobile number');
+      return;
+    }
+
     if (password.length < 8) {
       toast.error('Password must be at least 8 characters long');
       return;
@@ -40,7 +50,7 @@ const SignupPage: React.FC = () => {
     setLoading(true);
     
     try {
-      const { data } = await api.post('/auth/signup', { name, email, password });
+      const { data } = await api.post('/auth/signup', { name, email, phone, password });
       // Instruction: Save token+user to localStorage and redirect to home
       login(data.access_token, data.user);
       toast.success('Account created! Welcome to MovieMind.');
@@ -93,6 +103,16 @@ const SignupPage: React.FC = () => {
               placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className={styles.group}>
+            <label>Mobile Number</label>
+            <input 
+              type="tel" 
+              placeholder="10 digit number"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
               required
             />
           </div>

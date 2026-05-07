@@ -29,6 +29,7 @@ def signup(user_data: UserSignup):
     user_doc = {
         "name": user_data.name,
         "email": email,
+        "phone": user_data.phone,
         "password_hash": hash_password(user_data.password),
     }
     result = users.insert_one(user_doc)
@@ -39,7 +40,12 @@ def signup(user_data: UserSignup):
 
     return TokenResponse(
         access_token=token,
-        user=UserResponse(id=user_id, name=user_data.name, email=user_data.email)
+        user=UserResponse(
+            id=user_id, 
+            name=user_data.name, 
+            email=email,
+            phone=user_data.phone
+        )
     )
 
 
@@ -69,7 +75,12 @@ def login(credentials: UserLogin):
 
     return TokenResponse(
         access_token=token,
-        user=UserResponse(id=user_id, name=user["name"], email=user["email"])
+        user=UserResponse(
+            id=str(user["_id"]), 
+            name=user["name"], 
+            email=user["email"],
+            phone=user.get("phone")
+        )
     )
 
 
