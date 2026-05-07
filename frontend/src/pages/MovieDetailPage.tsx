@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Check, Star, Clock, Calendar, Play, X } from 'lucide-react';
+import { Plus, Check, Star, Clock, Calendar, Play, X, Share2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import { Movie } from '../types';
@@ -9,6 +9,7 @@ import MovieGrid from '../components/MovieGrid';
 import Loader from '../components/Loader';
 import RatingStars from '../components/RatingStars';
 import PageTransition from '../components/PageTransition';
+import ShareModal from '../components/ShareModal';
 import styles from './MovieDetailPage.module.css';
 
 const MovieDetailPage: React.FC = () => {
@@ -19,6 +20,7 @@ const MovieDetailPage: React.FC = () => {
   const [inWatchlist, setInWatchlist] = useState(false);
   const [userRating, setUserRating] = useState(0);
   const [showTrailer, setShowTrailer] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
     const fetchMovieData = async () => {
@@ -204,6 +206,14 @@ const MovieDetailPage: React.FC = () => {
                       <Play size={20} fill="currentColor" /> Watch Trailer
                     </button>
                   )}
+
+                  <button 
+                    className={styles.shareBtn}
+                    onClick={() => setShowShareModal(true)}
+                    title="Share Movie"
+                  >
+                    <Share2 size={20} /> Share
+                  </button>
                 </div>
 
                 {/* Watch Providers Section */}
@@ -262,6 +272,12 @@ const MovieDetailPage: React.FC = () => {
             <MovieGrid movies={similar} />
           </section>
         </div>
+        <ShareModal 
+          isOpen={showShareModal} 
+          onClose={() => setShowShareModal(false)} 
+          title={movie.title} 
+          url={`/movie/${movie.id}`} 
+        />
       </div>
     </PageTransition>
   );
