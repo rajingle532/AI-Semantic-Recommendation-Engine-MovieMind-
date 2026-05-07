@@ -16,6 +16,8 @@ import SignupPage from './pages/SignupPage';
 import ProfilePage from './pages/ProfilePage';
 import PersonDetailPage from './pages/PersonDetailPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import AccountPage from './pages/AccountPage';
+import HelpPage from './pages/HelpPage';
 
 const App: React.FC = () => {
   const location = useLocation();
@@ -49,6 +51,8 @@ const App: React.FC = () => {
             <Route path="/movie/:id" element={<MovieDetailPage />} />
             <Route path="/person/:id" element={<PersonDetailPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/account" element={<AccountPage />} />
+            <Route path="/help" element={<HelpPage />} />
           </Route>
         </Routes>
       </AnimatePresence>
