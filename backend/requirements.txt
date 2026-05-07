@@ -1,33 +1,15 @@
-# ═══════════════════════════════════════════
-# Movie Recommender System — Backend Dependencies
-# ═══════════════════════════════════════════
-
-# Web Framework
 fastapi==0.115.0
 uvicorn[standard]==0.30.0
 python-multipart==0.0.9
-
-# Environment & Config
 python-dotenv==1.0.1
-
-# Database
 pymongo==4.8.0
-
-# Authentication & Security
 bcrypt==4.2.0
 PyJWT==2.9.0
 pydantic[email]==2.9.0
-
-# Machine Learning
-scikit-learn
-pandas
-numpy
-nltk
-# Removed heavy libs for Render Free Tier (May 8 Build)
-
-# External API
 requests==2.32.0
 google-auth==2.35.0
-
-# CORS
-# (included in fastapi — no extra install needed)
+numpy
+nltk
+pandas
+scikit-learn
+# EXTREME STABILITY: TORCH AND SENTENCE-TRANSFORMERS ARE BANNED
