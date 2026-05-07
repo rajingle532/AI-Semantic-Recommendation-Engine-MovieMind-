@@ -168,31 +168,6 @@ def get_trending_movies(page: int = 1) -> list:
     ]
 
 
-def get_all_languages_movies(page: int = 1, year: str = None, min_rating: float = None) -> list:
-    """Discover movies with advanced filters."""
-    params = {
-        "page": page,
-        "sort_by": "popularity.desc",
-        "vote_count.gte": 50 # Only movies with enough votes
-    }
-    
-    if year:
-        params["primary_release_year"] = year
-    if min_rating:
-        params["vote_average.gte"] = min_rating
-
-    data = _make_request("/discover/movie", params)
-    results = data.get("results", [])
-    return [
-        {
-            "id": m["id"],
-            "title": m["title"],
-            "poster_path": f"{settings.TMDB_IMAGE_URL}{m['poster_path']}" if m.get("poster_path") else None,
-            "release_date": m.get("release_date"),
-            "vote_average": m.get("vote_average")
-        }
-        for m in results
-    ]
 
 
 def get_genres() -> list:
@@ -274,11 +249,22 @@ def get_movies_by_language(language_code: str, page: int = 1) -> list[dict]:
     ]
 
 
-def get_all_languages_movies(page: int = 1) -> list[dict]:
-    data = _make_request("/discover/movie", {
+def get_all_languages_movies(page: int = 1, language: str = None, year: str = None, min_rating: float = None) -> list[dict]:
+    """Discover movies with advanced combined filters."""
+    params = {
         "sort_by": "popularity.desc",
-        "page": page
-    })
+        "page": page,
+        "vote_count.gte": 50
+    }
+    
+    if language and language != 'all':
+        params["with_original_language"] = language
+    if year:
+        params["primary_release_year"] = year
+    if min_rating:
+        params["vote_average.gte"] = min_rating
+
+    data = _make_request("/discover/movie", params)
     results = data.get("results", [])
 
     return [
@@ -290,7 +276,7 @@ def get_all_languages_movies(page: int = 1) -> list[dict]:
             "vote_average": m.get("vote_average"),
             "release_date": m.get("release_date"),
         }
-        for m in results[:20]
+        for m in results
     ]
 
 

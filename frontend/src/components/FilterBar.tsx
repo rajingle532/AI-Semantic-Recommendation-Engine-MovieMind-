@@ -22,10 +22,16 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, setFilters, onClear }) =
     { code: 'all', name: 'All Languages' },
     { code: 'en', name: 'English' },
     { code: 'hi', name: 'Hindi' },
+    { code: 'mr', name: 'Marathi' },
+    { code: 'ta', name: 'Tamil' },
+    { code: 'te', name: 'Telugu' },
+    { code: 'ml', name: 'Malayalam' },
+    { code: 'kn', name: 'Kannada' },
     { code: 'es', name: 'Spanish' },
     { code: 'fr', name: 'French' },
     { code: 'ja', name: 'Japanese' },
     { code: 'ko', name: 'Korean' },
+    { code: 'de', name: 'German' },
   ];
 
   const hasFilters = filters.year || filters.minRating !== '0' || filters.language !== 'all';
