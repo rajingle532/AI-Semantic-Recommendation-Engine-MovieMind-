@@ -23,8 +23,7 @@ scikit-learn
 pandas
 numpy
 nltk
-sentence-transformers
-torch
+# Removed heavy libs to prevent Render crashes
 
 # External API
 requests==2.32.0
