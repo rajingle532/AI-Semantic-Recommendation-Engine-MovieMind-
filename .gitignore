@@ -26,9 +26,8 @@ env/
 # ═══════════════════════════════════════════
 # ML Models & Data (too large for Git)
 # ═══════════════════════════════════════════
-*.pkl
-*.pickle
-backend/saved_models/
+# Machine Learning Models (Optimized to fit in GitHub)
+!backend/saved_models/
 backend/data/
 !backend/data/*.csv
 

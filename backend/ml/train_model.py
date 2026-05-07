@@ -131,8 +131,10 @@ def compute_similarity(movies_df):
     print("Computing cosine similarity matrix...")
 
     cv = CountVectorizer(max_features=5000, stop_words='english')
-    vectors = cv.fit_transform(movies_df['tags']).toarray()
-    similarity = cosine_similarity(vectors)
+    # Use sparse matrix directly to save RAM
+    vectors = cv.fit_transform(movies_df['tags'])
+    # Cast to float32 to halve the file size (176MB -> 88MB)
+    similarity = cosine_similarity(vectors).astype(np.float32)
 
     print(f"Similarity matrix shape: {similarity.shape}")
     return similarity
