@@ -11,23 +11,37 @@ interface MovieCardProps {
 }
 
 const MovieCard: React.FC<MovieCardProps> = ({ movie, showRating = true }) => {
-  // Using direct poster_path as it already contains the full URL
   const posterUrl = movie.poster_path || 'https://via.placeholder.com/500x750?text=No+Poster';
-
   const movieId = movie.id || (movie as any).movie_id;
   const movieTitle = movie.title || (movie as any).movie_title;
 
   return (
     <motion.div 
       className={styles.card}
-      whileHover={{ scale: 1.05 }}
-      transition={{ duration: 0.3 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ 
+        scale: 1.05,
+        y: -10,
+        boxShadow: '0 20px 40px rgba(0,0,0,0.4)'
+      }}
+      transition={{ 
+        type: 'spring',
+        stiffness: 300,
+        damping: 20
+      }}
     >
       <Link to={`/movie/${movieId}`} className={styles.link}>
         <div className={styles.posterWrapper}>
           <img src={posterUrl} alt={movieTitle} className={styles.poster} loading="lazy" />
           <div className={styles.overlay}>
-            <button className={styles.viewBtn}>View Details</button>
+            <motion.button 
+              className={styles.viewBtn}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              View Details
+            </motion.button>
           </div>
         </div>
         

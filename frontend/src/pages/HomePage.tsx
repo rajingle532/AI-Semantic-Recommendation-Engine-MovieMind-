@@ -5,6 +5,7 @@ import api from '../services/api';
 import { Movie } from '../types';
 import MovieGrid from '../components/MovieGrid';
 import Loader from '../components/Loader';
+import PageTransition from '../components/PageTransition';
 import styles from './HomePage.module.css';
 
 const LANGUAGES = [
@@ -143,107 +144,109 @@ const HomePage: React.FC = () => {
   if (loading && movies.length === 0) return <Loader />;
 
   return (
-    <div className={styles.home}>
-      {heroMovie && !activeGenre && !activeLanguage && (
-        <section className={styles.hero}>
-          <div className={styles.heroBg}>
-            <img src={heroMovie.poster_path || ''} alt={heroMovie.title} />
-            <div className={styles.heroOverlay}></div>
-          </div>
-          <div className={`${styles.heroContent} container`}>
-            <motion.h1
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className={styles.heroTitle}
+    <PageTransition>
+      <div className={styles.home}>
+        {heroMovie && !activeGenre && !activeLanguage && (
+          <section className={styles.hero}>
+            <div className={styles.heroBg}>
+              <img src={heroMovie.poster_path || ''} alt={heroMovie.title} />
+              <div className={styles.heroOverlay}></div>
+            </div>
+            <div className={`${styles.heroContent} container`}>
+              <motion.h1
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className={styles.heroTitle}
+              >
+                {heroMovie.title}
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+                className={styles.heroOverview}
+              >
+                {heroMovie.overview}
+              </motion.p>
+              <div className={styles.heroActions}>
+                <button className={styles.playBtn}>
+                  <Play size={20} fill="currentColor" /> Play
+                </button>
+                <button className={styles.infoBtn}>
+                  <Info size={20} /> More Info
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        <main className={`${styles.main} container`}>
+          <div className={styles.genreStrip}>
+            <button
+              className={`${styles.genreChip} ${activeGenre === null && activeLanguage === null ? styles.chipActive : ''}`}
+              onClick={resetTrending}
             >
-              {heroMovie.title}
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
-              className={styles.heroOverview}
-            >
-              {heroMovie.overview}
-            </motion.p>
-            <div className={styles.heroActions}>
-              <button className={styles.playBtn}>
-                <Play size={20} fill="currentColor" /> Play
+              Trending
+            </button>
+            {genres.map((genre) => (
+              <button
+                key={genre.id}
+                className={`${styles.genreChip} ${activeGenre === genre.id ? styles.chipActive : ''}`}
+                onClick={() => handleGenreClick(genre.id)}
+              >
+                {genre.name}
               </button>
-              <button className={styles.infoBtn}>
-                <Info size={20} /> More Info
+            ))}
+          </div>
+
+          <div className={styles.genreStrip} style={{ marginTop: '10px' }}>
+            {LANGUAGES.map((lang) => (
+              <button
+                key={lang.code}
+                className={`${styles.genreChip} ${activeLanguage === lang.code ? styles.chipActive : ''}`}
+                onClick={() => handleLanguageClick(lang.code)}
+              >
+                {lang.flag} {lang.name}
+              </button>
+            ))}
+          </div>
+
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>
+              {activeLanguage 
+                ? `${LANGUAGES.find(l => l.code === activeLanguage)?.name} Movies`
+                : activeGenre
+                  ? `${genres.find(g => g.id === activeGenre)?.name} Movies`
+                  : 'Trending This Week'}
+            </h2>
+            {loading ? <Loader /> : <MovieGrid movies={movies} />}
+          </section>
+
+          {!loading && movies.length > 0 && (
+            <div style={{ textAlign: 'center', marginTop: '40px', marginBottom: '60px' }}>
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                style={{
+                  background: '#e50914',
+                  color: 'white',
+                  border: 'none',
+                  padding: '14px 48px',
+                  borderRadius: '4px',
+                  fontSize: '1rem',
+                  fontWeight: '700',
+                  cursor: loadingMore ? 'not-allowed' : 'pointer',
+                  opacity: loadingMore ? 0.7 : 1,
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                {loadingMore ? 'Loading...' : 'Load More Movies'}
               </button>
             </div>
-          </div>
-        </section>
-      )}
-
-      <main className={`${styles.main} container`}>
-        <div className={styles.genreStrip}>
-          <button
-            className={`${styles.genreChip} ${activeGenre === null && activeLanguage === null ? styles.chipActive : ''}`}
-            onClick={resetTrending}
-          >
-            Trending
-          </button>
-          {genres.map((genre) => (
-            <button
-              key={genre.id}
-              className={`${styles.genreChip} ${activeGenre === genre.id ? styles.chipActive : ''}`}
-              onClick={() => handleGenreClick(genre.id)}
-            >
-              {genre.name}
-            </button>
-          ))}
-        </div>
-
-        <div className={styles.genreStrip} style={{ marginTop: '10px' }}>
-          {LANGUAGES.map((lang) => (
-            <button
-              key={lang.code}
-              className={`${styles.genreChip} ${activeLanguage === lang.code ? styles.chipActive : ''}`}
-              onClick={() => handleLanguageClick(lang.code)}
-            >
-              {lang.flag} {lang.name}
-            </button>
-          ))}
-        </div>
-
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>
-            {activeLanguage 
-              ? `${LANGUAGES.find(l => l.code === activeLanguage)?.name} Movies`
-              : activeGenre
-                ? `${genres.find(g => g.id === activeGenre)?.name} Movies`
-                : 'Trending This Week'}
-          </h2>
-          {loading ? <Loader /> : <MovieGrid movies={movies} />}
-        </section>
-
-        {!loading && movies.length > 0 && (
-          <div style={{ textAlign: 'center', marginTop: '40px', marginBottom: '60px' }}>
-            <button
-              onClick={loadMore}
-              disabled={loadingMore}
-              style={{
-                background: '#e50914',
-                color: 'white',
-                border: 'none',
-                padding: '14px 48px',
-                borderRadius: '4px',
-                fontSize: '1rem',
-                fontWeight: '700',
-                cursor: loadingMore ? 'not-allowed' : 'pointer',
-                opacity: loadingMore ? 0.7 : 1,
-                transition: 'all 0.3s ease'
-              }}
-            >
-              {loadingMore ? 'Loading...' : 'Load More Movies'}
-            </button>
-          </div>
-        )}
-      </main>
-    </div>
+          )}
+        </main>
+      </div>
+    </PageTransition>
   );
 };
 

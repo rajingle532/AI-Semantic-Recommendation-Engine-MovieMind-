@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, User, LogOut, Film, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import styles from './Navbar.module.css';
@@ -54,7 +55,12 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className={styles.navbar}>
+    <motion.nav 
+      className={styles.navbar}
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ type: 'spring', stiffness: 120, damping: 20 }}
+    >
       <div className={`${styles.container} container`}>
         <Link to="/" className={styles.logo}>
           <Film size={28} className={styles.logoIcon} />
@@ -74,34 +80,42 @@ const Navbar: React.FC = () => {
             {isSearching && <div className={styles.searchLoader}></div>}
           </form>
 
-          {showDropdown && suggestions.length > 0 && (
-            <div className={styles.searchSuggestions}>
-              {suggestions.map((movie) => (
-                <div 
-                  key={movie.id} 
-                  className={styles.suggestionItem}
-                  onClick={() => handleSuggestionClick(movie.id)}
-                >
-                  <img 
-                    src={movie.poster_path || 'https://via.placeholder.com/40x60?text=?'} 
-                    alt={movie.title} 
-                  />
-                  <div className={styles.suggestionInfo}>
-                    <p className={styles.suggestionTitle}>{movie.title}</p>
-                    <p className={styles.suggestionYear}>
-                      {movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}
-                    </p>
-                  </div>
-                </div>
-              ))}
-              <div 
-                className={styles.seeAll}
-                onClick={handleSearch}
+          <AnimatePresence>
+            {showDropdown && suggestions.length > 0 && (
+              <motion.div 
+                className={styles.searchSuggestions}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.2 }}
               >
-                See all results for "{query}"
-              </div>
-            </div>
-          )}
+                {suggestions.map((movie) => (
+                  <div 
+                    key={movie.id} 
+                    className={styles.suggestionItem}
+                    onClick={() => handleSuggestionClick(movie.id)}
+                  >
+                    <img 
+                      src={movie.poster_path || 'https://via.placeholder.com/40x60?text=?'} 
+                      alt={movie.title} 
+                    />
+                    <div className={styles.suggestionInfo}>
+                      <p className={styles.suggestionTitle}>{movie.title}</p>
+                      <p className={styles.suggestionYear}>
+                        {movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                <div 
+                  className={styles.seeAll}
+                  onClick={handleSearch}
+                >
+                  See all results for "{query}"
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <div className={styles.actions}>
@@ -119,16 +133,24 @@ const Navbar: React.FC = () => {
                 </div>
               </div>
               
-              {showDropdown && (
-                <div className={styles.dropdown}>
-                  <Link to="/profile" onClick={() => setShowDropdown(false)}>
-                    <User size={16} /> Profile
-                  </Link>
-                  <button onClick={() => { logout(); setShowDropdown(false); }}>
-                    <LogOut size={16} /> Logout
-                  </button>
-                </div>
-              )}
+              <AnimatePresence>
+                {showDropdown && (
+                  <motion.div 
+                    className={styles.dropdown}
+                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Link to="/profile" onClick={() => setShowDropdown(false)}>
+                      <User size={16} /> Profile
+                    </Link>
+                    <button onClick={() => { logout(); setShowDropdown(false); }}>
+                      <LogOut size={16} /> Logout
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ) : (
             <div className={styles.authBtns}>
@@ -138,9 +160,8 @@ const Navbar: React.FC = () => {
           )}
         </div>
       </div>
-    </nav>
+    </motion.nav>
   );
 };
 
 export default Navbar;
-
