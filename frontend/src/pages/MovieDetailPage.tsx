@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Check, Star, Clock, Calendar, Play } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
@@ -150,22 +150,24 @@ const MovieDetailPage: React.FC = () => {
                   <RatingStars initialRating={userRating} onRate={handleRate} />
                 </div>
                 
-                <button 
-                  className={`${styles.watchlistBtn} ${inWatchlist ? styles.active : ''}`}
-                  onClick={toggleWatchlist}
-                >
-                  {inWatchlist ? <Check size={20} /> : <Plus size={20} />}
-                  {inWatchlist ? "In Watchlist" : "Add to Watchlist"}
-                </button>
-
-                {(movie as any).trailer_key && (
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                   <button 
-                    className={styles.trailerBtn}
-                    onClick={() => setShowTrailer(true)}
+                    className={`${styles.watchlistBtn} ${inWatchlist ? styles.active : ''}`}
+                    onClick={toggleWatchlist}
                   >
-                    <Play size={20} fill="currentColor" /> Watch Trailer
+                    {inWatchlist ? <Check size={20} /> : <Plus size={20} />}
+                    {inWatchlist ? "In Watchlist" : "Add to Watchlist"}
                   </button>
-                )}
+
+                  {(movie as any).trailer_key && (
+                    <button 
+                      className={styles.trailerBtn}
+                      onClick={() => setShowTrailer(true)}
+                    >
+                      <Play size={20} fill="currentColor" /> Watch Trailer
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -205,8 +207,6 @@ const MovieDetailPage: React.FC = () => {
               </motion.div>
             )}
           </AnimatePresence>
-            </div>
-          </div>
 
           <section className={styles.similarSection}>
             <h2 className={styles.sectionTitle}>Similar Movies You Might Like</h2>
