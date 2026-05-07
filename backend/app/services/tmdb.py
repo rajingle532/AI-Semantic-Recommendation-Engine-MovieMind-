@@ -46,9 +46,8 @@ def _make_request(endpoint: str, params: dict = None) -> dict:
 
 def get_movie_details(movie_id: int) -> dict:
     """Fetch full movie details from TMDB by movie ID."""
-    # Temporarily disabling cache to show new features
-    # if movie_id in _details_cache:
-    #     return _details_cache[movie_id]
+    if movie_id in _details_cache:
+        return _details_cache[movie_id]
 
     data = _make_request(f"/movie/{movie_id}")
     if not data:
