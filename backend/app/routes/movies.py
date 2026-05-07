@@ -1,7 +1,8 @@
 """
 Movie routes — search, details, trending, and genre endpoints.
 """
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, HTTPException
+from app.services import tmdb
 from app.services.tmdb import (
     get_movie_details,
     get_trending_movies,
@@ -95,3 +96,16 @@ def all_languages_movies(page: int = 1, language: str = None):
     if language and language != 'all':
         return get_movies_by_language(language, page)
     return get_all_languages_movies(page)
+
+@router.get("/person/{person_id}")
+async def person_details(person_id: int):
+    """Get person biography and details."""
+    details = tmdb.get_person_details(person_id)
+    if not details:
+        raise HTTPException(status_code=404, detail="Person not found")
+    return details
+
+@router.get("/person/{person_id}/movies")
+async def person_movies(person_id: int):
+    """Get all movies for a person."""
+    return tmdb.get_person_movie_credits(person_id)

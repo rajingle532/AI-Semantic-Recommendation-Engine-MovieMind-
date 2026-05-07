@@ -49,21 +49,33 @@ def get_movie_details(movie_id: int) -> dict:
     if movie_id in _details_cache:
         return _details_cache[movie_id]
 
-    data = _make_request(f"/movie/{movie_id}")
+    data = _make_request(f"/movie/{movie_id}", {"append_to_response": "credits"})
     if not data:
         return {}
+
+    # Format cast data
+    cast = []
+    if "credits" in data:
+        for member in data["credits"].get("cast", [])[:10]: # Top 10 actors
+            cast.append({
+                "id": member["id"],
+                "name": member["name"],
+                "character": member["character"],
+                "profile_path": f"{settings.TMDB_IMAGE_URL}{member['profile_path']}" if member.get("profile_path") else None
+            })
 
     details = {
         "id": data.get("id"),
         "title": data.get("title"),
         "overview": data.get("overview"),
         "poster_path": f"{settings.TMDB_IMAGE_URL}{data['poster_path']}" if data.get("poster_path") else None,
-        "backdrop_path": f"{settings.TMDB_IMAGE_URL}{data['backdrop_path']}" if data.get("backdrop_path") else None,
+        "backdrop_path": f"https://image.tmdb.org/t/p/original{data['backdrop_path']}" if data.get("backdrop_path") else None,
         "release_date": data.get("release_date"),
         "vote_average": data.get("vote_average"),
         "vote_count": data.get("vote_count"),
         "runtime": data.get("runtime"),
         "genres": [g["name"] for g in data.get("genres", [])],
+        "cast": cast,
         "tagline": data.get("tagline"),
         "trailer_key": get_movie_videos(movie_id),
         "watch_providers": get_watch_providers(movie_id)
@@ -160,6 +172,40 @@ def get_genres() -> list:
     """Get list of all movie genres from TMDB."""
     data = _make_request("/genre/movie/list")
     return data.get("genres", [])
+
+
+def get_person_details(person_id: int) -> dict:
+    """Fetch person biography and details from TMDB."""
+    return _make_request(f"/person/{person_id}")
+
+def get_person_movie_credits(person_id: int) -> list:
+    """Fetch all movies a person has worked on."""
+    data = _make_request(f"/person/{person_id}/movie_credits")
+    if not data:
+        return []
+    
+    # Combine cast and crew credits
+    cast = data.get("cast", [])
+    crew = data.get("crew", [])
+    combined = cast + crew
+    
+    # Sort by popularity and remove duplicates
+    seen = set()
+    unique_movies = []
+    for m in sorted(combined, key=lambda x: x.get("popularity", 0), reverse=True):
+        if m["id"] not in seen:
+            seen.add(m["id"])
+            unique_movies.append({
+                "id": m["id"],
+                "title": m.get("title") or m.get("name"),
+                "poster_path": f"{settings.TMDB_IMAGE_URL}{m['poster_path']}" if m.get("poster_path") else None,
+                "character": m.get("character", ""),
+                "job": m.get("job", ""),
+                "release_date": m.get("release_date", ""),
+                "vote_average": m.get("vote_average", 0)
+            })
+    
+    return unique_movies[:40] # Return top 40 movies
 
 
 def search_movies_tmdb(query: str, page: int = 1) -> list:

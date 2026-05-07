@@ -246,8 +246,72 @@
   height: 100%;
 }
 
+.castSection {
+  margin: 4rem 0;
+}
+
+.castList {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  padding: 1rem 0;
+  scrollbar-width: none; /* Hide scrollbar for Firefox */
+}
+
+.castList::-webkit-scrollbar {
+  display: none; /* Hide scrollbar for Chrome/Safari */
+}
+
+.castCard {
+  flex: 0 0 150px;
+  text-decoration: none;
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.castCard:hover {
+  transform: translateY(-5px);
+}
+
+.castAvatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin: 0 auto 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: #222;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.castAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatarPlaceholder {
+  font-size: 2rem;
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.castName {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 0.2rem;
+}
+
+.castCharacter {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
 .similarSection {
-  margin-top: 4rem;
+  margin: 4rem 0;
 }
 
 .sectionTitle {

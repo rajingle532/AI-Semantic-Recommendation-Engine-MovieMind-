@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Check, Star, Clock, Calendar, Play, X } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -235,6 +235,27 @@ const MovieDetailPage: React.FC = () => {
               </div>
             </div>
           </div>
+
+          <section className={styles.castSection}>
+            <h2 className={styles.sectionTitle}>Top Cast</h2>
+            <div className={styles.castList}>
+              {(movie as any).cast?.map((member: any) => (
+                <Link to={`/person/${member.id}`} key={member.id} className={styles.castCard}>
+                  <div className={styles.castAvatar}>
+                    {member.profile_path ? (
+                      <img src={member.profile_path} alt={member.name} />
+                    ) : (
+                      <div className={styles.avatarPlaceholder}>{member.name[0]}</div>
+                    )}
+                  </div>
+                  <div className={styles.castInfo}>
+                    <p className={styles.castName}>{member.name}</p>
+                    <p className={styles.castCharacter}>{member.character}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
 
           <section className={styles.similarSection}>
             <h2 className={styles.sectionTitle}>Similar Movies You Might Like</h2>

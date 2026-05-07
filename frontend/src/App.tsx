@@ -14,6 +14,7 @@ import MovieDetailPage from './pages/MovieDetailPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ProfilePage from './pages/ProfilePage';
+import PersonDetailPage from './pages/PersonDetailPage';
 
 const App: React.FC = () => {
   const location = useLocation();
@@ -39,6 +40,7 @@ const App: React.FC = () => {
           <Route path="/" element={<HomePage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/movie/:id" element={<MovieDetailPage />} />
+          <Route path="/person/:id" element={<PersonDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
 

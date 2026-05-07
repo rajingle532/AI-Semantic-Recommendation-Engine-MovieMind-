@@ -1,0 +1,117 @@
+.personPage {
+  padding: 2rem 0;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  margin-bottom: 2rem;
+  transition: color 0.3s ease;
+  width: fit-content;
+}
+
+.backBtn:hover {
+  color: var(--accent);
+}
+
+.header {
+  display: flex;
+  gap: 3rem;
+  margin-bottom: 4rem;
+}
+
+.profileWrapper {
+  flex: 0 0 300px;
+}
+
+.profileImg {
+  width: 100%;
+  border-radius: 20px;
+  box-shadow: var(--shadow-lg);
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info {
+  flex: 1;
+}
+
+.name {
+  font-size: 3rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #fff 0%, #aaa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  color: var(--text-secondary);
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bioSection h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+.biography {
+  line-height: 1.8;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  white-space: pre-wrap;
+}
+
+.sectionTitle {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.creditsSection {
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.noMovies {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 3rem;
+}
+
+@media (max-width: 900px) {
+  .header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 2rem;
+  }
+
+  .profileWrapper {
+    flex: 0 0 250px;
+    width: 250px;
+  }
+
+  .name {
+    font-size: 2.5rem;
+  }
+
+  .meta {
+    justify-content: center;
+  }
+}
