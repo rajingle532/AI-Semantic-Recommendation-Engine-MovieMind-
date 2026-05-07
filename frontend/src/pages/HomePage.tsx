@@ -70,7 +70,9 @@ const HomePage: React.FC = () => {
         setActiveGenre(null);
         setPage(1);
         try {
-          const { data } = await api.get(`/movies/all?page=1&language=${filters.language}&year=${filters.year}&min_rating=${filters.minRating}`);
+          const endpoint = `/movies/all?page=1&language=${filters.language}&year=${filters.year}&min_rating=${filters.minRating}`;
+          console.log("DEBUG: Fetching filtered movies from:", endpoint);
+          const { data } = await api.get(endpoint);
           setMovies(Array.isArray(data) ? data : (data.results || []));
         } catch (err) {
           console.error("Filter fetch failed", err);

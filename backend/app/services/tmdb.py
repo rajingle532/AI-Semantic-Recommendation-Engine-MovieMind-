@@ -254,17 +254,24 @@ def get_all_languages_movies(page: int = 1, language: str = None, year: str = No
     params = {
         "sort_by": "popularity.desc",
         "page": page,
-        "vote_count.gte": 50
+        "vote_count.gte": 5 # Lowered for better results in regional languages
     }
     
-    if language and language != 'all':
+    if language and language != 'all' and language != 'null':
         params["with_original_language"] = language
-    if year:
+    
+    if year and year != '' and year != 'null':
         params["primary_release_year"] = year
-    if min_rating:
-        params["vote_average.gte"] = min_rating
+        
+    if min_rating and float(min_rating) > 0:
+        params["vote_average.gte"] = float(min_rating)
 
+    print(f"DEBUG: Discovering with params: {params}") # This helps in debugging
+    
     data = _make_request("/discover/movie", params)
+    if not data:
+        return []
+        
     results = data.get("results", [])
 
     return [
