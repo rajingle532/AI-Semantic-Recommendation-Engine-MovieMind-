@@ -28,17 +28,26 @@ def _load_models():
     movie_list_path = os.path.join(MODELS_DIR, 'movie_list.pkl')
     similarity_path = os.path.join(MODELS_DIR, 'similarity.pkl')
 
+    print(f"Attempting to load models from: {MODELS_DIR}")
+    print(f"Checking if files exist: movie_list={os.path.exists(movie_list_path)}, similarity={os.path.exists(similarity_path)}")
+
     if not os.path.exists(movie_list_path) or not os.path.exists(similarity_path):
-        print("ML models not found. Run 'python -m backend.ml.train_model' first.")
+        print(f"CRITICAL: ML models NOT found at {MODELS_DIR}")
         return
 
-    with open(movie_list_path, 'rb') as f:
-        _movies_df = pickle.load(f)
+    try:
+        with open(movie_list_path, 'rb') as f:
+            _movies_df = pickle.load(f)
+        print("Successfully loaded movie_list.pkl")
 
-    with open(similarity_path, 'rb') as f:
-        _similarity_matrix = pickle.load(f)
-
-    print(f"ML models loaded: {len(_movies_df)} movies, similarity matrix shape: {_similarity_matrix.shape}")
+        with open(similarity_path, 'rb') as f:
+            _similarity_matrix = pickle.load(f)
+        print(f"Successfully loaded similarity.pkl. Shape: {_similarity_matrix.shape}")
+        
+    except Exception as e:
+        print(f"ERROR loading models: {str(e)}")
+        _movies_df = None
+        _similarity_matrix = None
 
 
 def get_content_recommendations(movie_id: int, n: int = 10) -> list:
