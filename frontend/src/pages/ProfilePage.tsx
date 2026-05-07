@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLocation } from 'react-router-dom';
 import api from '../services/api';
 import MovieGrid from '../components/MovieGrid';
 import PageTransition from '../components/PageTransition';
@@ -7,6 +8,7 @@ import styles from './ProfilePage.module.css';
 
 const ProfilePage: React.FC = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [watchlist, setWatchlist] = useState<any[]>([]);
   const [ratings, setRatings] = useState<any[]>([]);
   const [recommendations, setRecommendations] = useState<any[]>([]);
@@ -14,11 +16,15 @@ const ProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Handle anchor links (e.g. from Navbar)
-    if (window.location.hash === '#watchlist') {
+    // Handle anchor links and hash changes
+    if (location.hash === '#watchlist') {
       setActiveTab('watchlist');
+    } else if (location.hash === '#ai') {
+      setActiveTab('ai');
+    } else if (location.hash === '#ratings') {
+      setActiveTab('ratings');
     }
-  }, []);
+  }, [location.hash]);
 
   useEffect(() => {
     const fetchUserData = async () => {
