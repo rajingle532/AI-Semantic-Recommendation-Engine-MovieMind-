@@ -10,7 +10,15 @@ const ProfilePage: React.FC = () => {
   const [watchlist, setWatchlist] = useState<any[]>([]);
   const [ratings, setRatings] = useState<any[]>([]);
   const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'watchlist' | 'ratings' | 'ai'>('watchlist');
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Handle anchor links (e.g. from Navbar)
+    if (window.location.hash === '#watchlist') {
+      setActiveTab('watchlist');
+    }
+  }, []);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -109,33 +117,57 @@ const ProfilePage: React.FC = () => {
           </div>
         </header>
 
-        <div className={styles.content}>
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Picked by MovieMind AI 🤖</h2>
-            {recommendations.length > 0 ? (
-              <MovieGrid movies={recommendations} />
-            ) : (
-              <div style={{textAlign: 'center', padding: '40px', color: 'var(--text-muted)'}}>
-                {loading ? 'Analyzing your taste...' : 'Rate some movies to get personalized recommendations!'}
-              </div>
-            )}
-          </section>
+        <div className={styles.tabs}>
+          <button 
+            className={`${styles.tab} ${activeTab === 'watchlist' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('watchlist')}
+          >
+            My Watchlist ({watchlist.length})
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'ratings' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('ratings')}
+          >
+            My Ratings ({ratings.length})
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'ai' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('ai')}
+          >
+            AI Recommendations 🤖
+          </button>
+        </div>
 
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>My Watchlist</h2>
-            <MovieGrid 
-              movies={watchlist} 
-              emptyMessage="Your watchlist is empty. Add some movies to watch later!" 
-            />
-          </section>
+        <div className={styles.tabContent}>
+          {activeTab === 'watchlist' && (
+            <section className={styles.section}>
+              <MovieGrid 
+                movies={watchlist} 
+                emptyMessage="Your watchlist is empty. Add some movies to watch later!" 
+              />
+            </section>
+          )}
 
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>My Ratings ⭐</h2>
-            <MovieGrid 
-              movies={ratings} 
-              emptyMessage="You haven't rated any movies yet. Share your thoughts on what you've watched!" 
-            />
-          </section>
+          {activeTab === 'ratings' && (
+            <section className={styles.section}>
+              <MovieGrid 
+                movies={ratings} 
+                emptyMessage="You haven't rated any movies yet. Share your thoughts on what you've watched!" 
+              />
+            </section>
+          )}
+
+          {activeTab === 'ai' && (
+            <section className={styles.section}>
+              {recommendations.length > 0 ? (
+                <MovieGrid movies={recommendations} />
+              ) : (
+                <div className={styles.emptyAI}>
+                  {loading ? 'Analyzing your taste...' : 'Rate some movies to get personalized recommendations!'}
+                </div>
+              )}
+            </section>
+          )}
         </div>
       </div>
     </PageTransition>
