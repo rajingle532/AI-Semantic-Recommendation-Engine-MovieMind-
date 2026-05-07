@@ -37,9 +37,15 @@
   background: var(--bg-secondary);
   border-radius: 20px;
   padding: 0.5rem 1rem 0.5rem 2.5rem;
-  margin: 0 1rem;
+  margin: 0;
   border: 1px solid transparent;
   transition: var(--transition);
+}
+
+.searchWrapper {
+  flex: 0 1 500px;
+  position: relative;
+  margin: 0 1rem;
 }
 
 .searchBar:focus-within {
@@ -140,4 +146,89 @@
 .dropdown a:hover, .dropdown button:hover {
   background: var(--bg-tertiary);
   color: var(--text-primary);
+}
+
+.searchSuggestions {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--bg-tertiary);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 1001;
+}
+
+.suggestionItem {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: var(--transition);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.suggestionItem:hover {
+  background: var(--bg-tertiary);
+}
+
+.suggestionItem img {
+  width: 40px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.suggestionInfo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.suggestionTitle {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.suggestionYear {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.seeAll {
+  padding: 0.75rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+  background: rgba(229, 9, 20, 0.05);
+}
+
+.seeAll:hover {
+  text-decoration: underline;
+  background: rgba(229, 9, 20, 0.1);
+}
+
+.searchLoader {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--accent);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: translateY(-50%) rotate(360deg); }
 }
