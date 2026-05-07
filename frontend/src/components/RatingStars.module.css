@@ -1,0 +1,40 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.stars {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.star {
+  font-size: 2rem;
+  color: var(--bg-tertiary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.star.active {
+  color: var(--gold);
+}
+
+.star:hover {
+  transform: scale(1.2);
+}
+
+.text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.readonly .star {
+  cursor: default;
+}
+
+.readonly .star:hover {
+  transform: none;
+}

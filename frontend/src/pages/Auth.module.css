@@ -1,0 +1,110 @@
+.page {
+  min-height: calc(100vh - var(--navbar-height));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  background-color: var(--bg-primary);
+  padding: 2rem;
+}
+
+.glow {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(229, 9, 20, 0.15) 0%, transparent 70%);
+  z-index: 0;
+}
+
+.card {
+  width: 100%;
+  max-width: 450px;
+  background: var(--bg-secondary);
+  padding: 3rem;
+  border-radius: 8px;
+  z-index: 1;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.group input {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  padding: 0.85rem 1rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  border: 1px solid transparent;
+  transition: var(--transition);
+}
+
+.group input:focus {
+  border-color: var(--text-muted);
+  background: #333;
+}
+
+.btn {
+  background: var(--accent);
+  color: white;
+  padding: 1rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-top: 1rem;
+  box-shadow: 0 4px 15px rgba(229, 9, 20, 0.3);
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+  box-shadow: 0 4px 20px rgba(229, 9, 20, 0.5);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.footer {
+  margin-top: 2rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.footer a {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.footer a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 2rem 1.5rem;
+  }
+}
