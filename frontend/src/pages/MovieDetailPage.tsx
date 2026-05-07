@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, Check, Star, Clock, Calendar } from 'lucide-react';
+import { Plus, Check, Star, Clock, Calendar, Play } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import { Movie } from '../types';
@@ -18,6 +18,7 @@ const MovieDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [inWatchlist, setInWatchlist] = useState(false);
   const [userRating, setUserRating] = useState(0);
+  const [showTrailer, setShowTrailer] = useState(false);
 
   useEffect(() => {
     const fetchMovieData = async () => {
@@ -156,7 +157,54 @@ const MovieDetailPage: React.FC = () => {
                   {inWatchlist ? <Check size={20} /> : <Plus size={20} />}
                   {inWatchlist ? "In Watchlist" : "Add to Watchlist"}
                 </button>
+
+                {(movie as any).trailer_key && (
+                  <button 
+                    className={styles.trailerBtn}
+                    onClick={() => setShowTrailer(true)}
+                  >
+                    <Play size={20} fill="currentColor" /> Watch Trailer
+                  </button>
+                )}
               </div>
+            </div>
+          </div>
+
+          <AnimatePresence>
+            {showTrailer && (movie as any).trailer_key && (
+              <motion.div 
+                className={styles.modalBackdrop}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowTrailer(false)}
+              >
+                <motion.div 
+                  className={styles.modalContent}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button 
+                    className={styles.closeModal}
+                    onClick={() => setShowTrailer(false)}
+                  >
+                    &times;
+                  </button>
+                  <div className={styles.videoWrapper}>
+                    <iframe 
+                      src={`https://www.youtube.com/embed/${(movie as any).trailer_key}?autoplay=1`}
+                      title="YouTube video player"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
             </div>
           </div>
 

@@ -56,10 +56,31 @@ def get_movie_details(movie_id: int) -> dict:
         "runtime": data.get("runtime"),
         "genres": [g["name"] for g in data.get("genres", [])],
         "tagline": data.get("tagline"),
+        "trailer_key": get_movie_videos(movie_id)
     }
     
     _details_cache[movie_id] = details
     return details
+
+
+def get_movie_videos(movie_id: int) -> Optional[str]:
+    """Fetch YouTube trailer key for a movie."""
+    data = _make_request(f"/movie/{movie_id}/videos")
+    if not data or not data.get("results"):
+        return None
+
+    # Filter for official YouTube trailers
+    videos = data.get("results", [])
+    for video in videos:
+        if video.get("site") == "YouTube" and video.get("type") == "Trailer":
+            return video.get("key")
+    
+    # Fallback to any YouTube video if no official trailer
+    for video in videos:
+        if video.get("site") == "YouTube":
+            return video.get("key")
+            
+    return None
 
 
 def get_movie_poster(movie_id: int) -> Optional[str]:
