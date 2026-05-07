@@ -79,6 +79,9 @@ def get_movie_videos(movie_id: int) -> Optional[str]:
     
     # Fallback to any YouTube video if no official trailer
     for video in videos:
+        if video.get("site") == "YouTube":
+            return video.get("key")
+            
     return None
 
 
