@@ -18,7 +18,6 @@ const HomePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [activeGenre, setActiveGenre] = useState<number | null>(null);
-  const [activeLanguage, setActiveLanguage] = useState<string | null>(null);
   const [activeMood, setActiveMood] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     year: '',
@@ -70,8 +69,10 @@ const HomePage: React.FC = () => {
         setActiveGenre(null);
         setPage(1);
         try {
-          const endpoint = `/movies/all?page=1&language=${filters.language}&year=${filters.year}&min_rating=${filters.minRating}`;
-          console.log("DEBUG: Fetching filtered movies from:", endpoint);
+          // Added cache buster to force fresh results from backend
+          const timestamp = Date.now();
+          const endpoint = `/movies/all?page=1&language=${filters.language}&year=${filters.year}&min_rating=${filters.minRating}&cb=${timestamp}`;
+          console.log("DEBUG: Force-fetching filtered movies from:", endpoint);
           const { data } = await api.get(endpoint);
           setMovies(Array.isArray(data) ? data : (data.results || []));
         } catch (err) {
@@ -131,7 +132,6 @@ const HomePage: React.FC = () => {
     setLoading(true);
     setActiveMood(mood);
     setActiveGenre(null);
-    setActiveLanguage(null);
     setPage(1);
     try {
       const { data } = await api.get(`/movies/mood/${mood}`);
@@ -147,7 +147,6 @@ const HomePage: React.FC = () => {
   const handleGenreClick = async (genreId: number) => {
     setLoading(true);
     setActiveGenre(genreId);
-    setActiveLanguage(null);
     setActiveMood(null);
     setPage(1);
     try {
