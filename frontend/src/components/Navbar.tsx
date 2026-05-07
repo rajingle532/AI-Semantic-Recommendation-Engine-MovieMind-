@@ -175,6 +175,10 @@ const Navbar: React.FC = () => {
                     <Link to="/profile" onClick={() => setShowProfileMenu(false)}>
                       <User size={16} /> Profile
                     </Link>
+                    <Link to="/profile#watchlist" onClick={() => setShowProfileMenu(false)}>
+                      <Film size={16} /> My Watchlist
+                    </Link>
+                    <div className={styles.divider}></div>
                     <button onClick={() => { 
                       logout(); 
                       setShowProfileMenu(false);
