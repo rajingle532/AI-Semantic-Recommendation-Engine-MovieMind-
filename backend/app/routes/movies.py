@@ -15,6 +15,13 @@ from app.services.search import semantic_search
 
 router = APIRouter(prefix="/api/movies", tags=["Movies"])
 
+MOOD_MAPPING = {
+    "joy": [35, 16, 10751],      # Comedy, Animation, Family
+    "thrill": [28, 53, 27],      # Action, Thriller, Horror
+    "sorrow": [18, 10749],       # Drama, Romance
+    "mystery": [96, 80, 878]     # Mystery, Crime, Sci-Fi
+}
+
 
 @router.get("/search")
 def search_movies(q: str = Query(..., min_length=1, description="Search query")):
@@ -52,6 +59,21 @@ def movies_by_genre(genre_id: int, page: int = 1):
     """Get movies for a specific genre ID."""
     results = get_movies_by_genre(genre_id, page)
     return {"results": results, "count": len(results)}
+
+
+@router.get("/mood/{mood}")
+def movies_by_mood(mood: str, page: int = 1):
+    """Get movies based on a specific mood."""
+    mood = mood.lower()
+    if mood not in MOOD_MAPPING:
+        return {"error": "Invalid mood", "available_moods": list(MOOD_MAPPING.keys())}
+    
+    # Get movies for the first genre in the mood mapping for simplicity, 
+    # or we could aggregate results from multiple genres.
+    # Let's pick a random one or just the first for now.
+    genre_id = MOOD_MAPPING[mood][0] 
+    results = get_movies_by_genre(genre_id, page)
+    return {"results": results, "mood": mood, "count": len(results)}
 
 
 @router.get("/{movie_id}")

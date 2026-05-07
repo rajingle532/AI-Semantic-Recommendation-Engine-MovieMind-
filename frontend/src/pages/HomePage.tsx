@@ -6,6 +6,7 @@ import { Movie } from '../types';
 import MovieGrid from '../components/MovieGrid';
 import Loader from '../components/Loader';
 import PageTransition from '../components/PageTransition';
+import MoodSelector from '../components/MoodSelector';
 import styles from './HomePage.module.css';
 
 const LANGUAGES = [
@@ -39,6 +40,7 @@ const HomePage: React.FC = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [activeGenre, setActiveGenre] = useState<number | null>(null);
   const [activeLanguage, setActiveLanguage] = useState<string | null>(null);
+  const [activeMood, setActiveMood] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -66,7 +68,11 @@ const HomePage: React.FC = () => {
     setLoadingMore(true);
     const nextPage = page + 1;
     try {
-      if (activeLanguage) {
+      if (activeMood) {
+        const { data } = await api.get(`/movies/mood/${activeMood}?page=${nextPage}`);
+        const newMovies = Array.isArray(data) ? data : (data.results || []);
+        setMovies(prev => [...prev, ...newMovies]);
+      } else if (activeLanguage) {
         const endpoint = activeLanguage === 'all'
           ? `/movies/all?page=${nextPage}`
           : `/movies/language/${activeLanguage}?page=${nextPage}`;
@@ -90,10 +96,32 @@ const HomePage: React.FC = () => {
     }
   };
 
+  const handleMoodSelect = async (mood: string) => {
+    if (!mood) {
+      resetTrending();
+      return;
+    }
+    setLoading(true);
+    setActiveMood(mood);
+    setActiveGenre(null);
+    setActiveLanguage(null);
+    setPage(1);
+    try {
+      const { data } = await api.get(`/movies/mood/${mood}`);
+      const moviesData = Array.isArray(data) ? data : (data.results || []);
+      setMovies(moviesData);
+    } catch (err) {
+      console.error("Failed to fetch mood movies", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGenreClick = async (genreId: number) => {
     setLoading(true);
     setActiveGenre(genreId);
     setActiveLanguage(null);
+    setActiveMood(null);
     setPage(1);
     try {
       const { data } = await api.get(`/movies/genre/${genreId}`);
@@ -110,6 +138,7 @@ const HomePage: React.FC = () => {
     setLoading(true);
     setActiveLanguage(langCode);
     setActiveGenre(null);
+    setActiveMood(null);
     setPage(1);
     try {
       if (langCode === 'all') {
@@ -130,6 +159,7 @@ const HomePage: React.FC = () => {
     setLoading(true);
     setActiveGenre(null);
     setActiveLanguage(null);
+    setActiveMood(null);
     setPage(1);
     try {
       const { data } = await api.get('/movies/trending?page=1');
@@ -146,7 +176,7 @@ const HomePage: React.FC = () => {
   return (
     <PageTransition>
       <div className={styles.home}>
-        {heroMovie && !activeGenre && !activeLanguage && (
+        {heroMovie && !activeGenre && !activeLanguage && !activeMood && (
           <section className={styles.hero}>
             <div className={styles.heroBg}>
               <img src={heroMovie.poster_path || ''} alt={heroMovie.title} />
@@ -181,9 +211,11 @@ const HomePage: React.FC = () => {
         )}
 
         <main className={`${styles.main} container`}>
+          <MoodSelector activeMood={activeMood} onMoodSelect={handleMoodSelect} />
+
           <div className={styles.genreStrip}>
             <button
-              className={`${styles.genreChip} ${activeGenre === null && activeLanguage === null ? styles.chipActive : ''}`}
+              className={`${styles.genreChip} ${activeGenre === null && activeLanguage === null && activeMood === null ? styles.chipActive : ''}`}
               onClick={resetTrending}
             >
               Trending
@@ -213,11 +245,13 @@ const HomePage: React.FC = () => {
 
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>
-              {activeLanguage 
-                ? `${LANGUAGES.find(l => l.code === activeLanguage)?.name} Movies`
-                : activeGenre
-                  ? `${genres.find(g => g.id === activeGenre)?.name} Movies`
-                  : 'Trending This Week'}
+              {activeMood 
+                ? `${activeMood.charAt(0).toUpperCase() + activeMood.slice(1)} Movies`
+                : activeLanguage 
+                  ? `${LANGUAGES.find(l => l.code === activeLanguage)?.name} Movies`
+                  : activeGenre
+                    ? `${genres.find(g => g.id === activeGenre)?.name} Movies`
+                    : 'Trending This Week'}
             </h2>
             {loading ? <Loader /> : <MovieGrid movies={movies} />}
           </section>
