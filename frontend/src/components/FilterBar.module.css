@@ -1,0 +1,97 @@
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1.25rem 2rem;
+  border-radius: 20px;
+  margin-bottom: 2.5rem;
+  align-items: center;
+  backdrop-filter: blur(10px);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.select {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  outline: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+  min-width: 140px;
+  transition: all 0.3s ease;
+}
+
+.select:focus {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.select option {
+  background: #1a1a1a;
+  color: #fff;
+}
+
+.clearBtn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.clearBtn:hover {
+  background: rgba(255, 0, 0, 0.1);
+  color: #ff4d4d;
+  border-color: rgba(255, 0, 0, 0.2);
+}
+
+@media (max-width: 768px) {
+  .filterBar {
+    padding: 1rem;
+    gap: 1rem;
+  }
+  
+  .group {
+    flex: 1;
+    min-width: calc(50% - 0.5rem);
+  }
+  
+  .select {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .clearBtn {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+}

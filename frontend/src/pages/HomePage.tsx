@@ -7,30 +7,8 @@ import MovieGrid from '../components/MovieGrid';
 import Loader from '../components/Loader';
 import PageTransition from '../components/PageTransition';
 import MoodSelector from '../components/MoodSelector';
+import FilterBar from '../components/FilterBar';
 import styles from './HomePage.module.css';
-
-const LANGUAGES = [
-  { code: 'all', name: 'All Languages', flag: '🌍' },
-  { code: 'hi', name: 'Hindi', flag: '🇮🇳' },
-  { code: 'mr', name: 'Marathi', flag: '🟠' },
-  { code: 'ta', name: 'Tamil', flag: '🎬' },
-  { code: 'te', name: 'Telugu', flag: '🎭' },
-  { code: 'ml', name: 'Malayalam', flag: '🌴' },
-  { code: 'kn', name: 'Kannada', flag: '⭐' },
-  { code: 'bn', name: 'Bengali', flag: '🎪' },
-  { code: 'pa', name: 'Punjabi', flag: '💛' },
-  { code: 'ko', name: 'Korean', flag: '🌸' },
-  { code: 'ja', name: 'Japanese', flag: '🗾' },
-  { code: 'fr', name: 'French', flag: '🥐' },
-  { code: 'es', name: 'Spanish', flag: '🌮' },
-  { code: 'it', name: 'Italian', flag: '🍕' },
-  { code: 'de', name: 'German', flag: '🇩🇪' },
-  { code: 'zh', name: 'Chinese', flag: '🀄' },
-  { code: 'ar', name: 'Arabic', flag: '🌙' },
-  { code: 'tr', name: 'Turkish', flag: '🦃' },
-  { code: 'ru', name: 'Russian', flag: '❄️' },
-  { code: 'pt', name: 'Portuguese', flag: '🌊' },
-];
 
 const HomePage: React.FC = () => {
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -41,6 +19,11 @@ const HomePage: React.FC = () => {
   const [activeGenre, setActiveGenre] = useState<number | null>(null);
   const [activeLanguage, setActiveLanguage] = useState<string | null>(null);
   const [activeMood, setActiveMood] = useState<string | null>(null);
+  const [filters, setFilters] = useState({
+    year: '',
+    minRating: '0',
+    language: 'all'
+  });
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -64,6 +47,36 @@ const HomePage: React.FC = () => {
     fetchData();
   }, []);
 
+  // Filter effect
+  useEffect(() => {
+    const fetchFiltered = async () => {
+      if (filters.year || filters.minRating !== '0' || filters.language !== 'all') {
+        setLoading(true);
+        setActiveMood(null);
+        setActiveGenre(null);
+        setPage(1);
+        try {
+          const { data } = await api.get(`/movies/all?page=1&language=${filters.language}&year=${filters.year}&min_rating=${filters.minRating}`);
+          setMovies(Array.isArray(data) ? data : (data.results || []));
+        } catch (err) {
+          console.error("Filter fetch failed", err);
+        } finally {
+          setLoading(false);
+        }
+      } else if (page === 1 && !activeMood && !activeGenre) {
+         // This handles the reset when filters are cleared
+         const fetchTrending = async () => {
+           setLoading(true);
+           const { data } = await api.get('/movies/trending?page=1');
+           setMovies(data.results || data || []);
+           setLoading(false);
+         };
+         fetchTrending();
+      }
+    };
+    fetchFiltered();
+  }, [filters]);
+
   const loadMore = async () => {
     setLoadingMore(true);
     const nextPage = page + 1;
@@ -72,10 +85,8 @@ const HomePage: React.FC = () => {
         const { data } = await api.get(`/movies/mood/${activeMood}?page=${nextPage}`);
         const newMovies = Array.isArray(data) ? data : (data.results || []);
         setMovies(prev => [...prev, ...newMovies]);
-      } else if (activeLanguage) {
-        const endpoint = activeLanguage === 'all'
-          ? `/movies/all?page=${nextPage}`
-          : `/movies/language/${activeLanguage}?page=${nextPage}`;
+      } else if (filters.year || filters.minRating !== '0' || filters.language !== 'all') {
+        const endpoint = `/movies/all?page=${nextPage}&language=${filters.language}&year=${filters.year}&min_rating=${filters.minRating}`;
         const { data } = await api.get(endpoint);
         const newMovies = Array.isArray(data) ? data : (data.results || []);
         setMovies(prev => [...prev, ...newMovies]);
@@ -134,31 +145,10 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const handleLanguageClick = async (langCode: string) => {
-    setLoading(true);
-    setActiveLanguage(langCode);
-    setActiveGenre(null);
-    setActiveMood(null);
-    setPage(1);
-    try {
-      if (langCode === 'all') {
-        const { data } = await api.get(`/movies/all?page=1`);
-        setMovies(Array.isArray(data) ? data : (data.results || []));
-      } else {
-        const { data } = await api.get(`/movies/language/${langCode}?page=1`);
-        setMovies(Array.isArray(data) ? data : (data.results || []));
-      }
-    } catch (err) {
-      console.error("Failed to fetch language movies", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const resetTrending = async () => {
+    setFilters({ year: '', minRating: '0', language: 'all' });
     setLoading(true);
     setActiveGenre(null);
-    setActiveLanguage(null);
     setActiveMood(null);
     setPage(1);
     try {
@@ -176,7 +166,7 @@ const HomePage: React.FC = () => {
   return (
     <PageTransition>
       <div className={styles.home}>
-        {heroMovie && !activeGenre && !activeLanguage && !activeMood && (
+        {heroMovie && !activeGenre && !activeMood && filters.language === 'all' && !filters.year && filters.minRating === '0' && (
           <section className={styles.hero}>
             <div className={styles.heroBg}>
               <img src={heroMovie.poster_path || ''} alt={heroMovie.title} />
@@ -215,7 +205,7 @@ const HomePage: React.FC = () => {
 
           <div className={styles.genreStrip}>
             <button
-              className={`${styles.genreChip} ${activeGenre === null && activeLanguage === null && activeMood === null ? styles.chipActive : ''}`}
+              className={`${styles.genreChip} ${activeGenre === null && filters.language === 'all' && !filters.year && filters.minRating === '0' && activeMood === null ? styles.chipActive : ''}`}
               onClick={resetTrending}
             >
               Trending
@@ -231,26 +221,20 @@ const HomePage: React.FC = () => {
             ))}
           </div>
 
-          <div className={styles.genreStrip} style={{ marginTop: '10px' }}>
-            {LANGUAGES.map((lang) => (
-              <button
-                key={lang.code}
-                className={`${styles.genreChip} ${activeLanguage === lang.code ? styles.chipActive : ''}`}
-                onClick={() => handleLanguageClick(lang.code)}
-              >
-                {lang.flag} {lang.name}
-              </button>
-            ))}
-          </div>
+          <FilterBar 
+            filters={filters} 
+            setFilters={setFilters} 
+            onClear={() => setFilters({ year: '', minRating: '0', language: 'all' })} 
+          />
 
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>
               {activeMood 
                 ? `${activeMood.charAt(0).toUpperCase() + activeMood.slice(1)} Movies`
-                : activeLanguage 
-                  ? `${LANGUAGES.find(l => l.code === activeLanguage)?.name} Movies`
-                  : activeGenre
-                    ? `${genres.find(g => g.id === activeGenre)?.name} Movies`
+                : activeGenre
+                  ? `${genres.find(g => g.id === activeGenre)?.name} Movies`
+                  : filters.year || filters.minRating !== '0' || filters.language !== 'all'
+                    ? 'Filtered Results'
                     : 'Trending This Week'}
             </h2>
             {loading ? <Loader /> : <MovieGrid movies={movies} />}

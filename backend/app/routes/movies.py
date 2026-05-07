@@ -92,10 +92,10 @@ def movies_by_language(language_code: str, page: int = 1):
 
 
 @router.get("/all")
-def all_languages_movies(page: int = 1, language: str = None):
+def all_languages_movies(page: int = 1, language: str = None, year: str = None, min_rating: float = None):
     if language and language != 'all':
         return get_movies_by_language(language, page)
-    return get_all_languages_movies(page)
+    return get_all_languages_movies(page, year, min_rating)
 
 @router.get("/person/{person_id}")
 async def person_details(person_id: int):

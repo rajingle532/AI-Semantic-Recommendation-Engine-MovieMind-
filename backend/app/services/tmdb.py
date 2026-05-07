@@ -168,6 +168,33 @@ def get_trending_movies(page: int = 1) -> list:
     ]
 
 
+def get_all_languages_movies(page: int = 1, year: str = None, min_rating: float = None) -> list:
+    """Discover movies with advanced filters."""
+    params = {
+        "page": page,
+        "sort_by": "popularity.desc",
+        "vote_count.gte": 50 # Only movies with enough votes
+    }
+    
+    if year:
+        params["primary_release_year"] = year
+    if min_rating:
+        params["vote_average.gte"] = min_rating
+
+    data = _make_request("/discover/movie", params)
+    results = data.get("results", [])
+    return [
+        {
+            "id": m["id"],
+            "title": m["title"],
+            "poster_path": f"{settings.TMDB_IMAGE_URL}{m['poster_path']}" if m.get("poster_path") else None,
+            "release_date": m.get("release_date"),
+            "vote_average": m.get("vote_average")
+        }
+        for m in results
+    ]
+
+
 def get_genres() -> list:
     """Get list of all movie genres from TMDB."""
     data = _make_request("/genre/movie/list")
