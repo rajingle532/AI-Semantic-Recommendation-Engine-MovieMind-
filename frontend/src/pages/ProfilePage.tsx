@@ -27,8 +27,8 @@ const ProfilePage: React.FC = () => {
     } else if (hash === '#ratings') {
       setActiveTab('ratings');
     } else {
-      // Default tab when no hash
-      setActiveTab('watchlist');
+      // Default tab when no hash (General Profile)
+      setActiveTab('ai');
     }
   }, [location.hash]);
 
