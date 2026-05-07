@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, User, LogOut, Film, Sun, Moon } from 'lucide-react';
+import { Search, User, LogOut, Film, Sun, Moon, Shield, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -177,6 +177,12 @@ const Navbar: React.FC = () => {
                     </Link>
                     <Link to="/profile#watchlist" onClick={() => setShowProfileMenu(false)}>
                       <Film size={16} /> My Watchlist
+                    </Link>
+                    <Link to="/profile#account" onClick={() => setShowProfileMenu(false)}>
+                      <Shield size={16} /> Account Details
+                    </Link>
+                    <Link to="/help" onClick={() => setShowProfileMenu(false)}>
+                      <HelpCircle size={16} /> Help
                     </Link>
                     <div className={styles.divider}></div>
                     <button onClick={() => { 

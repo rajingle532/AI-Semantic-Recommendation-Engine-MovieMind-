@@ -26,6 +26,8 @@ const ProfilePage: React.FC = () => {
       setActiveTab('ai');
     } else if (hash === '#ratings') {
       setActiveTab('ratings');
+    } else if (hash === '#account') {
+      setActiveTab('account');
     } else {
       // Default tab when no hash (General Profile)
       setActiveTab('ai');
