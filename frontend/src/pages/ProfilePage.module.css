@@ -15,33 +15,13 @@
   backdrop-filter: blur(10px);
 }
 
-.userSection {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-}
-
-.avatar {
-  width: 100px;
-  height: 100px;
-  background: var(--accent);
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.headerTitle h1 {
   font-size: 2.5rem;
-  font-weight: 800;
-  box-shadow: 0 10px 20px rgba(229, 9, 20, 0.3);
-}
-
-.name {
-  font-size: 2rem;
   font-weight: 800;
   margin-bottom: 0.5rem;
 }
 
-.email {
+.headerTitle p {
   color: var(--text-secondary);
   font-size: 1rem;
 }

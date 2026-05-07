@@ -109,14 +109,9 @@ const ProfilePage: React.FC = () => {
     <PageTransition>
       <div className={`${styles.page} container`}>
         <header className={styles.header}>
-          <div className={styles.userSection}>
-            <div className={styles.avatar}>
-              {(user?.name ?? "U").charAt(0).toUpperCase()}
-            </div>
-            <div className={styles.userInfo}>
-              <h1 className={styles.name}>{user?.name}</h1>
-              <p className={styles.email}>{user?.email}</p>
-            </div>
+          <div className={styles.headerTitle}>
+            <h1>My Library 📚</h1>
+            <p>Your personalized movie collection and AI recommendations.</p>
           </div>
           
           <div className={styles.stats}>

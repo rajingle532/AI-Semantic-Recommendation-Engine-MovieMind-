@@ -173,7 +173,7 @@ const Navbar: React.FC = () => {
                     transition={{ duration: 0.2 }}
                   >
                     <Link to="/profile" onClick={() => setShowProfileMenu(false)}>
-                      <User size={16} /> Profile
+                      <Film size={16} /> My Library
                     </Link>
                     <Link to="/profile#watchlist" onClick={() => setShowProfileMenu(false)}>
                       <Film size={16} /> My Watchlist
