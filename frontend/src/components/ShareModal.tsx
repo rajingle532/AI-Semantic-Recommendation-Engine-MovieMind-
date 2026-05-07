@@ -52,9 +52,9 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, title, url }) 
         <div className={styles.overlay} onClick={onClose}>
           <motion.div 
             className={styles.modal}
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className={styles.header}>
