@@ -207,29 +207,31 @@ const MovieDetailPage: React.FC = () => {
                 </div>
 
                 {/* Watch Providers Section */}
-                {(movie as any).watch_providers && (
-                  <div className={styles.providersSection}>
-                    <p className={styles.sectionSmallTitle}>Watch On:</p>
-                    <div className={styles.providerList}>
-                      {((movie as any).watch_providers.flatrate || []).length > 0 ? (
-                        (movie as any).watch_providers.flatrate.map((p: any) => (
-                          <a 
-                            key={p.provider_id} 
-                            href={(movie as any).watch_providers.link + "?tag=your-affiliate-id"} // Add your affiliate ID here
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className={styles.providerLogo}
-                            title={p.provider_name}
-                          >
-                            <img src={p.logo_path} alt={p.provider_name} />
-                          </a>
-                        ))
-                      ) : (
-                        <span className={styles.noProvider}>Not available for streaming in your region.</span>
-                      )}
-                    </div>
+                <div className={styles.providersSection}>
+                  <p className={styles.sectionSmallTitle}>Watch On:</p>
+                  <div className={styles.providerList}>
+                    {(movie as any).watch_providers && ((movie as any).watch_providers.flatrate || []).length > 0 ? (
+                      (movie as any).watch_providers.flatrate.map((p: any) => (
+                        <a 
+                          key={p.provider_id} 
+                          href={(movie as any).watch_providers.link + "?tag=your-affiliate-id"}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className={styles.providerLogo}
+                          title={p.provider_name}
+                        >
+                          <img src={p.logo_path} alt={p.provider_name} />
+                        </a>
+                      ))
+                    ) : (
+                      <span className={styles.noProvider}>
+                        {(movie as any).watch_providers 
+                          ? "Not available for streaming in your region." 
+                          : "Loading provider data..."}
+                      </span>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
