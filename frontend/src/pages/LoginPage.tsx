@@ -64,7 +64,12 @@ const LoginPage: React.FC = () => {
             />
           </div>
           <div className={styles.group}>
-            <label>Password</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label>Password</label>
+              <Link to="/forgot-password" style={{ fontSize: '0.8rem', color: 'var(--accent)', textDecoration: 'none' }}>
+                Forgot Password?
+              </Link>
+            </div>
             <input
               type="password"
               placeholder="••••••••"

@@ -15,8 +15,28 @@ const SignupPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  const validateEmail = (email: string) => {
+    return String(email)
+      .toLowerCase()
+      .match(
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // 1. Validation
+    if (!validateEmail(email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    if (password.length < 8) {
+      toast.error('Password must be at least 8 characters long');
+      return;
+    }
+
     setLoading(true);
     
     try {
