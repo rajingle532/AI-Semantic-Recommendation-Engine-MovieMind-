@@ -187,10 +187,13 @@
 
 .modalBackdrop {
   position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.9);
-  backdrop-filter: blur(10px);
-  z-index: 2000;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(15px);
+  z-index: 9999; /* Super high z-index */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -198,42 +201,41 @@
 }
 
 .modalContent {
-  width: 100%;
-  max-width: 1000px;
+  width: 95%;
+  max-width: 1200px;
   position: relative;
-  background: black;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+  background: #000;
+  border-radius: 12px;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .closeModal {
   position: absolute;
-  top: 1rem;
-  right: 1.5rem;
-  background: rgba(255, 255, 255, 0.1);
+  top: -50px;
+  right: 0;
+  background: transparent;
   color: white;
   border: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  font-size: 1.5rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  font-size: 2.5rem;
   cursor: pointer;
-  z-index: 2001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: var(--transition);
+  padding: 10px;
 }
 
 .closeModal:hover {
-  background: var(--accent);
+  color: var(--accent);
+  transform: rotate(90deg);
 }
 
 .videoWrapper {
   position: relative;
   padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
   height: 0;
+  background: #000;
 }
 
 .videoWrapper iframe {

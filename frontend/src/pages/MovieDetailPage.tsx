@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Check, Star, Clock, Calendar, Play } from 'lucide-react';
+import { Plus, Check, Star, Clock, Calendar, Play, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import { Movie } from '../types';
@@ -102,6 +102,43 @@ const MovieDetailPage: React.FC = () => {
   return (
     <PageTransition>
       <div className={styles.page}>
+        {/* Modal is now here at the top level of the component */}
+        <AnimatePresence>
+          {showTrailer && (movie as any).trailer_key && (
+            <motion.div 
+              className={styles.modalBackdrop}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowTrailer(false)}
+            >
+              <motion.div 
+                className={styles.modalContent}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button 
+                  className={styles.closeModal}
+                  onClick={() => setShowTrailer(false)}
+                >
+                  <X size={40} />
+                </button>
+                <div className={styles.videoWrapper}>
+                  <iframe 
+                    src={`https://www.youtube.com/embed/${(movie as any).trailer_key}?autoplay=1`}
+                    title="YouTube video player"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div className={styles.backdrop}>
           <img src={posterUrl} alt="" />
           <div className={styles.backdropOverlay}></div>
@@ -171,42 +208,6 @@ const MovieDetailPage: React.FC = () => {
               </div>
             </div>
           </div>
-
-          <AnimatePresence>
-            {showTrailer && (movie as any).trailer_key && (
-              <motion.div 
-                className={styles.modalBackdrop}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowTrailer(false)}
-              >
-                <motion.div 
-                  className={styles.modalContent}
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.8, opacity: 0 }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button 
-                    className={styles.closeModal}
-                    onClick={() => setShowTrailer(false)}
-                  >
-                    &times;
-                  </button>
-                  <div className={styles.videoWrapper}>
-                    <iframe 
-                      src={`https://www.youtube.com/embed/${(movie as any).trailer_key}?autoplay=1`}
-                      title="YouTube video player"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    ></iframe>
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           <section className={styles.similarSection}>
             <h2 className={styles.sectionTitle}>Similar Movies You Might Like</h2>
