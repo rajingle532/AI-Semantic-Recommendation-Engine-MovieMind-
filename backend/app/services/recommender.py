@@ -54,6 +54,18 @@ def _load_models():
         print(f"ERROR loading models: {str(e)}")
 
 
+def reload_models():
+    """Force clear cache and reload all models from disk."""
+    global _movies_df, _similarity_matrix, _bert_model, _bert_embeddings
+    _movies_df = None
+    _similarity_matrix = None
+    _bert_model = None
+    _bert_embeddings = None
+    print("RECOMMANDER: Cache cleared. Models will reload on next request.")
+    _load_models()
+    _load_bert_model()
+
+
 def _load_bert_model():
     """Load BERT model and embeddings (lazy loading)."""
     global _bert_model, _bert_embeddings, _movies_df

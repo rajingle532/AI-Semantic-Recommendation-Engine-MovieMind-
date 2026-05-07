@@ -14,6 +14,8 @@ import nltk
 from nltk.stem.porter import PorterStemmer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from app.services.tmdb import get_movie_details, get_trending_movies, _make_request
+from sentence_transformers import SentenceTransformer
 
 # Download NLTK data
 nltk.download('punkt', quiet=True)
@@ -50,8 +52,38 @@ def load_and_merge_data():
     movies = movies[['movie_id', 'title', 'overview', 'genres', 'keywords', 'cast', 'crew']]
     movies.dropna(inplace=True)
 
-    print(f"Loaded {len(movies)} movies")
+    print(f"Loaded {len(movies)} movies from CSV")
     return movies
+
+
+def get_live_movie_data(num_pages=50):
+    """Fetch popular movies from TMDB API to build a fresh dataset."""
+    print(f"Fetching {num_pages * 20} movies from TMDB API...")
+    all_movies = []
+    
+    for page in range(1, num_pages + 1):
+        try:
+            data = _make_request("/movie/popular", {"page": page})
+            results = data.get("results", [])
+            for m in results:
+                all_movies.append({
+                    "movie_id": m.get("id"),
+                    "title": m.get("title"),
+                    "overview": m.get("overview", ""),
+                    "genres": str([{"name": "Unknown"}]), # Simplified for live fetch
+                    "keywords": str([]),
+                    "cast": str([]),
+                    "crew": str([])
+                })
+            if page % 10 == 0:
+                print(f"   Progress: {page}/{num_pages} pages fetched")
+        except Exception as e:
+            print(f"   Error fetching page {page}: {e}")
+            
+    df = pd.DataFrame(all_movies)
+    df.dropna(inplace=True)
+    print(f"Fetched {len(df)} live movies")
+    return df
 
 
 def extract_names(obj_str):
@@ -181,6 +213,46 @@ def train():
     print("=" * 60)
     print("Training complete! Models are ready.")
     print("=" * 60)
+
+
+def train_bert_only(movies_df):
+    """Specifically train and save BERT embeddings."""
+    print("Generating BERT embeddings...")
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+    embeddings = model.encode(movies_df['tags'].tolist(), show_progress_bar=True)
+    
+    embeddings_path = os.path.join(MODELS_DIR, 'bert_embeddings.pkl')
+    with open(embeddings_path, 'wb') as f:
+        pickle.dump(embeddings, f)
+    print(f"BERT embeddings saved to {embeddings_path}")
+
+
+def full_retrain(use_live_data=False):
+    """Complete re-training pipeline (Content-based + BERT)."""
+    print("Starting full re-train...")
+    
+    # 1. Load Data
+    if use_live_data:
+        movies = get_live_movie_data()
+    else:
+        movies = load_and_merge_data()
+        
+    if movies is None or movies.empty:
+        print("Retrain failed: No data found")
+        return False
+        
+    # 2. Build Features
+    movies_processed = build_features(movies)
+    
+    # 3. Content Similarity
+    similarity = compute_similarity(movies_processed)
+    
+    # 4. BERT Embeddings
+    train_bert_only(movies_processed)
+    
+    # 5. Save everything
+    save_models(movies_processed, similarity)
+    return True
 
 
 if __name__ == "__main__":
