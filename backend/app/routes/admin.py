@@ -1,5 +1,5 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends
-from app.ml.train_model import full_retrain
+from ml.train_model import full_retrain
 from app.services.recommender import reload_models
 import logging
 
