@@ -17,12 +17,18 @@ const ProfilePage: React.FC = () => {
 
   useEffect(() => {
     // Handle anchor links and hash changes
-    if (location.hash === '#watchlist') {
+    const hash = location.hash;
+    console.log("Current Hash:", hash);
+    
+    if (hash === '#watchlist') {
       setActiveTab('watchlist');
-    } else if (location.hash === '#ai') {
+    } else if (hash === '#ai') {
       setActiveTab('ai');
-    } else if (location.hash === '#ratings') {
+    } else if (hash === '#ratings') {
       setActiveTab('ratings');
+    } else {
+      // Default tab when no hash
+      setActiveTab('watchlist');
     }
   }, [location.hash]);
 
