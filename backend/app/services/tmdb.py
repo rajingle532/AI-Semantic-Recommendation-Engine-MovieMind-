@@ -61,6 +61,8 @@ def get_movie_details(movie_id: int) -> dict:
         "watch_providers": get_watch_providers(movie_id)
     }
     
+    print(f"DEBUG: Fetched details for movie {movie_id}. Providers: {bool(details['watch_providers'])}")
+    
     _details_cache[movie_id] = details
     return details
 
