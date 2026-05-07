@@ -23,7 +23,7 @@ scikit-learn
 pandas
 numpy
 nltk
-# Removed heavy libs to prevent Render crashes
+# Removed heavy libs for Render Free Tier (May 8 Build)
 
 # External API
 requests==2.32.0
