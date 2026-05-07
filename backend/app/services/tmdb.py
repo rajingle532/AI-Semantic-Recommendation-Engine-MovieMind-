@@ -250,15 +250,23 @@ def get_movies_by_language(language_code: str, page: int = 1) -> list[dict]:
 
 
 def get_all_languages_movies(page: int = 1, language: str = None, year: str = None, min_rating: float = None) -> list[dict]:
-    """Discover movies with advanced combined filters."""
+    """Discover movies with strict advanced combined filters."""
+    # Start with a clean params dict
     params = {
+        "api_key": settings.TMDB_API_KEY,
         "sort_by": "popularity.desc",
         "page": page,
-        "vote_count.gte": 5 # Lowered for better results in regional languages
+        "vote_count.gte": 5,
+        "include_adult": "false"
     }
     
+    # Strictly handle language
     if language and language != 'all' and language != 'null':
         params["with_original_language"] = language
+        # When filtering by original language, we DON'T want to send the generic 'language' param 
+        # because it might confuse TMDB into returning translated results instead of original ones.
+    else:
+        params["language"] = "en-US"
     
     if year and year != '' and year != 'null':
         params["primary_release_year"] = year
@@ -266,10 +274,17 @@ def get_all_languages_movies(page: int = 1, language: str = None, year: str = No
     if min_rating and float(min_rating) > 0:
         params["vote_average.gte"] = float(min_rating)
 
-    print(f"DEBUG: Discovering with params: {params}") # This helps in debugging
+    print(f"DEBUG: Discovering on TMDB with final params: {params}")
     
-    data = _make_request("/discover/movie", params)
-    if not data:
+    # Use requests directly to ensure params are not modified by _make_request
+    try:
+        response = requests.get(f"{settings.TMDB_BASE_URL}/discover/movie", params=params, timeout=10)
+        if response.status_code != 200:
+            print(f"TMDB ERROR: {response.text}")
+            return []
+        data = response.json()
+    except Exception as e:
+        print(f"REQUEST ERROR: {e}")
         return []
         
     results = data.get("results", [])
