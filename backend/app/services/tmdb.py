@@ -217,26 +217,23 @@ def get_trending_movies(page: int = 1) -> list:
             if i < len(hindi_results):
                 mixed_results.append(format_movie(hindi_results[i]))
 
-    # If both fail, use local fallback data
     if not mixed_results:
         print("TMDB_API_ERROR: All TMDB requests failed. Using local fallback dataset.")
-        return _get_fallback_movies()
+        return _get_fallback_movies(page)
 
     # Return top 20 mixed results
     return mixed_results[:20]
 
 
-def _get_fallback_movies() -> list:
-    """Fetch movies from the local CSV dataset as a fallback when API is down."""
-    global _fallback_movies
-    if _fallback_movies:
-        return _fallback_movies
-
+def _get_fallback_movies(page: int = 1) -> list:
+    """Fetch movies from the local CSV dataset as a fallback when API is down.
+    Randomized by page to ensure 'Load More' shows different results.
+    """
     try:
         import pandas as pd
         import os
+        import random
         
-        # Paths to local data
         data_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data')
         movies_path = os.path.join(data_dir, 'tmdb_5000_movies.csv')
         
@@ -244,21 +241,24 @@ def _get_fallback_movies() -> list:
             return []
             
         df = pd.read_csv(movies_path)
-        # Sort by popularity or just take top 20
-        top_movies = df.sort_values('popularity', ascending=False).head(20)
+        # Sort by popularity and take a larger chunk, then sample based on page
+        all_popular = df.sort_values('popularity', ascending=False).head(200)
+        
+        # Use page as seed for deterministic but different results per page
+        start = ((page - 1) * 20) % 180
+        page_movies = all_popular.iloc[start : start + 20]
         
         fallback = []
-        for _, row in top_movies.iterrows():
+        for _, row in page_movies.iterrows():
             fallback.append({
                 "id": int(row['id']),
                 "title": row['title'],
                 "overview": row['overview'][:150] if isinstance(row['overview'], str) else "",
-                "poster_path": None, # CSV doesn't have posters, but UI will handle it
+                "poster_path": None,
                 "vote_average": row['vote_average'],
                 "release_date": row['release_date'],
             })
         
-        _fallback_movies = fallback
         return fallback
     except Exception as e:
         print(f"FALLBACK ERROR: {e}")
