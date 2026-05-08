@@ -62,7 +62,7 @@ const HomePage: React.FC = () => {
       setMovies(prev => {
         const combined = isLoadMore ? [...prev, ...newMovies] : newMovies;
         const uniqueMoviesMap = new Map();
-        combined.forEach(m => {
+        combined.forEach((m: any) => {
           if (m && m.id && !uniqueMoviesMap.has(m.id)) {
             uniqueMoviesMap.set(m.id, m);
           }
