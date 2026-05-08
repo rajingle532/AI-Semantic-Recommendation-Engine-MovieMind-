@@ -30,7 +30,7 @@ const HomePage: React.FC = () => {
   const [showTrailer, setShowTrailer] = useState(false);
   const navigate = useNavigate();
 
-  const fetchMovies = async (pageToLoad: number, isLoadMore = false, currentFilters = filters, genre = activeGenre, mood = activeMood) => {
+  const fetchMovies = async (pageToLoad: number, isLoadMore = false, currentFilters = filters, genre = activeGenre, mood = activeMood, retryCount = 0) => {
     if (isLoadMore) setLoadingMore(true);
     else setLoading(true);
 
@@ -84,10 +84,17 @@ const HomePage: React.FC = () => {
       });
     } catch (err) {
       console.error("Failed to fetch movies", err);
-      toast.error("Connectivity issue. Please refresh.");
+      if (retryCount < 2) {
+        console.log(`Retrying fetch... (${retryCount + 1})`);
+        setTimeout(() => fetchMovies(pageToLoad, isLoadMore, currentFilters, genre, mood, retryCount + 1), 2000);
+      } else {
+        toast.error("Still having trouble connecting. Please refresh again.");
+      }
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
+      if (retryCount >= 2 || !loading) {
+        setLoading(false);
+        setLoadingMore(false);
+      }
     }
   };
 
