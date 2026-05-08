@@ -270,21 +270,6 @@ const HomePage: React.FC = () => {
             ))}
           </div>
 
-          <FilterBar
-            filters={filters}
-            setFilters={onFilterChange}
-            onClear={resetTrending}
-          />
-
-          {(filters.year || filters.language !== 'all' || filters.minRating !== '0') && (
-            <div style={{ marginBottom: '2rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              Showing results for:
-              {filters.language !== 'all' && <span style={{ color: 'var(--accent)', marginLeft: '0.5rem' }}>{filters.language.toUpperCase()}</span>}
-              {filters.year && <span style={{ color: 'var(--accent)', marginLeft: '0.5rem' }}>{filters.year}</span>}
-              {filters.minRating !== '0' && <span style={{ color: 'var(--accent)', marginLeft: '0.5rem' }}>⭐ {filters.minRating}+</span>}
-            </div>
-          )}
-
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>
               {activeMood
