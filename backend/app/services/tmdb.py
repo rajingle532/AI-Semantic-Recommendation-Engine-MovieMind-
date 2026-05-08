@@ -16,6 +16,16 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 # In-memory caches to avoid redundant API calls
 _poster_cache = {}
 _details_cache = {}
+_fallback_movies = []
+
+# Force IPv4 preference for TMDB as some ISPs/regions have broken IPv6 routing to their API
+try:
+    import socket
+    import requests.packages.urllib3.util.connection as urllib3_cn
+    urllib3_cn.allowed_gai_family = lambda: socket.AF_INET
+    print("TMDB_SERVICE: Forced IPv4 preference for API connectivity.")
+except Exception as e:
+    print(f"TMDB_SERVICE: Could not force IPv4 preference: {e}")
 
 
 def _make_request(endpoint: str, params: dict = None) -> dict:
@@ -207,8 +217,52 @@ def get_trending_movies(page: int = 1) -> list:
             if i < len(hindi_results):
                 mixed_results.append(format_movie(hindi_results[i]))
 
+    # If both fail, use local fallback data
+    if not mixed_results:
+        print("TMDB_API_ERROR: All TMDB requests failed. Using local fallback dataset.")
+        return _get_fallback_movies()
+
     # Return top 20 mixed results
     return mixed_results[:20]
+
+
+def _get_fallback_movies() -> list:
+    """Fetch movies from the local CSV dataset as a fallback when API is down."""
+    global _fallback_movies
+    if _fallback_movies:
+        return _fallback_movies
+
+    try:
+        import pandas as pd
+        import os
+        
+        # Paths to local data
+        data_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data')
+        movies_path = os.path.join(data_dir, 'tmdb_5000_movies.csv')
+        
+        if not os.path.exists(movies_path):
+            return []
+            
+        df = pd.read_csv(movies_path)
+        # Sort by popularity or just take top 20
+        top_movies = df.sort_values('popularity', ascending=False).head(20)
+        
+        fallback = []
+        for _, row in top_movies.iterrows():
+            fallback.append({
+                "id": int(row['id']),
+                "title": row['title'],
+                "overview": row['overview'][:150] if isinstance(row['overview'], str) else "",
+                "poster_path": None, # CSV doesn't have posters, but UI will handle it
+                "vote_average": row['vote_average'],
+                "release_date": row['release_date'],
+            })
+        
+        _fallback_movies = fallback
+        return fallback
+    except Exception as e:
+        print(f"FALLBACK ERROR: {e}")
+        return []
 
 
 

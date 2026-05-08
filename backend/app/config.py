@@ -4,8 +4,19 @@ Configuration module — loads environment variables from .env file.
 import os
 from dotenv import load_dotenv
 
-# Load .env file from project root
-load_dotenv(os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
+# Try to load .env from multiple locations
+env_paths = [
+    os.path.join(os.getcwd(), '.env'),
+    os.path.join(os.path.dirname(__file__), '..', '..', '.env'),
+    os.path.join(os.path.dirname(__file__), '..', '.env'),
+]
+
+for path in env_paths:
+    if os.path.exists(path):
+        load_dotenv(path)
+        break
+else:
+    load_dotenv() # Fallback to default
 
 
 class Settings:

@@ -1,5 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends
-from ml.train_model import full_retrain
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from app.services.recommender import reload_models
 import logging
 
@@ -28,6 +27,7 @@ async def trigger_retrain(background_tasks: BackgroundTasks, admin: bool = Depen
 
 def run_training_job():
     try:
+        from ml.train_model import full_retrain
         logging.info("ADMIN: Starting background re-training...")
         success = full_retrain(use_live_data=True)
         if success:

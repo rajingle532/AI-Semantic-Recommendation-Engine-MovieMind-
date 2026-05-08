@@ -10,6 +10,13 @@ from app.config import settings
 from app.services.tmdb import get_movie_poster, get_movie_details, get_similar_movies, search_movies_tmdb
 from app.database import get_collection
 
+try:
+    from sentence_transformers import SentenceTransformer
+    HAS_ML_LIBS = True
+except (ImportError, OSError, Exception):
+    HAS_ML_LIBS = False
+    print("RECOMMANDER: ML libraries (torch/sentence-transformers) not available. BERT features disabled.")
+
 # Path to saved models
 MODELS_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'saved_models')
 
