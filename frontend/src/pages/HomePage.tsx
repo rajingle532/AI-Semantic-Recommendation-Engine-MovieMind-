@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Info, Play } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Info, Play, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import api from '../services/api';
 import { Movie } from '../types';
 import MovieGrid from '../components/MovieGrid';
@@ -14,7 +16,7 @@ const HomePage: React.FC = () => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [heroMovie, setHeroMovie] = useState<Movie | null>(null);
   const [heroVideo, setHeroVideo] = useState<string | null>(null);
-  const [genres, setGenres] = useState<{id: number, name: string}[]>([]);
+  const [genres, setGenres] = useState<{ id: number, name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [activeGenre, setActiveGenre] = useState<number | null>(null);
@@ -25,6 +27,8 @@ const HomePage: React.FC = () => {
     language: 'all'
   });
   const [page, setPage] = useState(1);
+  const [showTrailer, setShowTrailer] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -38,15 +42,16 @@ const HomePage: React.FC = () => {
         if (trendingMovies.length > 0) {
           const firstMovie = trendingMovies[0];
           setHeroMovie(firstMovie);
-          
-          // Fetch trailer for hero movie
+
+          // Fetch full details for hero movie (to get backdrop, trailer, etc)
           try {
             const { data: details } = await api.get(`/movies/${firstMovie.id}`);
+            setHeroMovie(details);
             if (details.trailer_key) {
               setHeroVideo(details.trailer_key);
             }
           } catch (vErr) {
-            console.error("Failed to fetch hero trailer", vErr);
+            console.error("Failed to fetch hero details", vErr);
           }
         }
         const genreData = genresRes.data;
@@ -81,14 +86,14 @@ const HomePage: React.FC = () => {
           setLoading(false);
         }
       } else if (page === 1 && !activeMood && !activeGenre) {
-         // This handles the reset when filters are cleared
-         const fetchTrending = async () => {
-           setLoading(true);
-           const { data } = await api.get('/movies/trending?page=1');
-           setMovies(data.results || data || []);
-           setLoading(false);
-         };
-         fetchTrending();
+        // This handles the reset when filters are cleared
+        const fetchTrending = async () => {
+          setLoading(true);
+          const { data } = await api.get('/movies/trending?page=1');
+          setMovies(data.results || data || []);
+          setLoading(false);
+        };
+        fetchTrending();
       }
     };
     fetchFiltered();
@@ -195,7 +200,7 @@ const HomePage: React.FC = () => {
                   ></iframe>
                 </div>
               ) : (
-                <img src={heroMovie.poster_path || ''} alt={heroMovie.title} />
+                <img src={(heroMovie as any).backdrop_path || heroMovie.poster_path || ''} alt={heroMovie.title} />
               )}
               <div className={styles.heroOverlay}></div>
             </div>
@@ -216,16 +221,74 @@ const HomePage: React.FC = () => {
                 {heroMovie.overview}
               </motion.p>
               <div className={styles.heroActions}>
-                <button className={styles.playBtn}>
+                <button 
+                  className={styles.playBtn} 
+                  onClick={() => {
+                    if (heroVideo) {
+                      setShowTrailer(true);
+                    } else {
+                      toast.error("Trailer not available for this movie");
+                    }
+                  }}
+                >
                   <Play size={20} fill="currentColor" /> Play
                 </button>
-                <button className={styles.infoBtn}>
+                <button 
+                  className={styles.infoBtn}
+                  onClick={() => navigate(`/movie/${heroMovie.id}`)}
+                >
                   <Info size={20} /> More Info
                 </button>
               </div>
             </div>
           </section>
         )}
+
+        <AnimatePresence>
+          {showTrailer && heroVideo && (
+            <motion.div 
+              className={styles.modalBackdrop}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowTrailer(false)}
+            >
+              <motion.div 
+                className={styles.modalContent}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button 
+                  className={styles.closeModal}
+                  onClick={() => setShowTrailer(false)}
+                >
+                  <X size={40} />
+                </button>
+                <div className={styles.videoWrapperModal}>
+                  <iframe 
+                    src={`https://www.youtube.com/embed/${heroVideo}?autoplay=1`}
+                    title="Hero Trailer Player"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                </div>
+                <div style={{ padding: '1rem', textAlign: 'center' }}>
+                  <a 
+                    href={`https://www.youtube.com/watch?v=${heroVideo}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{ color: '#aaa', fontSize: '0.8rem', textDecoration: 'underline' }}
+                  >
+                    Having trouble? Watch on YouTube
+                  </a>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <main className={`${styles.main} container`}>
           <MoodSelector activeMood={activeMood} onMoodSelect={handleMoodSelect} />
@@ -248,15 +311,15 @@ const HomePage: React.FC = () => {
             ))}
           </div>
 
-          <FilterBar 
-            filters={filters} 
-            setFilters={setFilters} 
-            onClear={resetTrending} 
+          <FilterBar
+            filters={filters}
+            setFilters={setFilters}
+            onClear={resetTrending}
           />
 
           {(filters.year || filters.language !== 'all' || filters.minRating !== '0') && (
             <div style={{ marginBottom: '2rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              Showing results for: 
+              Showing results for:
               {filters.language !== 'all' && <span style={{ color: 'var(--accent)', marginLeft: '0.5rem' }}>{filters.language.toUpperCase()}</span>}
               {filters.year && <span style={{ color: 'var(--accent)', marginLeft: '0.5rem' }}>{filters.year}</span>}
               {filters.minRating !== '0' && <span style={{ color: 'var(--accent)', marginLeft: '0.5rem' }}>⭐ {filters.minRating}+</span>}
@@ -265,7 +328,7 @@ const HomePage: React.FC = () => {
 
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>
-              {activeMood 
+              {activeMood
                 ? `${activeMood.charAt(0).toUpperCase() + activeMood.slice(1)} Movies`
                 : activeGenre
                   ? `${genres.find(g => g.id === activeGenre)?.name} Movies`

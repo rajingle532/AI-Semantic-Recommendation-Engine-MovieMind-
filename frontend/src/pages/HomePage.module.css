@@ -52,7 +52,7 @@
   position: absolute;
   inset: 0;
   background: linear-gradient(70deg, var(--bg-primary) 10%, transparent 60%),
-              linear-gradient(to top, var(--bg-primary) 0%, transparent 30%);
+    linear-gradient(to top, var(--bg-primary) 0%, transparent 30%);
 }
 
 .heroContent {
@@ -129,11 +129,13 @@
   overflow-x: auto;
   padding-bottom: 1.5rem;
   margin-bottom: 3rem;
-  scrollbar-width: none; /* Firefox */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 .genreStrip::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
+  display: none;
+  /* Chrome/Safari */
 }
 
 .genreChip {
@@ -167,9 +169,11 @@
   .hero {
     height: 60vh;
   }
+
   .main {
     margin-top: -2rem;
   }
+
   .heroOverview {
     font-size: 0.95rem;
   }

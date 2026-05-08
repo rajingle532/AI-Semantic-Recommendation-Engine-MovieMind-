@@ -136,6 +136,16 @@ const MovieDetailPage: React.FC = () => {
                     allowFullScreen
                   ></iframe>
                 </div>
+                <div style={{ padding: '1rem', textAlign: 'center' }}>
+                  <a 
+                    href={`https://www.youtube.com/watch?v=${(movie as any).trailer_key}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{ color: '#aaa', fontSize: '0.8rem', textDecoration: 'underline' }}
+                  >
+                    Having trouble? Watch on YouTube
+                  </a>
+                </div>
               </motion.div>
             </motion.div>
           )}
@@ -198,14 +208,19 @@ const MovieDetailPage: React.FC = () => {
                     {inWatchlist ? "In Watchlist" : "Add to Watchlist"}
                   </button>
 
-                  {(movie as any).trailer_key && (
-                    <button 
-                      className={styles.trailerBtn}
-                      onClick={() => setShowTrailer(true)}
-                    >
-                      <Play size={20} fill="currentColor" /> Watch Trailer
-                    </button>
-                  )}
+                  <button 
+                    className={styles.trailerBtn}
+                    onClick={() => {
+                      if ((movie as any).trailer_key) {
+                        setShowTrailer(true);
+                      } else {
+                        toast.error("Trailer not available for this movie");
+                      }
+                    }}
+                    style={{ opacity: (movie as any).trailer_key ? 1 : 0.6 }}
+                  >
+                    <Play size={20} fill="currentColor" /> Watch Trailer
+                  </button>
 
                   <button 
                     className={styles.shareBtn}

@@ -93,13 +93,17 @@ def get_movie_videos(movie_id: int) -> Optional[str]:
     if not data or not data.get("results"):
         return None
 
-    # Filter for official YouTube trailers
-    videos = data.get("results", [])
+    # Prioritize official YouTube trailers
     for video in videos:
         if video.get("site") == "YouTube" and video.get("type") == "Trailer":
             return video.get("key")
     
-    # Fallback to any YouTube video if no official trailer
+    # Fallback to Teasers
+    for video in videos:
+        if video.get("site") == "YouTube" and video.get("type") == "Teaser":
+            return video.get("key")
+    
+    # Fallback to any YouTube video (Clips, Featurettes, etc.)
     for video in videos:
         if video.get("site") == "YouTube":
             return video.get("key")
