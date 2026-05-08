@@ -161,11 +161,14 @@ async def forgot_password(data: dict, background_tasks: BackgroundTasks):
     
     from app.utils.email import send_reset_password_email
     
+    print(f"DEBUG: Forgot password request received for: {email}")
+    
     # Generate a reset token (re-using create_token for simplicity)
     user_id = str(user["_id"])
     reset_token = create_token(user_id, email)
     
     # Send the email in the background so the UI doesn't hang
+    print(f"DEBUG: Adding background task for {email}")
     background_tasks.add_task(send_reset_password_email, email, reset_token)
     
     return {"message": "Reset link sent successfully"}
