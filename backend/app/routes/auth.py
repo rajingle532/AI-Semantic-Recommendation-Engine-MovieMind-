@@ -145,7 +145,7 @@ def google_auth(data: GoogleLogin):
             detail="Invalid Google token"
         )
 @router.post("/forgot-password")
-def forgot_password(data: dict):
+async def forgot_password(data: dict):
     """Handle password reset request."""
     email = data.get("email", "").lower().strip()
     if not email:
