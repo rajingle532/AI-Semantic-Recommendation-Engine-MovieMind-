@@ -8,6 +8,8 @@ from app.models.user import UserSignup, UserLogin, UserResponse, TokenResponse, 
 from app.utils.security import hash_password, verify_password, create_token
 from app.config import settings
 from app.database import get_collection
+import jwt
+from bson import ObjectId
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
@@ -177,3 +179,42 @@ async def forgot_password(data: dict, background_tasks: BackgroundTasks):
         # If it fails, we show why in the logs
         print(f"DEBUG: Resend API call FAILED for {email}")
         raise HTTPException(status_code=500, detail="Failed to send email. Check logs.")
+
+@router.post("/reset-password")
+def reset_password(data: dict):
+    """Verify reset token and update user password."""
+    token = data.get("token")
+    new_password = data.get("new_password")
+    
+    if not token or not new_password:
+        raise HTTPException(status_code=400, detail="Token and password are required")
+    
+    try:
+        # Decode the token (same secret as login)
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+        user_id = payload.get("sub")
+        
+        if not user_id:
+            raise HTTPException(status_code=400, detail="Invalid token")
+            
+        users = get_collection("users")
+        
+        # Update user's password
+        hashed_pwd = hash_password(new_password)
+        result = users.update_one(
+            {"_id": ObjectId(user_id)}, 
+            {"$set": {"password_hash": hashed_pwd}}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="User not found")
+            
+        return {"message": "Password updated successfully"}
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=400, detail="Reset link has expired")
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=400, detail="Invalid reset link")
+    except Exception as e:
+        print(f"RESET ERROR: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update password")
