@@ -155,12 +155,24 @@ def get_movie_poster(movie_id: int) -> Optional[str]:
 
 
 def get_trending_movies(page: int = 1) -> list:
-    """Get trending movies for the week."""
-    data = _make_request("/trending/movie/week", {"page": page})
-    results = data.get("results", [])
+    """Get a mix of global trending movies and popular Hindi (Bollywood) movies."""
+    # 1. Fetch Global Trending (Hollywood/International)
+    global_data = _make_request("/trending/movie/week", {"page": page})
+    global_results = global_data.get("results", [])
 
-    return [
-        {
+    # 2. Fetch Popular Hindi Movies (Bollywood)
+    hindi_data = _make_request("/discover/movie", {
+        "page": page,
+        "sort_by": "popularity.desc",
+        "with_original_language": "hi",
+        "region": "IN",
+        "with_origin_country": "IN"
+    })
+    hindi_results = hindi_data.get("results", [])
+
+    # Format helper
+    def format_movie(m):
+        return {
             "id": m.get("id"),
             "title": m.get("title"),
             "overview": m.get("overview", "")[:150],
@@ -168,8 +180,19 @@ def get_trending_movies(page: int = 1) -> list:
             "vote_average": m.get("vote_average"),
             "release_date": m.get("release_date"),
         }
-        for m in results[:20]
-    ]
+
+    # Interleave results (1 global, 1 hindi, 1 global, 1 hindi...)
+    mixed_results = []
+    max_len = max(len(global_results), len(hindi_results))
+    
+    for i in range(max_len):
+        if i < len(global_results):
+            mixed_results.append(format_movie(global_results[i]))
+        if i < len(hindi_results):
+            mixed_results.append(format_movie(hindi_results[i]))
+
+    # Return top 20 mixed results
+    return mixed_results[:20]
 
 
 
