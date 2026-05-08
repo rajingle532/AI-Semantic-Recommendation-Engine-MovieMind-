@@ -23,8 +23,8 @@ const MovieGrid: React.FC<MovieGridProps> = ({
 
   return (
     <div className={styles.grid}>
-      {movies.map((movie) => (
-        <MovieCard key={movie.id} movie={movie} />
+      {movies.map((movie, index) => (
+        <MovieCard key={`${movie.id}-${index}`} movie={movie} />
       ))}
     </div>
   );

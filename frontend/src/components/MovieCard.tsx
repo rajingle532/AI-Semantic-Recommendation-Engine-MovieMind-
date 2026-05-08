@@ -11,7 +11,9 @@ interface MovieCardProps {
 }
 
 const MovieCard: React.FC<MovieCardProps> = ({ movie, showRating = true }) => {
-  const posterUrl = movie.poster_path || 'https://via.placeholder.com/500x750?text=No+Poster';
+  const [imageError, setImageError] = React.useState(false);
+  const placeholderUrl = 'https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=2059&auto=format&fit=crop';
+  const posterUrl = !imageError && movie.poster_path ? movie.poster_path : placeholderUrl;
   const movieId = movie.id || (movie as any).movie_id;
   const movieTitle = movie.title || (movie as any).movie_title;
 
@@ -33,7 +35,13 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, showRating = true }) => {
     >
       <Link to={`/movie/${movieId}`} className={styles.link}>
         <div className={styles.posterWrapper}>
-          <img src={posterUrl} alt={movieTitle} className={styles.poster} loading="lazy" />
+          <img 
+            src={posterUrl} 
+            alt={movieTitle} 
+            className={styles.poster} 
+            loading="lazy" 
+            onError={() => setImageError(true)}
+          />
           <div className={styles.overlay}>
             <motion.button 
               className={styles.viewBtn}

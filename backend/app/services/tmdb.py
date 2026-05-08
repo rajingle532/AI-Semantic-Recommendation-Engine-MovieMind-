@@ -308,9 +308,13 @@ def get_person_movie_credits(person_id: int) -> list:
 
 
 def search_movies_tmdb(query: str, page: int = 1) -> list:
-    """Search movies on TMDB by title query."""
+    """Search movies on TMDB by title query with local CSV fallback."""
     data = _make_request("/search/movie", {"query": query, "page": page})
     results = data.get("results", [])
+
+    if not results:
+        print(f"SEARCH: No TMDB results for '{query}'. Trying local fallback.")
+        return _search_fallback_movies(query)
 
     return [
         {
@@ -323,6 +327,38 @@ def search_movies_tmdb(query: str, page: int = 1) -> list:
         }
         for m in results[:20]
     ]
+
+
+def _search_fallback_movies(query: str) -> list:
+    """Search for movies in the local CSV dataset."""
+    try:
+        import pandas as pd
+        import os
+        
+        data_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data')
+        movies_path = os.path.join(data_dir, 'tmdb_5000_movies.csv')
+        
+        if not os.path.exists(movies_path):
+            return []
+            
+        df = pd.read_csv(movies_path)
+        # Simple case-insensitive title search
+        matches = df[df['title'].str.contains(query, case=False, na=False)].head(20)
+        
+        results = []
+        for _, row in matches.iterrows():
+            results.append({
+                "id": int(row['id']),
+                "title": row['title'],
+                "overview": row['overview'][:150] if isinstance(row['overview'], str) else "",
+                "poster_path": None,
+                "vote_average": row['vote_average'],
+                "release_date": row['release_date'],
+            })
+        return results
+    except Exception as e:
+        print(f"SEARCH FALLBACK ERROR: {e}")
+        return []
 
 
 def get_movies_by_language(language_code: str, page: int = 1) -> list[dict]:
