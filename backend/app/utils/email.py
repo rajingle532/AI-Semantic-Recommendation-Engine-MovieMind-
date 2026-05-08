@@ -42,16 +42,21 @@ def send_reset_password_email(email: str, token: str):
         """
         message.attach(MIMEText(html, "html"))
 
-        # Connect and send
-        # We use SSL for port 465
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        # Connect and send with a 10-second timeout
+        print(f"SMTP: Connecting to smtp.gmail.com on Port 465 (Timeout: 10s)...")
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
             # Strip any spaces from the password
             clean_password = settings.MAIL_PASSWORD.replace(" ", "")
+            print(f"SMTP: Logging in as {settings.MAIL_USERNAME}...")
             server.login(settings.MAIL_USERNAME, clean_password)
+            print(f"SMTP: Sending message to {email}...")
             server.sendmail(settings.MAIL_FROM, email, message.as_string())
             
         print(f"SMTP SUCCESS: Email sent to {email}")
         return True
+    except smtplib.SMTPException as e:
+        print(f"SMTP PROTOCOL ERROR: {str(e)}")
+        return False
     except Exception as e:
-        print(f"SMTP CRITICAL ERROR: {str(e)}")
+        print(f"SMTP UNKNOWN ERROR: {str(e)}")
         return False
