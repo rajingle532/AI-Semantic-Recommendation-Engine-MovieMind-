@@ -114,6 +114,7 @@ const HomePage: React.FC = () => {
   };
 
   useEffect(() => {
+    fetchMovies(1);
     api.get('/movies/genres').then(res => {
       const genreData = res.data;
       setGenres(Array.isArray(genreData) ? genreData : (genreData.genres || []));
