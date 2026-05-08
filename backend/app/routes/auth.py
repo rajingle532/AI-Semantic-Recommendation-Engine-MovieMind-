@@ -145,7 +145,7 @@ def google_auth(data: GoogleLogin):
             detail="Invalid Google token"
         )
 @router.post("/forgot-password")
-async def forgot_password(data: dict):
+async def forgot_password(data: dict, background_tasks: BackgroundTasks):
     """Handle password reset request."""
     email = data.get("email", "").lower().strip()
     if not email:
@@ -160,15 +160,13 @@ async def forgot_password(data: dict):
         raise HTTPException(status_code=404, detail="Email not found")
     
     from app.utils.email import send_reset_password_email
+    from fastapi import BackgroundTasks
     
     # Generate a reset token (re-using create_token for simplicity)
     user_id = str(user["_id"])
     reset_token = create_token(user_id, email)
     
-    try:
-        # Send the actual email
-        await send_reset_password_email(email, reset_token)
-        return {"message": "Reset link sent successfully"}
-    except Exception as e:
-        print(f"Email error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to send email. Check SMTP settings.")
+    # Send the email in the background so the UI doesn't hang
+    background_tasks.add_task(send_reset_password_email, email, reset_token)
+    
+    return {"message": "Reset link sent successfully"}
