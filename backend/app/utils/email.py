@@ -1,22 +1,14 @@
 import os
 import smtplib
+import socket
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from app.config import settings
 
 def send_reset_password_email(email: str, token: str):
-    """Send password reset email using standard smtplib for maximum reliability."""
+    """Send password reset email with forced IPv4 for cloud compatibility."""
     try:
-        # Strict Credential Check
-        user = settings.MAIL_USERNAME
-        pwd = settings.MAIL_PASSWORD.replace(" ", "")
-        sender = settings.MAIL_FROM
-        
-        if not user or not pwd:
-            print(f"SMTP ERROR: MAIL_USERNAME or MAIL_PASSWORD is missing in Environment Variables!")
-            return False
-            
-        print(f"SMTP: Starting send to {email} (Sender: {user})")
+        print(f"SMTP: Starting send to {email}...")
         
         # Build the reset link
         reset_link = f"{settings.FRONTEND_URL}/reset-password?token={token}"
@@ -42,21 +34,33 @@ def send_reset_password_email(email: str, token: str):
         """
         message.attach(MIMEText(html, "html"))
 
-        # Connect and send with a 10-second timeout
-        print(f"SMTP: Connecting to smtp.gmail.com on Port 465 (Timeout: 10s)...")
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
-            # Strip any spaces from the password
-            clean_password = settings.MAIL_PASSWORD.replace(" ", "")
-            print(f"SMTP: Logging in as {settings.MAIL_USERNAME}...")
-            server.login(settings.MAIL_USERNAME, clean_password)
-            print(f"SMTP: Sending message to {email}...")
-            server.sendmail(settings.MAIL_FROM, email, message.as_string())
+        # FORCE IPv4 (Crucial for Render/Cloud)
+        # We resolve smtp.gmail.com to its IPv4 address
+        print("SMTP: Resolving smtp.gmail.com to IPv4...")
+        try:
+            target_ip = socket.gethostbyname("smtp.gmail.com")
+            print(f"SMTP: Resolved to {target_ip}")
+        except Exception as e:
+            print(f"SMTP WARNING: Failed to resolve via IPv4, using hostname. Error: {e}")
+            target_ip = "smtp.gmail.com"
+
+        # Connect using Port 587 (Standard for STARTTLS)
+        print(f"SMTP: Connecting to {target_ip} on Port 587...")
+        server = smtplib.SMTP(target_ip, 587, timeout=15)
+        
+        server.set_debuglevel(1) # Show full conversation in logs
+        server.starttls() # Secure the connection
+        
+        clean_password = settings.MAIL_PASSWORD.replace(" ", "")
+        print(f"SMTP: Logging in as {settings.MAIL_USERNAME}...")
+        server.login(settings.MAIL_USERNAME, clean_password)
+        
+        print(f"SMTP: Sending to {email}...")
+        server.sendmail(settings.MAIL_FROM, email, message.as_string())
+        server.quit()
             
-        print(f"SMTP SUCCESS: Email sent to {email}")
+        print(f"SMTP SUCCESS: Email delivered to {email}")
         return True
-    except smtplib.SMTPException as e:
-        print(f"SMTP PROTOCOL ERROR: {str(e)}")
-        return False
     except Exception as e:
-        print(f"SMTP UNKNOWN ERROR: {str(e)}")
+        print(f"SMTP CRITICAL ERROR: {str(e)}")
         return False
