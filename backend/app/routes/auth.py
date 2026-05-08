@@ -195,10 +195,11 @@ def reset_password(data: dict):
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
         print(f"DEBUG: Token payload: {payload}")
         
-        user_id = payload.get("sub")
+        # Check for user_id in sub (standard) or user_id (custom) field
+        user_id = payload.get("sub") or payload.get("user_id")
         
         if not user_id:
-            print("DEBUG: Token is missing 'sub' field")
+            print("DEBUG: Token is missing both 'sub' and 'user_id' fields")
             raise HTTPException(status_code=400, detail="Invalid token structure")
             
         users = get_collection("users")
