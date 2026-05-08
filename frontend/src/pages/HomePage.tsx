@@ -91,8 +91,11 @@ const HomePage: React.FC = () => {
         toast.error("Still having trouble connecting. Please refresh again.");
       }
     } finally {
-      if (retryCount >= 2 || !loading) {
+      // Reset loading state if it's the final retry or if we succeeded
+      if (retryCount >= 2 || !isLoadMore) {
         setLoading(false);
+      }
+      if (isLoadMore) {
         setLoadingMore(false);
       }
     }
