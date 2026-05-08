@@ -5,7 +5,7 @@
       "destination": "https://moviemind-api.onrender.com/api/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/frontend/dist/index.html"
     }
   ]
