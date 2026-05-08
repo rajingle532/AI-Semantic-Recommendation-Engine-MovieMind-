@@ -302,7 +302,7 @@ const HomePage: React.FC = () => {
             >
               Trending
             </button>
-            {genres.map((genre) => (
+            {Array.isArray(genres) && genres.map((genre) => (
               <button
                 key={genre.id}
                 className={`${styles.genreChip} ${activeGenre === genre.id ? styles.chipActive : ''}`}

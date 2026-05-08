@@ -100,7 +100,7 @@ const PersonDetailPage: React.FC = () => {
 
         <section className={styles.creditsSection}>
           <h2 className={styles.sectionTitle}>Known For</h2>
-          {movies.length > 0 ? (
+          {Array.isArray(movies) && movies.length > 0 ? (
             <MovieGrid movies={movies} />
           ) : (
             <p className={styles.noMovies}>No movies found for this person.</p>

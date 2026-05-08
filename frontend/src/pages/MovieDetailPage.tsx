@@ -183,7 +183,7 @@ const MovieDetailPage: React.FC = () => {
               </div>
 
               <div className={styles.genres}>
-                {movie.genres?.map((g, i) => (
+                {Array.isArray(movie.genres) && movie.genres.map((g, i) => (
                   <span key={i} className={styles.genreTag}>{g}</span>
                 ))}
               </div>
@@ -236,7 +236,7 @@ const MovieDetailPage: React.FC = () => {
                 <div className={styles.providersSection}>
                   <p className={styles.sectionSmallTitle}>Watch On:</p>
                   <div className={styles.providerList}>
-                    {(movie as any).watch_providers && ((movie as any).watch_providers.flatrate || []).length > 0 ? (
+                    {(movie as any).watch_providers && Array.isArray((movie as any).watch_providers.flatrate) && (movie as any).watch_providers.flatrate.length > 0 ? (
                       (movie as any).watch_providers.flatrate.map((p: any) => (
                         <a 
                           key={p.provider_id} 
@@ -265,7 +265,7 @@ const MovieDetailPage: React.FC = () => {
           <section className={styles.castSection}>
             <h2 className={styles.sectionTitle}>Top Cast</h2>
             <div className={styles.castList}>
-              {(movie as any).cast?.map((member: any) => (
+              {Array.isArray((movie as any).cast) && (movie as any).cast.map((member: any) => (
                 <Link to={`/person/${member.id}`} key={member.id} className={styles.castCard}>
                   <div className={styles.castAvatar}>
                     {member.profile_path ? (
