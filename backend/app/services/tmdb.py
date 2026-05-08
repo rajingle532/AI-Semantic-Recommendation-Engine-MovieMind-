@@ -198,9 +198,9 @@ def get_trending_movies(page: int = 1) -> list:
             "release_date": m.get("release_date"),
         }
 
-    # Interleave results with random start (sometimes Bollywood first, sometimes Hollywood)
-    import random
-    start_with_hindi = random.choice([True, False])
+    # Interleave results deterministically based on page to prevent repeats
+    # Odd pages start with Hindi, Even pages start with Global
+    start_with_hindi = (page % 2 != 0)
     
     mixed_results = []
     max_len = max(len(global_results), len(hindi_results))
@@ -397,18 +397,17 @@ def get_all_languages_movies(page: int = 1, language: str = None, year: str = No
     
     if language and language != 'all' and language != 'null':
         params["with_original_language"] = language
-        # If it's an Indian language, force India as origin country to filter out international mis-matches
+        # If it's an Indian language, force India as region to avoid global overlap
         if language in indian_langs:
-            params["with_origin_country"] = "IN"
             params["region"] = "IN"
-    else:
-        params["language"] = "en-US"
+            params["with_origin_country"] = "IN"
     
     if year and year != '' and year != 'null':
         params["primary_release_year"] = year
         
     if min_rating and float(min_rating) > 0:
         params["vote_average.gte"] = float(min_rating)
+        params["vote_count.gte"] = 5 # Higher vote count for better quality on ratings
 
     print(f"DEBUG: Strict Discover with params: {params}")
     

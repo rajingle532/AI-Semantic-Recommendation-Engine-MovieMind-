@@ -31,156 +31,120 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const timestamp = Date.now();
-        const [trendingRes, genresRes] = await Promise.all([
-          api.get(`/movies/trending?page=1&cb=${timestamp}`),
-          api.get('/movies/genres')
-        ]);
-        const trendingMovies = trendingRes.data.results || trendingRes.data || [];
-        setMovies(trendingMovies);
-        if (trendingMovies.length > 0) {
-          const firstMovie = trendingMovies[0];
-          setHeroMovie(firstMovie);
+  const fetchMovies = async (pageToLoad: number, isLoadMore = false, currentFilters = filters, genre = activeGenre, mood = activeMood) => {
+    if (isLoadMore) setLoadingMore(true);
+    else setLoading(true);
 
-          // Fetch full details for hero movie (to get backdrop, trailer, etc)
-          try {
-            const { data: details } = await api.get(`/movies/${firstMovie.id}`);
-            setHeroMovie(details);
-            if (details.trailer_key) {
-              setHeroVideo(details.trailer_key);
-            }
-          } catch (vErr) {
-            console.error("Failed to fetch hero details", vErr);
-          }
-        }
-        const genreData = genresRes.data;
-        setGenres(Array.isArray(genreData) ? genreData : (genreData.genres || []));
-      } catch (err) {
-        console.error("Failed to fetch home data", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  // Filter effect
-  useEffect(() => {
-    const fetchFiltered = async () => {
-      if (filters.year || filters.minRating !== '0' || filters.language !== 'all') {
-        setLoading(true);
-        setActiveMood(null);
-        setActiveGenre(null);
-        setPage(1);
-        try {
-          // Added cache buster to force fresh results from backend
-          const timestamp = Date.now();
-          const endpoint = `/movies/all?page=1&language=${filters.language}&year=${filters.year}&min_rating=${filters.minRating}&cb=${timestamp}`;
-          console.log("DEBUG: Force-fetching filtered movies from:", endpoint);
-          const { data } = await api.get(endpoint);
-          setMovies(Array.isArray(data) ? data : (data.results || []));
-        } catch (err) {
-          console.error("Filter fetch failed", err);
-        } finally {
-          setLoading(false);
-        }
-      } else if (page === 1 && !activeMood && !activeGenre) {
-        // This handles the reset when filters are cleared
-        const fetchTrending = async () => {
-          setLoading(true);
-          const { data } = await api.get('/movies/trending?page=1');
-          setMovies(data.results || data || []);
-          setLoading(false);
-        };
-        fetchTrending();
-      }
-    };
-    fetchFiltered();
-  }, [filters]);
-
-  const loadMore = async () => {
-    setLoadingMore(true);
-    const nextPage = page + 1;
     try {
-      if (activeMood) {
-        const { data } = await api.get(`/movies/mood/${activeMood}?page=${nextPage}`);
-        const newMovies = Array.isArray(data) ? data : (data.results || []);
-        setMovies(prev => [...prev, ...newMovies]);
-      } else if (filters.year || filters.minRating !== '0' || filters.language !== 'all') {
-        const endpoint = `/movies/all?page=${nextPage}&language=${filters.language}&year=${filters.year}&min_rating=${filters.minRating}`;
-        const { data } = await api.get(endpoint);
-        const newMovies = Array.isArray(data) ? data : (data.results || []);
-        setMovies(prev => [...prev, ...newMovies]);
-      } else if (activeGenre) {
-        const { data } = await api.get(`/movies/genre/${activeGenre}?page=${nextPage}`);
-        const newMovies = Array.isArray(data) ? data : (data.results || []);
-        setMovies(prev => [...prev, ...newMovies]);
+      let endpoint = '';
+      let params: any = { page: pageToLoad };
+
+      if (mood) {
+        endpoint = `/movies/mood/${mood}`;
+      } else if (currentFilters.year || currentFilters.minRating !== '0' || currentFilters.language !== 'all') {
+        endpoint = '/movies/all';
+        params = { 
+          ...params, 
+          year: currentFilters.year || null, 
+          min_rating: currentFilters.minRating !== '0' ? currentFilters.minRating : null, 
+          language: currentFilters.language === 'all' ? null : currentFilters.language 
+        };
+      } else if (genre) {
+        endpoint = `/movies/genre/${genre}`;
       } else {
-        const { data } = await api.get(`/movies/trending?page=${nextPage}`);
-        const newMovies = data.results || data || [];
-        setMovies(prev => [...prev, ...newMovies]);
+        endpoint = '/movies/trending';
       }
-      setPage(nextPage);
+
+      // Force fresh results
+      params.cb = Date.now();
+
+      const res = await api.get(endpoint, { params });
+      const newMovies = Array.isArray(res.data) ? res.data : (res.data.results || []);
+      
+      setMovies(prev => {
+        const combined = isLoadMore ? [...prev, ...newMovies] : newMovies;
+        // Strict de-duplication by movie ID
+        const uniqueMoviesMap = new Map();
+        combined.forEach(m => {
+          if (m && m.id && !uniqueMoviesMap.has(m.id)) {
+            uniqueMoviesMap.set(m.id, m);
+          }
+        });
+        const finalMovies = Array.from(uniqueMoviesMap.values());
+        
+        // Update hero movie if we're on the first page
+        if (pageToLoad === 1 && finalMovies.length > 0) {
+          updateHeroMovie(finalMovies[0]);
+        }
+        
+        return finalMovies;
+      });
     } catch (err) {
-      console.error("Failed to load more", err);
+      console.error("Failed to fetch movies", err);
+      toast.error("Error loading movies. Please try again.");
     } finally {
+      setLoading(false);
       setLoadingMore(false);
     }
   };
 
-  const handleMoodSelect = async (mood: string) => {
-    if (!mood) {
-      resetTrending();
-      return;
+  const updateHeroMovie = async (movie: Movie) => {
+    setHeroMovie(movie);
+    try {
+      const { data: details } = await api.get(`/movies/${movie.id}`);
+      setHeroMovie(details);
+      setHeroVideo(details.trailer_key || null);
+    } catch (err) {
+      console.error("Failed to fetch hero details", err);
+      setHeroVideo(null);
     }
-    setLoading(true);
+  };
+
+  useEffect(() => {
+    fetchMovies(1);
+    // Fetch genres once
+    api.get('/movies/genres').then(res => {
+      const genreData = res.data;
+      setGenres(Array.isArray(genreData) ? genreData : (genreData.genres || []));
+    });
+  }, []);
+
+  const loadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchMovies(nextPage, true);
+  };
+
+  const handleMoodSelect = (mood: string) => {
     setActiveMood(mood);
     setActiveGenre(null);
+    setFilters({ year: '', minRating: '0', language: 'all' });
     setPage(1);
-    try {
-      const { data } = await api.get(`/movies/mood/${mood}`);
-      const moviesData = Array.isArray(data) ? data : (data.results || []);
-      setMovies(moviesData);
-    } catch (err) {
-      console.error("Failed to fetch mood movies", err);
-    } finally {
-      setLoading(false);
-    }
+    fetchMovies(1, false, { year: '', minRating: '0', language: 'all' }, null, mood);
   };
 
-  const handleGenreClick = async (genreId: number) => {
-    setLoading(true);
+  const handleGenreClick = (genreId: number) => {
     setActiveGenre(genreId);
     setActiveMood(null);
+    setFilters({ year: '', minRating: '0', language: 'all' });
     setPage(1);
-    try {
-      const { data } = await api.get(`/movies/genre/${genreId}`);
-      const movies = Array.isArray(data) ? data : (data.results || []);
-      setMovies(movies);
-    } catch (err) {
-      console.error("Failed to fetch genre movies", err);
-    } finally {
-      setLoading(false);
-    }
+    fetchMovies(1, false, { year: '', minRating: '0', language: 'all' }, genreId, null);
   };
 
-  const resetTrending = async () => {
+  const resetTrending = () => {
     setFilters({ year: '', minRating: '0', language: 'all' });
-    setLoading(true);
     setActiveGenre(null);
     setActiveMood(null);
     setPage(1);
-    try {
-      const timestamp = Date.now();
-      const { data } = await api.get(`/movies/trending?page=1&cb=${timestamp}`);
-      setMovies(data.results || data || []);
-    } catch (err) {
-      console.error("Failed to fetch trending", err);
-    } finally {
-      setLoading(false);
-    }
+    fetchMovies(1, false, { year: '', minRating: '0', language: 'all' }, null, null);
+  };
+
+  const onFilterChange = (newFilters: any) => {
+    setFilters(newFilters);
+    setActiveGenre(null);
+    setActiveMood(null);
+    setPage(1);
+    fetchMovies(1, false, newFilters, null, null);
   };
 
   if (loading && movies.length === 0) return <Loader />;
@@ -188,7 +152,7 @@ const HomePage: React.FC = () => {
   return (
     <PageTransition>
       <div className={styles.home}>
-        {heroMovie && !activeGenre && !activeMood && filters.language === 'all' && !filters.year && filters.minRating === '0' && (
+        {heroMovie && (
           <section className={styles.hero}>
             <div className={styles.heroBg}>
               {heroVideo ? (
@@ -315,7 +279,7 @@ const HomePage: React.FC = () => {
 
           <FilterBar
             filters={filters}
-            setFilters={setFilters}
+            setFilters={onFilterChange}
             onClear={resetTrending}
           />
 
