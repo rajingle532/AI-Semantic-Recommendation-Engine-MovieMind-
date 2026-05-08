@@ -7,7 +7,16 @@ from app.config import settings
 def send_reset_password_email(email: str, token: str):
     """Send password reset email using standard smtplib for maximum reliability."""
     try:
-        print(f"SMTP: Attempting to send email to {email} via Port 465...")
+        # Strict Credential Check
+        user = settings.MAIL_USERNAME
+        pwd = settings.MAIL_PASSWORD.replace(" ", "")
+        sender = settings.MAIL_FROM
+        
+        if not user or not pwd:
+            print(f"SMTP ERROR: MAIL_USERNAME or MAIL_PASSWORD is missing in Environment Variables!")
+            return False
+            
+        print(f"SMTP: Starting send to {email} (Sender: {user})")
         
         # Build the reset link
         reset_link = f"{settings.FRONTEND_URL}/reset-password?token={token}"
