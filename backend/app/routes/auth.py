@@ -167,7 +167,13 @@ async def forgot_password(data: dict, background_tasks: BackgroundTasks):
     user_id = str(user["_id"])
     reset_token = create_token(user_id, email)
     
-    # Send the email in the background
-    background_tasks.add_task(send_reset_password_email, email, reset_token)
+    # Send the email DIRECTLY (synchronous to avoid background task death)
+    print(f"DEBUG: Attempting direct Resend API call for {email}")
+    success = send_reset_password_email(email, reset_token)
     
-    return {"message": "Reset link sent successfully"}
+    if success:
+        return {"message": "Reset link sent successfully"}
+    else:
+        # If it fails, we show why in the logs
+        print(f"DEBUG: Resend API call FAILED for {email}")
+        raise HTTPException(status_code=500, detail="Failed to send email. Check logs.")
