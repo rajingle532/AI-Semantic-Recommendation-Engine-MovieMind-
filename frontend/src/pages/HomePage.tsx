@@ -42,11 +42,11 @@ const HomePage: React.FC = () => {
         endpoint = `/movies/mood/${mood}`;
       } else if (currentFilters.year || currentFilters.minRating !== '0' || currentFilters.language !== 'all') {
         endpoint = '/movies/all';
-        params = { 
-          ...params, 
-          year: currentFilters.year || null, 
-          min_rating: currentFilters.minRating !== '0' ? currentFilters.minRating : null, 
-          language: currentFilters.language === 'all' ? null : currentFilters.language 
+        params = {
+          ...params,
+          year: currentFilters.year || null,
+          min_rating: currentFilters.minRating !== '0' ? currentFilters.minRating : null,
+          language: currentFilters.language === 'all' ? null : currentFilters.language
         };
       } else if (genre) {
         endpoint = `/movies/genre/${genre}`;
@@ -57,8 +57,15 @@ const HomePage: React.FC = () => {
       params.cb = Date.now();
 
       const res = await api.get(endpoint, { params });
-      const newMovies = Array.isArray(res.data) ? res.data : (res.data.results || []);
-      
+      let newMovies = Array.isArray(res.data) ? res.data : (res.data.results || []);
+
+      // Blank screen protection
+      if (newMovies.length === 0 && pageToLoad === 1 && (currentFilters.year || currentFilters.minRating !== '0' || currentFilters.language !== 'all')) {
+        toast.error("No movies match these filters. Showing trending instead.");
+        const trendingRes = await api.get('/api/movies/trending');
+        newMovies = trendingRes.data.results || [];
+      }
+
       setMovies(prev => {
         const combined = isLoadMore ? [...prev, ...newMovies] : newMovies;
         const uniqueMoviesMap = new Map();
@@ -68,15 +75,16 @@ const HomePage: React.FC = () => {
           }
         });
         const finalMovies = Array.from(uniqueMoviesMap.values());
-        
+
         if (pageToLoad === 1 && finalMovies.length > 0) {
           updateHeroMovie(finalMovies[0]);
         }
-        
+
         return finalMovies;
       });
     } catch (err) {
       console.error("Failed to fetch movies", err);
+      toast.error("Connectivity issue. Please refresh.");
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -181,8 +189,8 @@ const HomePage: React.FC = () => {
                 {heroMovie.overview}
               </motion.p>
               <div className={styles.heroActions}>
-                <button 
-                  className={styles.playBtn} 
+                <button
+                  className={styles.playBtn}
                   onClick={() => {
                     if (heroVideo) {
                       setShowTrailer(true);
@@ -193,7 +201,7 @@ const HomePage: React.FC = () => {
                 >
                   <Play size={20} fill="currentColor" /> Play
                 </button>
-                <button 
+                <button
                   className={styles.infoBtn}
                   onClick={() => navigate(`/movie/${heroMovie.id}`)}
                 >
@@ -206,28 +214,28 @@ const HomePage: React.FC = () => {
 
         <AnimatePresence>
           {showTrailer && heroVideo && (
-            <motion.div 
+            <motion.div
               className={styles.modalBackdrop}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowTrailer(false)}
             >
-              <motion.div 
+              <motion.div
                 className={styles.modalContent}
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.8, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
               >
-                <button 
+                <button
                   className={styles.closeModal}
                   onClick={() => setShowTrailer(false)}
                 >
                   <X size={40} />
                 </button>
                 <div className={styles.videoWrapperModal}>
-                  <iframe 
+                  <iframe
                     src={`https://www.youtube.com/embed/${heroVideo}?autoplay=1`}
                     title="Hero Trailer Player"
                     frameBorder="0"
@@ -236,9 +244,9 @@ const HomePage: React.FC = () => {
                   ></iframe>
                 </div>
                 <div style={{ padding: '1rem', textAlign: 'center' }}>
-                  <a 
-                    href={`https://www.youtube.com/watch?v=${heroVideo}`} 
-                    target="_blank" 
+                  <a
+                    href={`https://www.youtube.com/watch?v=${heroVideo}`}
+                    target="_blank"
                     rel="noopener noreferrer"
                     style={{ color: '#aaa', fontSize: '0.8rem', textDecoration: 'underline' }}
                   >
