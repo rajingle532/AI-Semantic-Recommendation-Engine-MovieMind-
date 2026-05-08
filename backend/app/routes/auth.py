@@ -159,6 +159,23 @@ def forgot_password(data: dict):
     if not user:
         raise HTTPException(status_code=404, detail="Email not found")
     
-    # In a real app, you would send an email here.
-    # For now, we'll just return success.
-    return {"message": "Reset link sent successfully"}
+    from app.utils.email import send_reset_password_email
+    
+    # Generate a reset token (re-using create_token for simplicity)
+    user_id = str(user["_id"])
+    reset_token = create_token(user_id, email)
+    
+    try:
+        # Send the actual email
+        import asyncio
+        # Run the async email sender
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            asyncio.create_task(send_reset_password_email(email, reset_token))
+        else:
+            asyncio.run(send_reset_password_email(email, reset_token))
+            
+        return {"message": "Reset link sent successfully"}
+    except Exception as e:
+        print(f"Email error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send email. Check SMTP settings.")
