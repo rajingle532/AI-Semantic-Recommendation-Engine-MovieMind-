@@ -42,9 +42,9 @@ def search_movies_nlp(q: str = Query(..., min_length=3, description="Describe th
 
 
 @router.get("/trending")
-def trending_movies():
-    """Get trending movies this week from TMDB."""
-    movies = get_trending_movies()
+def trending_movies(page: int = 1):
+    """Get trending movies this week from TMDB with pagination support."""
+    movies = get_trending_movies(page)
     return {"results": movies, "count": len(movies)}
 
 
