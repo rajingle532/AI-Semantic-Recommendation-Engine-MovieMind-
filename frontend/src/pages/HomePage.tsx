@@ -30,7 +30,6 @@ const HomePage: React.FC = () => {
   const [showTrailer, setShowTrailer] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
   const fetchMovies = async (pageToLoad: number, isLoadMore = false, currentFilters = filters, genre = activeGenre, mood = activeMood) => {
     if (isLoadMore) setLoadingMore(true);
     else setLoading(true);
@@ -55,7 +54,6 @@ const HomePage: React.FC = () => {
         endpoint = '/movies/trending';
       }
 
-      // Force fresh results
       params.cb = Date.now();
 
       const res = await api.get(endpoint, { params });
@@ -63,7 +61,6 @@ const HomePage: React.FC = () => {
       
       setMovies(prev => {
         const combined = isLoadMore ? [...prev, ...newMovies] : newMovies;
-        // Strict de-duplication by movie ID
         const uniqueMoviesMap = new Map();
         combined.forEach(m => {
           if (m && m.id && !uniqueMoviesMap.has(m.id)) {
@@ -72,7 +69,6 @@ const HomePage: React.FC = () => {
         });
         const finalMovies = Array.from(uniqueMoviesMap.values());
         
-        // Update hero movie if we're on the first page
         if (pageToLoad === 1 && finalMovies.length > 0) {
           updateHeroMovie(finalMovies[0]);
         }
@@ -81,7 +77,6 @@ const HomePage: React.FC = () => {
       });
     } catch (err) {
       console.error("Failed to fetch movies", err);
-      toast.error("Error loading movies. Please try again.");
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -102,7 +97,6 @@ const HomePage: React.FC = () => {
 
   useEffect(() => {
     fetchMovies(1);
-    // Fetch genres once
     api.get('/movies/genres').then(res => {
       const genreData = res.data;
       setGenres(Array.isArray(genreData) ? genreData : (genreData.genres || []));
