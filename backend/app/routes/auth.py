@@ -191,11 +191,15 @@ def reset_password(data: dict):
     
     try:
         # Decode the token (same secret as login)
+        print(f"DEBUG: Decoding token: {token[:10]}...")
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+        print(f"DEBUG: Token payload: {payload}")
+        
         user_id = payload.get("sub")
         
         if not user_id:
-            raise HTTPException(status_code=400, detail="Invalid token")
+            print("DEBUG: Token is missing 'sub' field")
+            raise HTTPException(status_code=400, detail="Invalid token structure")
             
         users = get_collection("users")
         
@@ -203,20 +207,10 @@ def reset_password(data: dict):
         hashed_pwd = hash_password(new_password)
         
         print(f"DEBUG: Attempting DB update for user_id: {user_id}")
-        
-        # We try to update by ObjectId first
         result = users.update_one(
             {"_id": ObjectId(user_id)}, 
             {"$set": {"password_hash": hashed_pwd}}
         )
-        
-        if result.matched_count == 0:
-            # Fallback: maybe user_id is just a string (not likely in Mongo but for safety)
-            print("DEBUG: ObjectId match failed, trying string match...")
-            result = users.update_one(
-                {"_id": user_id}, 
-                {"$set": {"password_hash": hashed_pwd}}
-            )
         
         if result.matched_count == 0:
             print(f"DEBUG: No user found with ID {user_id}")
@@ -225,9 +219,13 @@ def reset_password(data: dict):
         print(f"DEBUG: Password successfully updated for {user_id}")
         return {"message": "Password updated successfully"}
         
+    except HTTPException as e:
+        # Re-raise HTTP exceptions directly
+        raise e
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=400, detail="Reset link has expired")
-    except jwt.PyJWTError:
+    except jwt.PyJWTError as e:
+        print(f"JWT ERROR: {e}")
         raise HTTPException(status_code=400, detail="Invalid reset link")
     except Exception as e:
         print(f"RESET ERROR: {e}")
