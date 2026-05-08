@@ -28,6 +28,18 @@ const HomePage: React.FC = () => {
   });
   const [page, setPage] = useState(1);
   const [showTrailer, setShowTrailer] = useState(false);
+
+  // Lock scroll when modal is open
+  useEffect(() => {
+    if (showTrailer) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showTrailer]);
   const navigate = useNavigate();
 
   const fetchMovies = async (pageToLoad: number, isLoadMore = false, currentFilters = filters, genre = activeGenre, mood = activeMood) => {
