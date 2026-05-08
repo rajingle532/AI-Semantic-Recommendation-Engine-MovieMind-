@@ -1,7 +1,7 @@
 """
 Auth routes — signup and login endpoints.
 """
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, BackgroundTasks
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from app.models.user import UserSignup, UserLogin, UserResponse, TokenResponse, GoogleLogin
@@ -160,7 +160,6 @@ async def forgot_password(data: dict, background_tasks: BackgroundTasks):
         raise HTTPException(status_code=404, detail="Email not found")
     
     from app.utils.email import send_reset_password_email
-    from fastapi import BackgroundTasks
     
     # Generate a reset token (re-using create_token for simplicity)
     user_id = str(user["_id"])
