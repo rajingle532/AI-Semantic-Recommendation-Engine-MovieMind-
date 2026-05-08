@@ -12,7 +12,8 @@ conf = ConnectionConfig(
     MAIL_STARTTLS=True,
     MAIL_SSL_TLS=False,
     USE_CREDENTIALS=True,
-    VALIDATE_CERTS=True
+    VALIDATE_CERTS=True,
+    TEMPLATE_FOLDER=None
 )
 
 async def send_reset_password_email(email: EmailStr, token: str):

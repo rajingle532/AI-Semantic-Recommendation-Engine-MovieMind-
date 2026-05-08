@@ -167,14 +167,7 @@ def forgot_password(data: dict):
     
     try:
         # Send the actual email
-        import asyncio
-        # Run the async email sender
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            asyncio.create_task(send_reset_password_email(email, reset_token))
-        else:
-            asyncio.run(send_reset_password_email(email, reset_token))
-            
+        await send_reset_password_email(email, reset_token)
         return {"message": "Reset link sent successfully"}
     except Exception as e:
         print(f"Email error: {e}")
