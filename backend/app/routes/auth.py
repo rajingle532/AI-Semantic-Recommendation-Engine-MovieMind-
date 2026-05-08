@@ -163,22 +163,10 @@ async def forgot_password(data: dict, background_tasks: BackgroundTasks):
     
     from app.utils.email import send_reset_password_email
     
-    print(f"DEBUG: Forgot password request received for: {email}")
+    # Send the email in the background for a fast UI
+    background_tasks.add_task(send_reset_password_email, email, reset_token)
     
-    # Generate a reset token (re-using create_token for simplicity)
-    user_id = str(user["_id"])
-    reset_token = create_token(user_id, email)
-    
-    # Send the email DIRECTLY (synchronous to avoid background task death)
-    print(f"DEBUG: Attempting direct Resend API call for {email}")
-    success = send_reset_password_email(email, reset_token)
-    
-    if success:
-        return {"message": "Reset link sent successfully"}
-    else:
-        # If it fails, we show why in the logs
-        print(f"DEBUG: Resend API call FAILED for {email}")
-        raise HTTPException(status_code=500, detail="Failed to send email. Check logs.")
+    return {"message": "Reset link sent successfully"}
 
 @router.post("/reset-password")
 def reset_password(data: dict):
@@ -190,43 +178,32 @@ def reset_password(data: dict):
         raise HTTPException(status_code=400, detail="Token and password are required")
     
     try:
-        # Decode the token (same secret as login)
-        print(f"DEBUG: Decoding token: {token[:10]}...")
+        # Decode the token (supports both sub and user_id fields)
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
-        print(f"DEBUG: Token payload: {payload}")
-        
-        # Check for user_id in sub (standard) or user_id (custom) field
         user_id = payload.get("sub") or payload.get("user_id")
         
         if not user_id:
-            print("DEBUG: Token is missing both 'sub' and 'user_id' fields")
             raise HTTPException(status_code=400, detail="Invalid token structure")
             
         users = get_collection("users")
         
         # Update user's password
         hashed_pwd = hash_password(new_password)
-        
-        print(f"DEBUG: Attempting DB update for user_id: {user_id}")
         result = users.update_one(
             {"_id": ObjectId(user_id)}, 
             {"$set": {"password_hash": hashed_pwd}}
         )
         
         if result.matched_count == 0:
-            print(f"DEBUG: No user found with ID {user_id}")
             raise HTTPException(status_code=404, detail="User account no longer exists")
             
-        print(f"DEBUG: Password successfully updated for {user_id}")
         return {"message": "Password updated successfully"}
         
     except HTTPException as e:
-        # Re-raise HTTP exceptions directly
         raise e
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=400, detail="Reset link has expired")
-    except jwt.PyJWTError as e:
-        print(f"JWT ERROR: {e}")
+    except jwt.PyJWTError:
         raise HTTPException(status_code=400, detail="Invalid reset link")
     except Exception as e:
         print(f"RESET ERROR: {e}")
