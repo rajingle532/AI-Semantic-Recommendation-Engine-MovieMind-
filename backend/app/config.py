@@ -45,12 +45,8 @@ class Settings:
     # CORS
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
-    # Email Settings (Gmail SMTP)
-    MAIL_USERNAME: str = os.getenv("MAIL_USERNAME", "")
-    MAIL_PASSWORD: str = os.getenv("MAIL_PASSWORD", "")
-    MAIL_FROM: str = os.getenv("MAIL_FROM", "")
-    MAIL_PORT: int = int(os.getenv("MAIL_PORT", "587"))
-    MAIL_SERVER: str = os.getenv("MAIL_SERVER", "smtp.gmail.com")
+    # Email Settings
+    RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
 
 
 settings = Settings()

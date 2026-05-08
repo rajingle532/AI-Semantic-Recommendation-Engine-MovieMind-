@@ -1,24 +1,18 @@
-import os
-import smtplib
-import socket
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import requests
 from app.config import settings
 
 def send_reset_password_email(email: str, token: str):
-    """Send password reset email with forced IPv4 for cloud compatibility."""
+    """Send password reset email using Resend HTTP API."""
     try:
-        print(f"SMTP: Starting send to {email}...")
-        
+        api_key = settings.RESEND_API_KEY
+        if not api_key:
+            print("RESEND ERROR: RESEND_API_KEY is missing!")
+            return False
+
         # Build the reset link
         reset_link = f"{settings.FRONTEND_URL}/reset-password?token={token}"
         
-        # Create message
-        message = MIMEMultipart("alternative")
-        message["Subject"] = "MovieMind — Password Reset"
-        message["From"] = settings.MAIL_FROM
-        message["To"] = email
-
+        # Build HTML content
         html = f"""
         <html>
         <body style="font-family: Arial, sans-serif; background-color: #141414; color: #ffffff; padding: 40px; text-align: center;">
@@ -32,35 +26,35 @@ def send_reset_password_email(email: str, token: str):
         </body>
         </html>
         """
-        message.attach(MIMEText(html, "html"))
 
-        # FORCE IPv4 (Crucial for Render/Cloud)
-        # We resolve smtp.gmail.com to its IPv4 address
-        print("SMTP: Resolving smtp.gmail.com to IPv4...")
-        try:
-            target_ip = socket.gethostbyname("smtp.gmail.com")
-            print(f"SMTP: Resolved to {target_ip}")
-        except Exception as e:
-            print(f"SMTP WARNING: Failed to resolve via IPv4, using hostname. Error: {e}")
-            target_ip = "smtp.gmail.com"
-
-        # Connect using Port 587 (Standard for STARTTLS)
-        print(f"SMTP: Connecting to {target_ip} on Port 587...")
-        server = smtplib.SMTP(target_ip, 587, timeout=15)
+        # Resend API endpoint
+        url = "https://api.resend.com/emails"
         
-        server.set_debuglevel(1) # Show full conversation in logs
-        server.starttls() # Secure the connection
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
         
-        clean_password = settings.MAIL_PASSWORD.replace(" ", "")
-        print(f"SMTP: Logging in as {settings.MAIL_USERNAME}...")
-        server.login(settings.MAIL_USERNAME, clean_password)
+        # Onboarding sender (required for free tier without domain verification)
+        sender = "MovieMind <onboarding@resend.dev>"
         
-        print(f"SMTP: Sending to {email}...")
-        server.sendmail(settings.MAIL_FROM, email, message.as_string())
-        server.quit()
+        payload = {
+            "from": sender,
+            "to": [email],
+            "subject": "MovieMind — Password Reset",
+            "html": html
+        }
+        
+        print(f"RESEND: Sending email to {email}...")
+        response = requests.post(url, headers=headers, json=payload)
+        
+        if response.status_code == 200 or response.status_code == 201:
+            print(f"RESEND SUCCESS: Email sent to {email}")
+            return True
+        else:
+            print(f"RESEND ERROR: {response.status_code} - {response.text}")
+            return False
             
-        print(f"SMTP SUCCESS: Email delivered to {email}")
-        return True
     except Exception as e:
-        print(f"SMTP CRITICAL ERROR: {str(e)}")
+        print(f"RESEND CRITICAL ERROR: {str(e)}")
         return False
