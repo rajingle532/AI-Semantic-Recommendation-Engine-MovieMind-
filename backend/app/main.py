@@ -28,6 +28,8 @@ app.add_middleware(
     allow_origins=[
         settings.FRONTEND_URL,
         "https://movies-recommender-system-ten.vercel.app",
+        "https://movies-recommender-system-git-main-omkar-ingle-s-projects.vercel.app",
+        "https://movies-recommender-system-mrjqv00ji-omkar-ingle-s-projects.vercel.app",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:3000",
