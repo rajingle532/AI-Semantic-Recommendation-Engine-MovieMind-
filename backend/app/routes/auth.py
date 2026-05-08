@@ -201,14 +201,28 @@ def reset_password(data: dict):
         
         # Update user's password
         hashed_pwd = hash_password(new_password)
+        
+        print(f"DEBUG: Attempting DB update for user_id: {user_id}")
+        
+        # We try to update by ObjectId first
         result = users.update_one(
             {"_id": ObjectId(user_id)}, 
             {"$set": {"password_hash": hashed_pwd}}
         )
         
-        if result.modified_count == 0:
-            raise HTTPException(status_code=404, detail="User not found")
+        if result.matched_count == 0:
+            # Fallback: maybe user_id is just a string (not likely in Mongo but for safety)
+            print("DEBUG: ObjectId match failed, trying string match...")
+            result = users.update_one(
+                {"_id": user_id}, 
+                {"$set": {"password_hash": hashed_pwd}}
+            )
+        
+        if result.matched_count == 0:
+            print(f"DEBUG: No user found with ID {user_id}")
+            raise HTTPException(status_code=404, detail="User account no longer exists")
             
+        print(f"DEBUG: Password successfully updated for {user_id}")
         return {"message": "Password updated successfully"}
         
     except jwt.ExpiredSignatureError:
