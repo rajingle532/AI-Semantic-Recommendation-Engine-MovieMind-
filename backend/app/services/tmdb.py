@@ -2,8 +2,16 @@ import requests
 from typing import Optional
 from app.config import settings
 
-# Persistent session for connection pooling
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+# Persistent session for connection pooling and retries
 _session = requests.Session()
+retries = Retry(total=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
+_session.mount('https://', HTTPAdapter(max_retries=retries))
+
+# Real browser User-Agent to avoid blocks
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
 # In-memory caches to avoid redundant API calls
 _poster_cache = {}
@@ -13,22 +21,20 @@ _details_cache = {}
 def _make_request(endpoint: str, params: dict = None) -> dict:
     """Make a GET request to TMDB API with automatic API key injection and retries."""
     url = f"{settings.TMDB_BASE_URL}{endpoint}"
-    default_params = {
-        "api_key": settings.TMDB_API_KEY,
-        "language": "en-US"
+    headers = {
+        "User-Agent": USER_AGENT,
+        "Accept": "application/json"
     }
-    if params:
-        default_params.update(params)
-
-    max_retries = 3
+    
     if not settings.TMDB_API_KEY:
         print("TMDB_API_ERROR: TMDB_API_KEY is not set in environment variables!")
         return {}
 
+    max_retries = 3
     for attempt in range(max_retries):
         try:
             full_params = {"api_key": settings.TMDB_API_KEY, **(params or {})}
-            response = requests.get(f"{settings.TMDB_BASE_URL}{endpoint}", params=full_params, timeout=10)
+            response = _session.get(url, params=full_params, headers=headers, timeout=10)
             
             if response.status_code != 200:
                 print(f"TMDB_API_ERROR: {endpoint} returned {response.status_code}. Response: {response.text}")
@@ -93,6 +99,7 @@ def get_movie_videos(movie_id: int) -> Optional[str]:
     if not data or not data.get("results"):
         return None
 
+    videos = data.get("results", [])
     # Prioritize official YouTube trailers
     for video in videos:
         if video.get("site") == "YouTube" and video.get("type") == "Trailer":
@@ -316,7 +323,8 @@ def get_all_languages_movies(page: int = 1, language: str = None, year: str = No
     print(f"DEBUG: Strict Discover with params: {params}")
     
     try:
-        response = requests.get(f"{settings.TMDB_BASE_URL}/discover/movie", params=params, timeout=10)
+        headers = {"User-Agent": USER_AGENT, "Accept": "application/json"}
+        response = _session.get(f"{settings.TMDB_BASE_URL}/discover/movie", params=params, headers=headers, timeout=10)
         data = response.json()
         results = data.get("results", [])
         print(f"DEBUG: TMDB returned {len(results)} movies for this filter.")
