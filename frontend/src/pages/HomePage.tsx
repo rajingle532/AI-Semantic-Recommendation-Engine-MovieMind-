@@ -33,8 +33,9 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const timestamp = Date.now();
         const [trendingRes, genresRes] = await Promise.all([
-          api.get('/movies/trending?page=1'),
+          api.get(`/movies/trending?page=1&cb=${timestamp}`),
           api.get('/movies/genres')
         ]);
         const trendingMovies = trendingRes.data.results || trendingRes.data || [];
@@ -172,7 +173,8 @@ const HomePage: React.FC = () => {
     setActiveMood(null);
     setPage(1);
     try {
-      const { data } = await api.get('/movies/trending?page=1');
+      const timestamp = Date.now();
+      const { data } = await api.get(`/movies/trending?page=1&cb=${timestamp}`);
       setMovies(data.results || data || []);
     } catch (err) {
       console.error("Failed to fetch trending", err);
