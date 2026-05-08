@@ -30,7 +30,7 @@ const HomePage: React.FC = () => {
   const [showTrailer, setShowTrailer] = useState(false);
   const navigate = useNavigate();
 
-  const fetchMovies = async (pageToLoad: number, isLoadMore = false, currentFilters = filters, genre = activeGenre, mood = activeMood, retryCount = 0) => {
+  const fetchMovies = async (pageToLoad: number, isLoadMore = false, currentFilters = filters, genre = activeGenre, mood = activeMood) => {
     if (isLoadMore) setLoadingMore(true);
     else setLoading(true);
 
@@ -55,16 +55,8 @@ const HomePage: React.FC = () => {
       }
 
       params.cb = Date.now();
-
       const res = await api.get(endpoint, { params });
       let newMovies = Array.isArray(res.data) ? res.data : (res.data.results || []);
-
-      // Blank screen protection
-      if (newMovies.length === 0 && pageToLoad === 1 && (currentFilters.year || currentFilters.minRating !== '0' || currentFilters.language !== 'all')) {
-        toast.error("No movies match these filters. Showing trending instead.");
-        const trendingRes = await api.get('/api/movies/trending');
-        newMovies = trendingRes.data.results || [];
-      }
 
       setMovies(prev => {
         const combined = isLoadMore ? [...prev, ...newMovies] : newMovies;
@@ -84,20 +76,9 @@ const HomePage: React.FC = () => {
       });
     } catch (err) {
       console.error("Failed to fetch movies", err);
-      if (retryCount < 2) {
-        console.log(`Retrying fetch... (${retryCount + 1})`);
-        setTimeout(() => fetchMovies(pageToLoad, isLoadMore, currentFilters, genre, mood, retryCount + 1), 2000);
-      } else {
-        toast.error("Still having trouble connecting. Please refresh again.");
-      }
     } finally {
-      // Reset loading state if it's the final retry or if we succeeded
-      if (retryCount >= 2 || !isLoadMore) {
-        setLoading(false);
-      }
-      if (isLoadMore) {
-        setLoadingMore(false);
-      }
+      setLoading(false);
+      setLoadingMore(false);
     }
   };
 
