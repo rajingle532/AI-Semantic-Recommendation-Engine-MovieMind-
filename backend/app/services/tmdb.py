@@ -181,15 +181,24 @@ def get_trending_movies(page: int = 1) -> list:
             "release_date": m.get("release_date"),
         }
 
-    # Interleave results (1 global, 1 hindi, 1 global, 1 hindi...)
+    # Interleave results with random start (sometimes Bollywood first, sometimes Hollywood)
+    import random
+    start_with_hindi = random.choice([True, False])
+    
     mixed_results = []
     max_len = max(len(global_results), len(hindi_results))
     
     for i in range(max_len):
-        if i < len(global_results):
-            mixed_results.append(format_movie(global_results[i]))
-        if i < len(hindi_results):
-            mixed_results.append(format_movie(hindi_results[i]))
+        if start_with_hindi:
+            if i < len(hindi_results):
+                mixed_results.append(format_movie(hindi_results[i]))
+            if i < len(global_results):
+                mixed_results.append(format_movie(global_results[i]))
+        else:
+            if i < len(global_results):
+                mixed_results.append(format_movie(global_results[i]))
+            if i < len(hindi_results):
+                mixed_results.append(format_movie(hindi_results[i]))
 
     # Return top 20 mixed results
     return mixed_results[:20]
