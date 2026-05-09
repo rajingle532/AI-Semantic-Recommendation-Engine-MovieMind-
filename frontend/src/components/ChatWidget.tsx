@@ -130,7 +130,9 @@ const ChatWidget: React.FC = () => {
                       {msg.movies.slice(0, 3).map((movie) => (
                         <Link key={movie.id} to={`/movie/${movie.id}`} className={styles.movieItem}>
                           <img 
-                            src={movie.poster_path ? `https://image.tmdb.org/t/p/w92${movie.poster_path}` : 'https://via.placeholder.com/92x138'} 
+                            src={movie.poster_path 
+                              ? (movie.poster_path.startsWith('http') ? movie.poster_path : `https://image.tmdb.org/t/p/w92${movie.poster_path}`)
+                              : 'https://via.placeholder.com/92x138'} 
                             alt={movie.title} 
                             className={styles.miniPoster}
                           />

@@ -12,4 +12,6 @@ numpy
 nltk
 pandas
 scikit-learn
+sentence-transformers
+torch
 fastapi-mail==1.4.1
