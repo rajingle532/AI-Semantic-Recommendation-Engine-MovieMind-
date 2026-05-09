@@ -79,6 +79,10 @@ MOVIE_TITLE_PATTERNS = [
     r"(.*?)(?:\s+kitna\s+(?:kamaya|earn\s+kiya|collection))",
     r"(.*?)(?:\s+kaisi\s+(?:movie|film)\s+hai)",
     r"(?:movie\s+)(.*?)(?:\s+(?:batao|dikhao|ke|ki|ka))",
+    # Marathi patterns
+    r"(.*?)(?:\s+chi\s+(?:story|katha|kahani|mahitii|mahiti|acting|role))",
+    r"(.*?)(?:\s+baddal\s+(?:sanga|mahitii|mahiti))",
+    r"(.*?)(?:\s+kadhi\s+(?:aali|ali|suri\s+zhali|release\s+zhali))",
 ]
 
 # English filler phrases to strip
@@ -179,7 +183,7 @@ def detect_intent(query: str) -> str:
         "actor", "cast", "hero", "heroine", "star", "budget", "paisa", 
         "kamaya", "revenue", "box office", "release", "kab aayi", 
         "director", "producer", "role", "plot", "story", "kahani",
-        "batao", "dikhao", "dakhva"
+        "batao", "dikhao", "dakhva", "sanga", "baddal", "kadhi", "zhali"
     ]
     if any(t in q for t in movie_question_triggers):
         return "movie_question"
@@ -191,13 +195,13 @@ def detect_intent(query: str) -> str:
 def detect_language(query: str) -> str:
     """Detect query language: 'hindi', 'marathi', or 'english'."""
     q = query.lower()
-    marathi_words = ["konta", "aahe", "dakhva", "sang", "changla", "pahije", "awadel", "mala", "tumhala", "kaay"]
+    marathi_words = ["konta", "aahe", "dakhva", "sang", "sanga", "kadhi", "baddal", "changla", "pahije", "awadel", "mala", "tumhala", "kaay"]
     hindi_words = ["kaun", "dikhao", "batao", "acha", "pyaar", "prem", "kisne", "karke",
                    "kab", "kitna", "kaisi", "kya", "hai", "mein", "ke", "ki", "ka", "se", "mujhe"]
     
-    if any(w in q for w in marathi_words):
+    if any(w in q.split() for w in marathi_words):
         return "marathi"
-    if sum(1 for w in hindi_words if w in q.split()) >= 2:
+    if sum(1 for w in hindi_words if w in q.split()) >= 1:
         return "hindi"
     return "english"
 

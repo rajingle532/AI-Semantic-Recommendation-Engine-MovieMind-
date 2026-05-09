@@ -265,6 +265,7 @@ Examples:
 - "inception ka plot kya hai" → Inception
 - "dangal mein kaun hai" → Dangal
 - "3 idiots movie batao" → 3 Idiots
+- "Inception baddal sanga" → Inception
 - "suggest action movies" → NONE (this is a genre request, not a specific movie)
 - "romantic movies dikhao" → NONE
 
