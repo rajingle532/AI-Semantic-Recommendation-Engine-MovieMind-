@@ -107,12 +107,14 @@ Respond naturally as MovieMind AI:"""
         return response.text.strip()
     except asyncio.TimeoutError:
         print(f"GEMINI_TIMEOUT: Request took > {GEMINI_TIMEOUT}s")
-        return _fallback_movie_info(movie_data) if movie_data else "I'm taking a bit longer than usual. Here's what I know from my database!"
-        # Fallback to high-quality formatted TMDB data if Gemini is down
+        return _fallback_movie_info(movie_data, query) if movie_data else "I'm taking a bit longer than usual, but here's what I found!"
+    except Exception as e:
+        error_msg = str(e)
+        print(f"GEMINI_ERROR: {error_msg[:200]}")
+        # Always return a useful fallback instead of crashing
         if movie_data:
             return _fallback_movie_info(movie_data, query)
-        
-        return "I'm experiencing a high volume of requests, but I'm still here! Ask me about a specific movie title for the best results."
+        return "I'm experiencing a high volume of requests. Try asking about a specific movie title for the best results!"
 
 
 async def get_ai_movie_info(query: str, movie_data: dict = None) -> str:
