@@ -127,12 +127,8 @@ def extract_movie_title(query: str) -> Optional[str]:
 def clean_query(query: str) -> str:
     """Remove common fillers to isolate the core search term."""
     q = query.lower().strip()
-    
-    # Remove English filler phrases (longer ones first)
     for filler in sorted(ENGLISH_FILLERS, key=len, reverse=True):
         q = q.replace(filler, " ")
-    
-    # Remove Hindi filler words
     words = q.split()
     cleaned = [w for w in words if w not in HINDI_FILLERS]
     result = re.sub(r'\s+', ' ', " ".join(cleaned)).strip()
@@ -140,39 +136,18 @@ def clean_query(query: str) -> str:
 
 
 def detect_intent(query: str) -> str:
-    """
-    Detect the user's intent from their query.
-    Returns: 'greeting', 'theater', 'movie_question', 'genre', 'recommendation', 'general_question'
-    """
+    """Detect the user's intent from their query."""
     q = query.lower()
-    
-    # Greeting
     greet_words = ["hi", "hello", "hey", "hola", "namaste", "namaskar", "sup", "yo"]
     if any(q.strip() == g or q.startswith(g + " ") or q.startswith(g + ",") for g in greet_words):
         if len(q.split()) <= 4:
             return "greeting"
     
-    # Theater/Ticket
     theater_words = ["theater", "theatre", "cinema", "showtime", "ticket", "bookmyshow", 
                      "book ticket", "pass ka", "booking", "screen", "multiplex", "pvr", "inox", "kuthe", "lavlay"]
     if any(w in q for w in theater_words):
         return "theater"
     
-    # Genre/mood-based request (check BEFORE movie_question to avoid false positives)
-    # e.g., "romantic movies dikhao" → genre, not movie_question
-    genre_only_indicators = ["suggest", "recommend", "best", "top", "good", 
-                            "acha", "achhi", "latest", "new", "trending",
-                            "mood", "feel like", "something like",
-                            "dikhao", "batao", "dakhva", "movies", "films"]
-    genre_words_found = [kw for kw in GENRE_KEYWORDS if kw in q.split() or f" {kw} " in f" {q} "]
-    if genre_words_found:
-        has_genre_indicator = any(gi in q for gi in genre_only_indicators)
-        has_specific_title = extract_movie_title(query)
-        # If it has a genre word + indicator, and no specific movie title → genre
-        if has_genre_indicator and not has_specific_title:
-            return "genre"
-    
-    # Movie-specific question indicators (Very broad to catch everything)
     movie_question_triggers = [
         "tell me", "what is", "about", "movie", "film", "kya", "kaun", "kab", "kaisa", "kaisi",
         "story", "plot", "cast", "hero", "heroine", "director", "rating", "review", "paisa", "kamaya",
@@ -181,8 +156,6 @@ def detect_intent(query: str) -> str:
     ]
     if any(t in q for t in movie_question_triggers):
         return "movie_chat"
-    
-    # Default to movie_chat if it's not a greeting or theater, to ensure we always try to answer
     return "movie_chat"
 
 
@@ -192,13 +165,11 @@ def detect_language(query: str) -> str:
     marathi_words = ["konta", "aahe", "dakhva", "sang", "sanga", "kadhi", "baddal", "changla", "pahije", "awadel", "mala", "tumhala", "kaay"]
     hindi_words = ["kaun", "dikhao", "batao", "acha", "pyaar", "prem", "kisne", "karke",
                    "kab", "kitna", "kaisi", "kya", "hai", "mein", "ke", "ki", "ka", "se", "mujhe"]
-    
     if any(w in q.split() for w in marathi_words):
         return "marathi"
     if sum(1 for w in hindi_words if w in q.split()) >= 1:
         return "hindi"
     return "english"
-
 
 # ═══════════════════════════════════════════
 # Main Chat Endpoint
@@ -206,132 +177,90 @@ def detect_language(query: str) -> str:
 
 @router.post("/")
 async def chat_response(payload: Dict[str, Any]):
-    """
-    Intelligent Chat API — routes every query to the best handler.
-    Every movie question gets a real AI-powered answer via Gemini + TMDB.
-    """
     raw_message = payload.get("message", "").strip()
     raw_lower = raw_message.lower()
     history = payload.get("history", [])
     
-    # Detect intent and language
-    intent = detect_intent(raw_lower)
-    lang = detect_language(raw_lower)
-    
-    print(f"CHAT: Query='{raw_message}' | Intent={intent} | Lang={lang}")
+    try:
+        # Detect intent and language
+        intent = detect_intent(raw_lower)
+        lang = detect_language(raw_lower)
+        print(f"CHAT: Query='{raw_message}' | Intent={intent} | Lang={lang}")
 
-    # ─────────────────────────────────────
-    # 1. GREETING
-    # ─────────────────────────────────────
-    if intent == "greeting":
-        if lang == "marathi":
-            resp = "Namaskar! 🎬 Me tumcha MovieMind AI aahe. Tumhala kontyahi movie baddal mahiti pahije? Nahi tar mood sanga, mi movie suggest karto!"
-        elif lang == "hindi":
-            resp = "Namaste! 🎬 Main aapka MovieMind AI hoon. Kisi bhi movie ke baare mein pucho — ya mood batao, main perfect movie dhundh dunga!"
-        else:
-            resp = random.choice(GREETINGS)
-            
-        return {
-            "response": resp,
-            "movies": [],
-            "suggestions": QUICK_PROMPTS,
-            "intent": "greeting"
-        }
-
-    # ─────────────────────────────────────
-    # 2. THEATER / TICKET BOOKING
-    # ─────────────────────────────────────
-    if intent == "theater":
-        location = "me"
-        movie_name = None
-        words = raw_lower.split()
-        
-        # Extract location
-        for keyword in ["in", "near", "at"]:
-            if keyword in words:
-                idx = words.index(keyword)
-                if idx + 1 < len(words):
-                    # Take remaining words as location
-                    location = " ".join(words[idx + 1:])
-                    break
-        
-        # Try to extract movie name from context
-        if history:
-            for msg in reversed(history):
-                if msg.get('role') == 'assistant' and '**' in msg.get('content', ''):
-                    # Extract bold movie title from previous responses
-                    bold_match = re.search(r'\*\*(.*?)\*\*', msg['content'])
-                    if bold_match:
-                        movie_name = bold_match.group(1)
-                        break
-        
-        resp = ai_assistant.search_nearby_theaters(location, movie_name)
-        return {
-            "response": resp,
-            "movies": [],
-            "suggestions": ["Theaters in Mumbai", "Theaters in Pune", "Theaters in Delhi", "Book on BookMyShow"],
-            "intent": "theater_search"
-        }
-
-    # ─────────────────────────────────────
-    # 3. MOVIE CHAT (PHASE 1: SEMANTIC-FIRST)
-    # ─────────────────────────────────────
-    if intent == "movie_chat" or intent == "genre":
-        # We use semantic search to find the movie meaning directly.
-        # This handles typos (Raja chivaji) and complex vibe queries.
-        movies = await get_semantic_search_results(raw_message, n=5)
-        details = None
-        
-        if movies:
-            target = movies[0]
-            details = await asyncio.to_thread(tmdb.get_movie_details, target['id'])
-        
-        # Get AI response using retrieved context (RAG)
-        ai_response = await ai_assistant.smart_movie_answer(raw_message, details, history)
-        
-        # If AI failed but we have movies, make the response more natural
-        if ("database" in ai_response or "longer than usual" in ai_response) and movies:
-            top_title = movies[0].get('title', 'this movie')
-            if lang == "hindi":
-                ai_response = f"Mujhe {top_title} ke baare mein ye jaankari mili hai. Kya aap iske baare mein aur jaanna chahte hain?"
-            elif lang == "marathi":
-                ai_response = f"Mala {top_title} baddal hi mahiti milali aahe. Tumhala azun kai janun ghyaycha aahe ka?"
+        # 1. GREETING
+        if intent == "greeting":
+            if lang == "marathi":
+                resp = "Namaskar! 🎬 Me tumcha MovieMind AI aahe. Tumhala kontyahi movie baddal mahiti pahije? Nahi tar mood sanga, mi movie suggest karto!"
+            elif lang == "hindi":
+                resp = "Namaste! 🎬 Main aapka MovieMind AI hoon. Kisi bhi movie ke baare mein pucho — ya mood batao, main perfect movie dhundh dunga!"
             else:
-                ai_response = f"I found some info about **{top_title}**. Would you like to know more about it or see similar movies?"
+                resp = random.choice(GREETINGS)
+            return {"response": resp, "movies": [], "suggestions": QUICK_PROMPTS, "intent": "greeting"}
 
-        return {
-            "response": ai_response,
-            "movies": movies[:8],
-            "suggestions": _get_movie_suggestions(details, lang) if details else QUICK_PROMPTS,
-            "intent": "movie_chat"
-        }
+        # 2. THEATER / TICKET BOOKING
+        if intent == "theater":
+            location = "me"
+            movie_name = None
+            words = raw_lower.split()
+            for keyword in ["in", "near", "at"]:
+                if keyword in words:
+                    idx = words.index(keyword)
+                    if idx + 1 < len(words):
+                        location = " ".join(words[idx + 1:])
+                        break
+            if history:
+                for msg in reversed(history):
+                    if msg.get('role') == 'assistant' and '**' in msg.get('content', ''):
+                        bold_match = re.search(r'\*\*(.*?)\*\*', msg['content'])
+                        if bold_match:
+                            movie_name = bold_match.group(1)
+                            break
+            resp = ai_assistant.search_nearby_theaters(location, movie_name)
+            return {"response": resp, "movies": [], "suggestions": ["Theaters in Mumbai", "Theaters in Pune"], "intent": "theater_search"}
+
+        # 3. MOVIE CHAT (PHASE 1: SEMANTIC-FIRST)
+        if intent == "movie_chat":
+            movies = await get_semantic_search_results(raw_message, n=5)
+            details = None
+            if movies:
+                target = movies[0]
+                details = await asyncio.to_thread(tmdb.get_movie_details, target['id'])
+            
+            ai_response = await ai_assistant.smart_movie_answer(raw_message, details, history)
+            
+            if ("database" in ai_response or "longer than usual" in ai_response) and movies:
+                top_title = movies[0].get('title', 'this movie')
+                if lang == "hindi":
+                    ai_response = f"Mujhe **{top_title}** ke baare mein ye jaankari mili hai. Kya aap iske baare mein aur jaanna chahte hain?"
+                elif lang == "marathi":
+                    ai_response = f"Mala **{top_title}** baddal hi mahiti milali aahe. Tumhala azun kai janun ghyaycha aahe ka?"
+                else:
+                    ai_response = f"I found some info about **{top_title}**. Would you like to know more about it?"
+
+            return {
+                "response": ai_response,
+                "movies": movies[:8],
+                "suggestions": _get_movie_suggestions(details, lang) if details else QUICK_PROMPTS,
+                "intent": "movie_chat"
+            }
+
+    except Exception as e:
+        print(f"CHAT_GLOBAL_ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        fallback_msg = "I'm having a bit of trouble reaching my movie database. Please try asking about a specific movie title!"
+        if lang == "hindi":
+            fallback_msg = "Maaf kijiye, abhi servers par thoda load hai. Kya aap movie ka naam dobara bata sakte hain?"
+        elif lang == "marathi":
+            fallback_msg = "Kshamasva, server var thoda load aahe. Krupay movie che naav punha sanga."
+        return {"response": fallback_msg, "movies": [], "suggestions": QUICK_PROMPTS, "intent": "error_fallback"}
 
 
 def _get_movie_suggestions(details: dict, lang: str) -> list:
     """Generate contextual follow-up suggestions based on movie details."""
     title = details.get('title', '')
-    suggestions = []
-    
     if lang == "hindi":
-        suggestions = [
-            f"{title} ka plot batao",
-            f"{title} mein hero kaun hai",
-            f"Iss jaisi aur movies",
-            "Ticket book karo"
-        ]
+        return [f"{title} ka plot batao", f"{title} mein hero kaun hai", "Ticket book karo"]
     elif lang == "marathi":
-        suggestions = [
-            f"{title} chi story sanga",
-            f"{title} madhe kaun aahe",
-            f"Ashi movies dakhva",
-            "Ticket book kara"
-        ]
-    else:
-        suggestions = [
-            f"Full plot of {title}",
-            f"Cast & crew of {title}",
-            f"Movies similar to {title}",
-            "Book tickets"
-        ]
-    
-    return suggestions
+        return [f"{title} chi story sanga", f"{title} madhe kaun aahe", "Ticket book kara"]
+    return [f"Tell me about {title}'s plot", f"Who is in {title}?", "Book tickets"]
