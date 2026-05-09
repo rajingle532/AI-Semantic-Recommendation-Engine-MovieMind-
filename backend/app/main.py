@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 
 # Import route modules
-from app.routes import auth, movies, recommend, ratings, watchlist, admin
+from app.routes import auth, movies, recommend, ratings, watchlist, admin, chat
 
 # ═══════════════════════════════════════════
 # Create FastAPI App
@@ -49,6 +49,7 @@ app.include_router(recommend.router)
 app.include_router(ratings.router)
 app.include_router(watchlist.router)
 app.include_router(admin.router)
+app.include_router(chat.router)
 
 
 # ═══════════════════════════════════════════

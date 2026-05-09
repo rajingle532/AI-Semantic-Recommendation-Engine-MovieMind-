@@ -6,6 +6,7 @@ import { Toaster } from 'react-hot-toast';
 // Components
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
+import ChatWidget from './components/ChatWidget';
 
 // Pages
 import HomePage from './pages/HomePage';
@@ -58,6 +59,8 @@ const App: React.FC = () => {
           </Route>
         </Routes>
       </AnimatePresence>
+      
+      <ChatWidget />
     </>
   );
 };

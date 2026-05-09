@@ -9,6 +9,7 @@ from typing import List
 from app.config import settings
 from app.services.tmdb import get_movie_poster, get_movie_details, get_similar_movies, search_movies_tmdb
 from app.database import get_collection
+from sklearn.metrics.pairwise import cosine_similarity
 
 try:
     from sentence_transformers import SentenceTransformer
@@ -224,6 +225,52 @@ def get_hybrid_recommendations(user_id: str, n: int = 10) -> list:
 def get_semantic_search_results(query: str, n: int = 15) -> list:
     """
     Find movies based on natural language description.
-    Optimized for low RAM: Uses TMDB search API.
+    Uses BERT embeddings for true semantic matching.
     """
-    return search_movies_tmdb(query)
+    global _bert_model, _bert_embeddings, _movies_df
+    
+    # Fallback to TMDB if ML libs are missing
+    if not HAS_ML_LIBS:
+        print("RECOMMANDER: BERT disabled, falling back to TMDB Search")
+        return search_movies_tmdb(query)
+        
+    _load_bert_model() # Ensure model and embeddings are loaded (lazy)
+    
+    if _bert_model is None or _bert_embeddings is None or _movies_df is None:
+        print("RECOMMANDER: BERT data not ready, falling back to TMDB Search")
+        return search_movies_tmdb(query)
+
+    try:
+        # Encode user query into a vector
+        query_vec = _bert_model.encode([query])
+        
+        # Calculate cosine similarity against all movies
+        sim_scores = cosine_similarity(query_vec, _bert_embeddings)[0]
+        
+        # Get top-N highest score indices
+        top_indices = sim_scores.argsort()[-n:][::-1]
+        
+        results = []
+        for idx in top_indices:
+            movie = _movies_df.iloc[idx]
+            score = float(sim_scores[idx])
+            
+            # Threshold to avoid random results for irrelevant queries
+            if score > 0.15: 
+                movie_id = int(movie['movie_id'])
+                results.append({
+                    "id": movie_id,
+                    "movie_id": movie_id,
+                    "title": movie['title'],
+                    "poster_path": get_movie_poster(movie_id),
+                    "relevance_score": round(score, 4),
+                })
+        
+        if not results:
+            return search_movies_tmdb(query)
+            
+        return results
+        
+    except Exception as e:
+        print(f"ERROR in BERT Search: {e}")
+        return search_movies_tmdb(query)
