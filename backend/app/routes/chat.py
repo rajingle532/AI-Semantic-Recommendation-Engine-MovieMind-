@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query, Body
 from app.services.recommender import get_semantic_search_results
-from app.services import tmdb
+from app.services import tmdb, ai_assistant
 from typing import List, Optional, Dict, Any
 import random
 import re
@@ -36,6 +36,9 @@ GENRE_KEYWORDS = {
 
 HINDI_FILLERS = ["muze", "mujhe", "batao", "dikhao", "film", "movie", "movies", "recommend", "suggest", "karo", "sang", "dakhva", "hai", "kaun", "acha", "achhi", "dikha", "do", "kuch", "vibe"]
 
+# Detailed Info Keywords
+INFO_KEYWORDS = ["actor", "cast", "hero", "heroine", "star", "budget", "paisa", "kamaya", "revenue", "box office", "release", "kab aayi", "director", "producer", "role"]
+
 def clean_query(query: str) -> str:
     """Remove common fillers to isolate keywords."""
     words = query.lower().split()
@@ -45,16 +48,18 @@ def clean_query(query: str) -> str:
 @router.post("/")
 async def chat_response(payload: Dict[str, Any]):
     """
-    Enhanced Chat API with context awareness and Multilingual support.
+    Enhanced Chat API with context awareness, Multilingual support, and AI Brain.
     """
     raw_message = payload.get("message", "").lower()
     history = payload.get("history", [])
     
-    # 1. Language Detection (Basic)
-    is_hindi = any(word in raw_message for word in ["kaun", "hai", "dikhao", "batao", "acha", "film", "movie dikhao", "pyaar", "prem"])
+    # 1. Language Detection
+    is_hindi = any(word in raw_message for word in ["kaun", "hai", "dikhao", "batao", "acha", "film", "movie dikhao", "pyaar", "prem", "kisne", "karke"])
     is_marathi = any(word in raw_message for word in ["konta", "aahe", "dakhva", "sang", "changla", "pahije", "awadel"])
     is_greeting = any(word in raw_message for word in ["hi", "hello", "hey", "hola", "namaste", "namaskar"])
-    
+    is_asking_info = any(word in raw_message for word in INFO_KEYWORDS)
+    is_theater_query = any(word in raw_message for word in ["theater", "cinema", "showtime", "ticket", "bookmyshow", "pass ka"])
+
     # 2. Greeting Handling
     if is_greeting and not history:
         if is_marathi:
@@ -71,29 +76,62 @@ async def chat_response(payload: Dict[str, Any]):
             "intent": "greeting"
         }
 
-    # 3. Keyword/Genre Detection
+    # 3. Theater Query Handling
+    if is_theater_query:
+        # Simple location extraction (can be improved with Gemini)
+        location = "me" # Default
+        words = raw_message.split()
+        if "in" in words:
+            idx = words.index("in")
+            if idx + 1 < len(words):
+                location = words[idx + 1]
+        elif "near" in words:
+            idx = words.index("near")
+            if idx + 1 < len(words):
+                location = words[idx + 1]
+        
+        resp = ai_assistant.search_nearby_theaters(location)
+        return {
+            "response": resp,
+            "movies": [],
+            "suggestions": ["Find theaters near me", "Theaters in Pune", "Book tickets"],
+            "intent": "theater_search"
+        }
+
+    # 4. Detailed Info / QA Handling (Gemini)
+    if is_asking_info:
+        # Try to extract movie title
+        cleaned_search = clean_query(raw_message)
+        movies = tmdb.search_movies_tmdb(cleaned_search)
+        if movies:
+            target_movie = tmdb.get_movie_details(movies[0]['id'])
+            ai_resp = await ai_assistant.get_ai_movie_info(raw_message, target_movie)
+            return {
+                "response": ai_resp,
+                "movies": [movies[0]],
+                "suggestions": ["Tell me more", "Budget details", "Cast roles"],
+                "intent": "detailed_info"
+            }
+
+    # 5. Regular Recommendation Logic
     detected_genre_id = None
     for kw, gid in GENRE_KEYWORDS.items():
         if kw in raw_message:
             detected_genre_id = gid
             break
             
-    # 4. Get Results
     cleaned_msg = clean_query(raw_message)
     
     if detected_genre_id and (not cleaned_msg or cleaned_msg in GENRE_KEYWORDS):
-        # If they just asked for a genre, use discover
         movies = tmdb.get_movies_by_genre(detected_genre_id)
         intent = "genre_discovery"
     else:
-        # Use semantic/search logic
         movies = get_semantic_search_results(raw_message, n=5)
-        # If semantic failed, try search with cleaned message
         if not movies and cleaned_msg:
             movies = tmdb.search_movies_tmdb(cleaned_msg)
         intent = "recommendation"
     
-    # 5. Build Dynamic Response
+    # 6. Build Dynamic Response
     if len(movies) > 0:
         top_movie = movies[0]
         if is_marathi:
@@ -101,7 +139,7 @@ async def chat_response(payload: Dict[str, Any]):
         elif is_hindi:
             ai_response = f"Aapki '{raw_message}' ki pasand ke hisab se, mujhe lagta hai aapko **{top_movie['title']}** bahut pasand aayegi!"
         else:
-            ai_response = f"Based on your interest in '{raw_message}', I think you'd really enjoy **{top_movie['title']}**. It's a perfect match for that vibe!"
+            ai_response = f"Based on your interest in '{raw_message}', I think you'd really enjoy **{top_movie['title']}**."
         
         for m in movies:
             m["reason"] = "Matches your interest" if not is_hindi else "Aapki pasand ke mutabik"

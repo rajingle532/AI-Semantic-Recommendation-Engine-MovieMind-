@@ -12,6 +12,7 @@ numpy
 nltk
 pandas
 scikit-learn
+google-generativeai
 sentence-transformers
 torch
 fastapi-mail==1.4.1

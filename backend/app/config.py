@@ -45,6 +45,10 @@ class Settings:
     # CORS
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
+    # External AI & Search
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    SERP_API_KEY: str = os.getenv("SERP_API_KEY", "")
+
     # Email Settings
     RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
 
