@@ -12,7 +12,7 @@ numpy
 nltk
 pandas
 scikit-learn
-google-generativeai
-sentence-transformers
-torch
+google-genai
+# sentence-transformers (Removed to save RAM on Render)
+# torch (Removed to save RAM on Render)
 fastapi-mail==1.4.1

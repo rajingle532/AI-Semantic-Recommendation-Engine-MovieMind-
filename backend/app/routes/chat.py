@@ -126,7 +126,7 @@ async def chat_response(payload: Dict[str, Any]):
         movies = tmdb.get_movies_by_genre(detected_genre_id)
         intent = "genre_discovery"
     else:
-        movies = get_semantic_search_results(raw_message, n=5)
+        movies = await get_semantic_search_results(raw_message, n=5)
         if not movies and cleaned_msg:
             movies = tmdb.search_movies_tmdb(cleaned_msg)
         intent = "recommendation"

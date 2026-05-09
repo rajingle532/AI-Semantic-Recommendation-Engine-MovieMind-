@@ -32,12 +32,12 @@ def search_movies(q: str = Query(..., min_length=1, description="Search query"))
 
 
 @router.get("/semantic")
-def search_movies_nlp(q: str = Query(..., min_length=3, description="Describe the movie you want")):
+async def search_movies_nlp(q: str = Query(..., min_length=3, description="Describe the movie you want")):
     """
     NLP-powered semantic search — describe a plot, mood, or theme
     and get matching movies. Example: 'a hero who saves the world from aliens'
     """
-    results = semantic_search(q)
+    results = await semantic_search(q)
     return {"results": results, "count": len(results)}
 
 

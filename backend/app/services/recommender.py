@@ -8,6 +8,7 @@ import numpy as np
 from typing import List
 from app.config import settings
 from app.services.tmdb import get_movie_poster, get_movie_details, get_similar_movies, search_movies_tmdb
+from app.services import ai_assistant
 from app.database import get_collection
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -223,17 +224,39 @@ def get_hybrid_recommendations(user_id: str, n: int = 10) -> list:
     ]
 
 
-def get_semantic_search_results(query: str, n: int = 15) -> list:
+async def get_semantic_search_results(query: str, n: int = 15) -> list:
     """
     Find movies based on natural language description.
     Uses BERT embeddings for true semantic matching.
     """
     global _bert_model, _bert_embeddings, _movies_df
     
-    # Fallback to TMDB if ML libs are missing
+    # Fallback to Gemini-powered TMDB Search if ML libs are missing (Render optimized)
     if not HAS_ML_LIBS:
-        print("RECOMMANDER: BERT disabled, falling back to TMDB Search")
-        return search_movies_tmdb(query)
+        print("RECOMMANDER: BERT disabled, using Gemini-TMDB Hybrid Search")
+        ai_titles = await ai_assistant.get_movie_suggestions_by_vibe(query)
+        
+        results = []
+        seen_ids = set()
+        
+        # 1. Search for titles suggested by AI
+        for title in ai_titles:
+            tmdb_res = search_movies_tmdb(title)
+            if tmdb_res:
+                m = tmdb_res[0] # Take first match
+                if m['id'] not in seen_ids:
+                    results.append(m)
+                    seen_ids.add(m['id'])
+        
+        # 2. Add keyword-based matches if we don't have enough
+        if len(results) < n:
+            keyword_res = search_movies_tmdb(query)
+            for m in keyword_res:
+                if m['id'] not in seen_ids:
+                    results.append(m)
+                    seen_ids.add(m['id'])
+                    
+        return results[:n]
         
     _load_bert_model() # Ensure model and embeddings are loaded (lazy)
     

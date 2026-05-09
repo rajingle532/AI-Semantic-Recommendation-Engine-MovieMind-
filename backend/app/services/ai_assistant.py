@@ -45,7 +45,7 @@ async def get_ai_movie_info(query: str, movie_data: dict = None) -> str:
 
     try:
         response = client.models.generate_content(
-            model="gemini-flash-latest",
+            model="gemini-1.5-flash",
             contents=prompt
         )
         return response.text
@@ -91,3 +91,28 @@ def search_nearby_theaters(location: str):
 
     except Exception as e:
         return f"Error connecting to SerpApi: {str(e)}"
+
+async def get_movie_suggestions_by_vibe(query: str) -> list:
+    """
+    Use Gemini to extract movie titles from a natural language 'vibe' or query.
+    Returns a list of movie titles.
+    """
+    if not client:
+        return []
+
+    prompt = f"""
+    The user is looking for movies with this vibe: "{query}"
+    Suggest 5-8 real movie titles that match this description perfectly.
+    Return ONLY the titles as a comma-separated list. No numbering, no intros, no descriptions.
+    Example: Inception, Interstellar, The Matrix, Shutter Island
+    """
+
+    try:
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=prompt
+        )
+        titles = [t.strip() for t in response.text.split(",") if t.strip()]
+        return titles
+    except:
+        return []
