@@ -48,7 +48,8 @@ HINDI_FILLERS = [
     "muze", "mujhe", "batao", "dikhao", "film", "movie", "movies", 
     "recommend", "suggest", "karo", "sang", "dakhva", "hai", "kaun", 
     "acha", "achhi", "dikha", "do", "kuch", "vibe", "bhi", "toh",
-    "na", "yaar", "bhai", "please", "pls", "karo", "de", "dedo"
+    "na", "yaar", "bhai", "please", "pls", "karo", "de", "dedo",
+    "strory", "stroy", "snga", "sanga", "chi", "baddal", "kadhi", "aahe"
 ]
 
 # Patterns for extracting movie titles from queries
@@ -79,10 +80,12 @@ MOVIE_TITLE_PATTERNS = [
     r"(.*?)(?:\s+kitna\s+(?:kamaya|earn\s+kiya|collection))",
     r"(.*?)(?:\s+kaisi\s+(?:movie|film)\s+hai)",
     r"(?:movie\s+)(.*?)(?:\s+(?:batao|dikhao|ke|ki|ka))",
-    # Marathi patterns
-    r"(.*?)(?:\s+chi\s+(?:story|katha|kahani|mahitii|mahiti|acting|role))",
-    r"(.*?)(?:\s+baddal\s+(?:sanga|mahitii|mahiti))",
+    # Marathi patterns (Improved for slang and typos)
+    r"(.*?)(?:\s+chi\s+(?:story|katha|kahani|mahitii|mahiti|acting|role|strory|stroy|snga|sanga))",
+    r"(.*?)(?:\s+baddal\s+(?:sanga|mahitii|mahiti|snga))",
     r"(.*?)(?:\s+kadhi\s+(?:aali|ali|suri\s+zhali|release\s+zhali))",
+    r"(?:story|sanga|snga|mahitii|mahiti|katha|kahani|strory|stroy)\s+(.*?)(?:\s+chi)?$",
+    r"(.*?)\s+chi\s+(?:story|sanga|snga|mahitii|mahiti|katha|kahani|strory|stroy)",
 ]
 
 # English filler phrases to strip

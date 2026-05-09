@@ -108,13 +108,11 @@ Respond naturally as MovieMind AI:"""
     except asyncio.TimeoutError:
         print(f"GEMINI_TIMEOUT: Request took > {GEMINI_TIMEOUT}s")
         return _fallback_movie_info(movie_data) if movie_data else "I'm taking a bit longer than usual. Here's what I know from my database!"
-    except Exception as e:
-        error_msg = str(e)
-        print(f"GEMINI_ERROR: {error_msg[:200]}")
-        if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
-            print("GEMINI: Rate limited — using fallback")
-        # Fallback to formatted TMDB data
-        return _fallback_movie_info(movie_data) if movie_data else "Let me show you what I have in my database!"
+        # Fallback to high-quality formatted TMDB data if Gemini is down
+        if movie_data:
+            return _fallback_movie_info(movie_data, query)
+        
+        return "I'm experiencing a high volume of requests, but I'm still here! Ask me about a specific movie title for the best results."
 
 
 async def get_ai_movie_info(query: str, movie_data: dict = None) -> str:
@@ -124,20 +122,31 @@ async def get_ai_movie_info(query: str, movie_data: dict = None) -> str:
     return await smart_movie_answer(query, movie_data)
 
 
-def _fallback_movie_info(movie_data: dict) -> str:
-    """Generate a formatted response from TMDB data when Gemini is unavailable."""
+def _fallback_movie_info(movie_data: dict, query: str = "") -> str:
+    """Generate a rich, structured response from TMDB data when Gemini is unavailable."""
     if not movie_data:
-        return "Sorry, I couldn't find details for this movie."
+        return "I couldn't find exact details for that query, but here are some popular movies you might like!"
     
     title = movie_data.get('title', 'Unknown')
     overview = movie_data.get('overview', '')
     release = movie_data.get('release_date', 'Unknown')
     rating = movie_data.get('vote_average', 0)
-    genres = ', '.join(movie_data.get('genres', []))
+    genres = ', '.join(movie_data.get('genres', [])) if isinstance(movie_data.get('genres'), list) else 'Movie'
     cast_list = movie_data.get('cast', [])
     cast_names = ', '.join([c['name'] for c in cast_list[:5]]) if cast_list else 'N/A'
     runtime = movie_data.get('runtime', 'N/A')
-    budget = movie_data.get('budget', 0)
+    
+    # Structure a natural sounding response even without AI
+    response = f"🎬 **{title}** ({release[:4]})\n\n"
+    response += f"⭐ **Rating:** {rating}/10\n"
+    response += f"🎭 **Cast:** {cast_names}\n"
+    response += f"🕒 **Runtime:** {runtime} min\n\n"
+    response += f"📝 **Plot:** {overview}\n\n"
+    
+    # Add a friendly note if it was a rate limit fallback
+    response += "_Note: Detailed AI analysis is currently limited due to high traffic, but I've fetched the core facts for you!_"
+    
+    return response
     revenue = movie_data.get('revenue', 0)
     
     response = f"🎬 **{title}**\n\n"
