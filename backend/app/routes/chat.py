@@ -151,7 +151,7 @@ def detect_intent(query: str) -> str:
     
     # Theater/Ticket
     theater_words = ["theater", "theatre", "cinema", "showtime", "ticket", "bookmyshow", 
-                     "book ticket", "pass ka", "booking", "screen", "multiplex", "pvr", "inox"]
+                     "book ticket", "pass ka", "booking", "screen", "multiplex", "pvr", "inox", "kuthe", "lavlay"]
     if any(w in q for w in theater_words):
         return "theater"
     
@@ -300,6 +300,11 @@ async def chat_response(payload: Dict[str, Any]):
             # Search TMDB for the movie
             movies = await asyncio.to_thread(tmdb.search_movies_tmdb, title)
             
+            if not movies:
+                # If direct search failed, try semantic search on the title
+                # This helps find movies with slightly different spelling in local DB
+                movies = await get_semantic_search_results(title, n=1)
+            
             if movies:
                 # Found the movie — get full details
                 target = movies[0]
@@ -319,17 +324,33 @@ async def chat_response(payload: Dict[str, Any]):
                     "intent": "movie_info"
                 }
             else:
-                # Movie not found on TMDB — still try Gemini with general knowledge
+                # No specific movie found in TMDB or Local DB
+                # Try to let Gemini answer from general knowledge OR suggest related things
                 ai_response = await ai_assistant.smart_movie_answer(raw_message, None, history)
                 
-                # Also search for similar/related movies
-                related = await get_semantic_search_results(title, n=5)
-                
+                # If Gemini gave a generic fallback, try to provide some value with semantic results
+                if "database" in ai_response or "taking a bit longer" in ai_response:
+                    related = await get_semantic_search_results(raw_message, n=5)
+                    if related:
+                        if lang == "hindi":
+                            ai_response = "Mujhe iss movie ke exact details nahi mile, par shayad aap inme se kuch dhundh rahe hain?"
+                        elif lang == "marathi":
+                            ai_response = "Ya movie baddal mahiti nahi milali, pan tumhala he awadu shaktat:"
+                        else:
+                            ai_response = "I couldn't find exact details, but you might be looking for one of these:"
+                        
+                        return {
+                            "response": ai_response,
+                            "movies": related,
+                            "suggestions": QUICK_PROMPTS,
+                            "intent": "recommendation_fallback"
+                        }
+
                 return {
                     "response": ai_response,
-                    "movies": related[:5] if related else [],
+                    "movies": [],
                     "suggestions": ["Try another movie", "Suggest similar movies", "Trending movies"],
-                    "intent": "movie_info"
+                    "intent": "movie_info_failed"
                 }
         
         # If we still have no title, it might be a follow-up question 
