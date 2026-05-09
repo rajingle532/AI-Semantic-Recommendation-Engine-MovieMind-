@@ -18,6 +18,9 @@ _poster_cache = {}
 _details_cache = {}
 _fallback_movies = []
 
+# Circuit breaker for TMDB API
+_tmdb_disabled = False
+
 # Force IPv4 preference for TMDB as some ISPs/regions have broken IPv6 routing to their API
 try:
     import socket
@@ -27,9 +30,32 @@ try:
 except Exception as e:
     print(f"TMDB_SERVICE: Could not force IPv4 preference: {e}")
 
+_fallback_df = None
+
+def _get_fallback_df():
+    """Load the fallback CSV into memory once."""
+    global _fallback_df
+    if _fallback_df is not None:
+        return _fallback_df
+    try:
+        import pandas as pd
+        import os
+        data_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data')
+        movies_path = os.path.join(data_dir, 'tmdb_5000_movies.csv')
+        if os.path.exists(movies_path):
+            _fallback_df = pd.read_csv(movies_path)
+        return _fallback_df
+    except Exception as e:
+        print(f"ERROR loading fallback dataset: {e}")
+        return None
+
 
 def _make_request(endpoint: str, params: dict = None) -> dict:
     """Make a GET request to TMDB API with automatic API key injection and retries."""
+    global _tmdb_disabled
+    if _tmdb_disabled:
+        return {}
+
     url = f"{settings.TMDB_BASE_URL}{endpoint}"
     headers = {
         "User-Agent": USER_AGENT,
@@ -38,13 +64,15 @@ def _make_request(endpoint: str, params: dict = None) -> dict:
     
     if not settings.TMDB_API_KEY:
         print("TMDB_API_ERROR: TMDB_API_KEY is not set in environment variables!")
+        _tmdb_disabled = True
         return {}
 
-    max_retries = 3
+    max_retries = 1 # Fast fail
     for attempt in range(max_retries):
         try:
             full_params = {"api_key": settings.TMDB_API_KEY, **(params or {})}
-            response = _session.get(url, params=full_params, headers=headers, timeout=10)
+            # Very short timeout to prevent blocking the event loop
+            response = _session.get(url, params=full_params, headers=headers, timeout=2.5)
             
             if response.status_code != 200:
                 print(f"TMDB_API_ERROR: {endpoint} returned {response.status_code}. Response: {response.text}")
@@ -53,7 +81,8 @@ def _make_request(endpoint: str, params: dict = None) -> dict:
             return response.json()
         except (requests.RequestException, ConnectionResetError) as e:
             if attempt == max_retries - 1:
-                print(f"TMDB API Error after {max_retries} attempts: {e}")
+                print(f"TMDB API Error after {max_retries} attempts: {e}. Disabling TMDB temporarily.")
+                _tmdb_disabled = True
                 return {}
             print(f"TMDB API attempt {attempt + 1} failed, retrying...")
             continue
@@ -233,17 +262,10 @@ def _get_fallback_movies(page: int = 1) -> list:
     Randomized by page to ensure 'Load More' shows different results.
     """
     try:
-        import pandas as pd
-        import os
-        import random
-        
-        data_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data')
-        movies_path = os.path.join(data_dir, 'tmdb_5000_movies.csv')
-        
-        if not os.path.exists(movies_path):
+        df = _get_fallback_df()
+        if df is None:
             return []
             
-        df = pd.read_csv(movies_path)
         # Sort by popularity and take a larger chunk, then sample based on page
         all_popular = df.sort_values('popularity', ascending=False).head(200)
         
@@ -335,16 +357,10 @@ def search_movies_tmdb(query: str, page: int = 1) -> list:
 def _search_fallback_movies(query: str) -> list:
     """Search for movies in the local CSV dataset."""
     try:
-        import pandas as pd
-        import os
-        
-        data_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data')
-        movies_path = os.path.join(data_dir, 'tmdb_5000_movies.csv')
-        
-        if not os.path.exists(movies_path):
+        df = _get_fallback_df()
+        if df is None:
             return []
             
-        df = pd.read_csv(movies_path)
         # Simple case-insensitive title search
         matches = df[df['title'].str.contains(query, case=False, na=False)].head(20)
         

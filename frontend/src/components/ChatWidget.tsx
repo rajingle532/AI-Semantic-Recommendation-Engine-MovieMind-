@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, X, Send, Sparkles, Film as MovieIcon, ChevronRight } from 'lucide-react';
+import { MessageSquare, X, Send, Sparkles, ChevronRight, RotateCcw } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
 import api from '../services/api';
 import { Movie } from '../types';
 import styles from './ChatWidget.module.css';
@@ -20,12 +21,13 @@ const ChatWidget: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
-      text: "Hi! I'm MovieMind AI, your personal cinema expert. What's on your mind today?",
+      text: "Hi! I'm **MovieMind AI** 🎬 Ask me anything about movies — cast, story, ratings, showtimes — or just tell me your mood and I'll find the perfect movie!",
       isAi: true,
       suggestions: [
-        "Suggest a mind-bending thriller",
-        "Top rated Sci-Fi movies",
-        "Action movies with great stunts"
+        "Tell me about Pushpa 2",
+        "Best thriller movies",
+        "Who directed Inception?",
+        "Romantic movies suggest karo"
       ]
     }
   ]);
@@ -56,8 +58,8 @@ const ChatWidget: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Send history for context (last 5 messages)
-      const history = messages.slice(-5).map(m => ({
+      // Send history for context (last 6 messages)
+      const history = messages.slice(-6).map(m => ({
         role: m.isAi ? 'assistant' : 'user',
         content: m.text
       }));
@@ -81,18 +83,39 @@ const ChatWidget: React.FC = () => {
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         text: "Sorry, I'm having trouble connecting right now. Let me check my database and get back to you!",
-        isAi: true
+        isAi: true,
+        suggestions: ["Try again", "Trending movies"]
       }]);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleReset = () => {
+    setMessages([
+      {
+        id: Date.now().toString(),
+        text: "Chat reset! 🎬 Ask me anything about movies!",
+        isAi: true,
+        suggestions: [
+          "Tell me about Pushpa 2",
+          "Best thriller movies",
+          "Who directed Inception?",
+          "Romantic movies suggest karo"
+        ]
+      }
+    ]);
+  };
+
   const TypingIndicator = () => (
     <div className={styles.typingIndicator}>
-      <div className={styles.dot}></div>
-      <div className={styles.dot}></div>
-      <div className={styles.dot}></div>
+      <Sparkles size={14} className={styles.typingIcon} />
+      <span className={styles.typingText}>Thinking</span>
+      <div className={styles.dots}>
+        <div className={styles.dot}></div>
+        <div className={styles.dot}></div>
+        <div className={styles.dot}></div>
+      </div>
     </div>
   );
 
@@ -109,13 +132,18 @@ const ChatWidget: React.FC = () => {
           >
             <div className={styles.chatHeader}>
               <h3><Sparkles size={20} color="#e50914" fill="#e50914" /> MovieMind AI</h3>
-              <button className={styles.closeBtn} onClick={() => setIsOpen(false)}>
-                <X size={18} />
-              </button>
+              <div className={styles.headerActions}>
+                <button className={styles.resetBtn} onClick={handleReset} title="New chat">
+                  <RotateCcw size={16} />
+                </button>
+                <button className={styles.closeBtn} onClick={() => setIsOpen(false)}>
+                  <X size={18} />
+                </button>
+              </div>
             </div>
 
             <div className={styles.messageArea} ref={scrollRef}>
-              {messages.map((msg, idx) => (
+              {messages.map((msg) => (
                 <motion.div 
                   key={msg.id} 
                   initial={{ opacity: 0, x: msg.isAi ? -20 : 20 }}
@@ -123,24 +151,50 @@ const ChatWidget: React.FC = () => {
                   transition={{ delay: 0.1 }}
                   className={`${styles.message} ${msg.isAi ? styles.aiMessage : styles.userMessage}`}
                 >
-                  <div className={styles.messageText}>{msg.text}</div>
+                  <div className={styles.messageText}>
+                    {msg.isAi ? (
+                      <ReactMarkdown
+                        components={{
+                          p: ({ children }) => <p className={styles.mdParagraph}>{children}</p>,
+                          strong: ({ children }) => <strong className={styles.mdBold}>{children}</strong>,
+                          em: ({ children }) => <em className={styles.mdItalic}>{children}</em>,
+                          a: ({ href, children }) => (
+                            <a href={href} target="_blank" rel="noopener noreferrer" className={styles.mdLink}>
+                              {children}
+                            </a>
+                          ),
+                          ul: ({ children }) => <ul className={styles.mdList}>{children}</ul>,
+                          ol: ({ children }) => <ol className={styles.mdList}>{children}</ol>,
+                          li: ({ children }) => <li className={styles.mdListItem}>{children}</li>,
+                        }}
+                      >
+                        {msg.text}
+                      </ReactMarkdown>
+                    ) : (
+                      msg.text
+                    )}
+                  </div>
                   
                   {msg.isAi && msg.movies && msg.movies.length > 0 && (
                     <div className={styles.movieResults}>
-                      {msg.movies.slice(0, 3).map((movie) => (
-                        <Link key={movie.id} to={`/movie/${movie.id}`} className={styles.movieItem}>
+                      {msg.movies.slice(0, 4).map((movie) => (
+                        <Link key={movie.id} to={`/movie/${movie.id}`} className={styles.movieItem} onClick={() => setIsOpen(false)}>
                           <img 
                             src={movie.poster_path 
                               ? (movie.poster_path.startsWith('http') ? movie.poster_path : `https://image.tmdb.org/t/p/w92${movie.poster_path}`)
-                              : 'https://via.placeholder.com/92x138'} 
+                              : 'https://via.placeholder.com/92x138?text=🎬'} 
                             alt={movie.title} 
                             className={styles.miniPoster}
+                            loading="lazy"
                           />
                           <div className={styles.movieInfo}>
                             <span className={styles.movieTitle}>{movie.title}</span>
+                            {movie.vote_average && (
+                              <span className={styles.movieRating}>⭐ {movie.vote_average?.toFixed(1)}</span>
+                            )}
                             {movie.reason && <span className={styles.movieReason}>{movie.reason}</span>}
                           </div>
-                          <ChevronRight size={16} style={{ marginLeft: 'auto', opacity: 0.5 }} />
+                          <ChevronRight size={16} style={{ marginLeft: 'auto', opacity: 0.5, flexShrink: 0 }} />
                         </Link>
                       ))}
                     </div>
@@ -169,10 +223,10 @@ const ChatWidget: React.FC = () => {
             <div className={styles.inputArea}>
               <input
                 type="text"
-                placeholder="Find a movie, explore vibes..."
+                placeholder="Ask anything about movies..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               />
               <button 
                 className={styles.sendBtn} 

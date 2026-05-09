@@ -11,6 +11,7 @@ from app.services.tmdb import get_movie_poster, get_movie_details, get_similar_m
 from app.services import ai_assistant
 from app.database import get_collection
 from sklearn.metrics.pairwise import cosine_similarity
+import asyncio
 
 try:
     from sentence_transformers import SentenceTransformer
@@ -241,7 +242,7 @@ async def get_semantic_search_results(query: str, n: int = 15) -> list:
         
         # 1. Search for titles suggested by AI
         for title in ai_titles:
-            tmdb_res = search_movies_tmdb(title)
+            tmdb_res = await asyncio.to_thread(search_movies_tmdb, title)
             if tmdb_res:
                 m = tmdb_res[0] # Take first match
                 if m['id'] not in seen_ids:
@@ -250,7 +251,7 @@ async def get_semantic_search_results(query: str, n: int = 15) -> list:
         
         # 2. Add keyword-based matches if we don't have enough
         if len(results) < n:
-            keyword_res = search_movies_tmdb(query)
+            keyword_res = await asyncio.to_thread(search_movies_tmdb, query)
             for m in keyword_res:
                 if m['id'] not in seen_ids:
                     results.append(m)
@@ -262,7 +263,7 @@ async def get_semantic_search_results(query: str, n: int = 15) -> list:
     
     if _bert_model is None or _bert_embeddings is None or _movies_df is None:
         print("RECOMMANDER: BERT data not ready, falling back to TMDB Search")
-        return search_movies_tmdb(query)
+        return await asyncio.to_thread(search_movies_tmdb, query)
 
     try:
         # Encode user query into a vector
@@ -292,7 +293,7 @@ async def get_semantic_search_results(query: str, n: int = 15) -> list:
                 })
         
         # Hybrid Merge: Prioritize TMDB if score is low, or merge them
-        tmdb_results = search_movies_tmdb(query)
+        tmdb_results = await asyncio.to_thread(search_movies_tmdb, query)
         final_results = []
         seen_ids = set()
 
@@ -312,4 +313,4 @@ async def get_semantic_search_results(query: str, n: int = 15) -> list:
         
     except Exception as e:
         print(f"ERROR in BERT Search: {e}")
-        return search_movies_tmdb(query)
+        return await asyncio.to_thread(search_movies_tmdb, query)
