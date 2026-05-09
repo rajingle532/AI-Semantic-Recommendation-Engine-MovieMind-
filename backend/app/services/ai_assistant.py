@@ -178,7 +178,7 @@ def search_nearby_theaters(location: str, movie_name: str = None):
                 "gl": "in"
             }
 
-            response = requests.get("https://serpapi.com/search", params=params, timeout=10)
+            response = requests.get("https://serpapi.com/search", params=params, timeout=3.0)
             data = response.json()
             
             theaters = data.get("local_results", [])

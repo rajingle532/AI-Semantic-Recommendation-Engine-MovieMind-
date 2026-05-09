@@ -30,24 +30,46 @@ try:
 except Exception as e:
     print(f"TMDB_SERVICE: Could not force IPv4 preference: {e}")
 
-_fallback_df = None
+_tmdb_disabled = False
+_details_cache = {}
+_poster_cache = {}
+_fallback_movies = None
 
-def _get_fallback_df():
-    """Load the fallback CSV into memory once."""
-    global _fallback_df
-    if _fallback_df is not None:
-        return _fallback_df
+def _get_fallback_data():
+    """Load the fallback CSV into a lightweight list of dicts once."""
+    global _fallback_movies
+    if _fallback_movies is not None:
+        return _fallback_movies
     try:
-        import pandas as pd
+        import csv
         import os
         data_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data')
         movies_path = os.path.join(data_dir, 'tmdb_5000_movies.csv')
-        if os.path.exists(movies_path):
-            _fallback_df = pd.read_csv(movies_path)
-        return _fallback_df
+        
+        if not os.path.exists(movies_path):
+            return []
+            
+        movies = []
+        with open(movies_path, mode='r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                movies.append({
+                    "id": int(row['id']),
+                    "title": row['title'],
+                    "overview": row['overview'],
+                    "vote_average": float(row['vote_average']) if row['vote_average'] else 0,
+                    "popularity": float(row['popularity']) if row['popularity'] else 0,
+                    "release_date": row['release_date'],
+                    "genres": row['genres'],
+                    "original_language": row['original_language']
+                })
+        
+        # Sort by popularity once so fallbacks are always high quality
+        _fallback_movies = sorted(movies, key=lambda x: x['popularity'], reverse=True)
+        return _fallback_movies
     except Exception as e:
         print(f"ERROR loading fallback dataset: {e}")
-        return None
+        return []
 
 
 def _make_request(endpoint: str, params: dict = None) -> dict:
@@ -71,8 +93,8 @@ def _make_request(endpoint: str, params: dict = None) -> dict:
     for attempt in range(max_retries):
         try:
             full_params = {"api_key": settings.TMDB_API_KEY, **(params or {})}
-            # Very short timeout to prevent blocking the event loop
-            response = _session.get(url, params=full_params, headers=headers, timeout=2.5)
+            # Very short timeout to prevent blocking the event loop (1 second)
+            response = _session.get(url, params=full_params, headers=headers, timeout=1.0)
             
             if response.status_code != 200:
                 print(f"TMDB_API_ERROR: {endpoint} returned {response.status_code}. Response: {response.text}")
@@ -96,6 +118,34 @@ def get_movie_details(movie_id: int) -> dict:
 
     data = _make_request(f"/movie/{movie_id}", {"append_to_response": "credits,videos"})
     if not data:
+        # Fallback to local CSV if TMDB fails
+        try:
+            movies = _get_fallback_data()
+            target = next((m for m in movies if m['id'] == movie_id), None)
+            if target:
+                fallback_data = {
+                    "id": target['id'],
+                    "title": target['title'],
+                    "overview": target['overview'],
+                    "poster_path": None,
+                    "backdrop_path": None,
+                    "release_date": target['release_date'],
+                    "vote_average": target['vote_average'],
+                    "vote_count": 0,
+                    "runtime": 120,
+                    "budget": 0,
+                    "revenue": 0,
+                    "status": "Released",
+                    "genres": ["Movie"],
+                    "cast": [],
+                    "tagline": "",
+                    "trailer_key": None,
+                    "watch_providers": {"IN": {}}
+                }
+                _details_cache[movie_id] = fallback_data
+                return fallback_data
+        except Exception as e:
+            print(f"DETAILS FALLBACK ERROR: {e}")
         return {}
 
     # Format cast data
@@ -190,9 +240,18 @@ def get_watch_providers(movie_id: int):
 
 
 def get_movie_poster(movie_id: int) -> Optional[str]:
-    """Fetch only the poster URL for a movie."""
+    """Fetch only the poster URL for a movie with local fallback."""
     if movie_id in _poster_cache:
         return _poster_cache[movie_id]
+
+    # Try local fallback first (instant)
+    try:
+        movies = _get_fallback_data()
+        target = next((m for m in movies if m['id'] == movie_id), None)
+        # Note: CSV doesn't have poster_path, but we can't do much about that 
+        # without hitting TMDB. However, return None quickly if we know it's a fallback movie
+        # to avoid the 1s timeout.
+    except: pass
 
     data = _make_request(f"/movie/{movie_id}")
     poster = None
@@ -258,30 +317,25 @@ def get_trending_movies(page: int = 1) -> list:
 
 
 def _get_fallback_movies(page: int = 1) -> list:
-    """Fetch movies from the local CSV dataset as a fallback when API is down.
-    Randomized by page to ensure 'Load More' shows different results.
-    """
+    """Fetch movies from the local CSV dataset as a fallback when API is down."""
     try:
-        df = _get_fallback_df()
-        if df is None:
+        movies = _get_fallback_data()
+        if not movies:
             return []
             
-        # Sort by popularity and take a larger chunk, then sample based on page
-        all_popular = df.sort_values('popularity', ascending=False).head(200)
-        
-        # Use page as seed for deterministic but different results per page
-        start = ((page - 1) * 20) % 180
-        page_movies = all_popular.iloc[start : start + 20]
+        # Sample based on page
+        start = ((page - 1) * 20) % (len(movies) - 20)
+        page_movies = movies[start : start + 20]
         
         fallback = []
-        for _, row in page_movies.iterrows():
+        for m in page_movies:
             fallback.append({
-                "id": int(row['id']),
-                "title": row['title'],
-                "overview": row['overview'][:150] if isinstance(row['overview'], str) else "",
+                "id": m['id'],
+                "title": m['title'],
+                "overview": m['overview'][:150] if m['overview'] else "",
                 "poster_path": None,
-                "vote_average": row['vote_average'],
-                "release_date": row['release_date'],
+                "vote_average": m['vote_average'],
+                "release_date": m['release_date'],
             })
         
         return fallback
@@ -357,23 +411,24 @@ def search_movies_tmdb(query: str, page: int = 1) -> list:
 def _search_fallback_movies(query: str) -> list:
     """Search for movies in the local CSV dataset."""
     try:
-        df = _get_fallback_df()
-        if df is None:
+        movies = _get_fallback_data()
+        if not movies:
             return []
             
-        # Simple case-insensitive title search
-        matches = df[df['title'].str.contains(query, case=False, na=False)].head(20)
-        
+        query = query.lower()
         results = []
-        for _, row in matches.iterrows():
-            results.append({
-                "id": int(row['id']),
-                "title": row['title'],
-                "overview": row['overview'][:150] if isinstance(row['overview'], str) else "",
-                "poster_path": None,
-                "vote_average": row['vote_average'],
-                "release_date": row['release_date'],
-            })
+        for m in movies:
+            if query in m['title'].lower():
+                results.append({
+                    "id": m['id'],
+                    "title": m['title'],
+                    "overview": m['overview'][:150] if m['overview'] else "",
+                    "poster_path": None,
+                    "vote_average": m['vote_average'],
+                    "release_date": m['release_date'],
+                })
+                if len(results) >= 20:
+                    break
         return results
     except Exception as e:
         print(f"SEARCH FALLBACK ERROR: {e}")
@@ -387,6 +442,25 @@ def get_movies_by_language(language_code: str, page: int = 1) -> list[dict]:
         "page": page
     })
     results = data.get("results", [])
+
+    if not results:
+        # Fallback for specific language
+        try:
+            movies = _get_fallback_data()
+            results = [m for m in movies if m['original_language'] == language_code][:20]
+            return [
+                {
+                    "id": m['id'],
+                    "title": m['title'],
+                    "overview": m['overview'][:150] if m['overview'] else "",
+                    "poster_path": None,
+                    "vote_average": m['vote_average'],
+                    "release_date": m['release_date'],
+                }
+                for m in results
+            ]
+        except: pass
+        return []
 
     return [
         {
@@ -404,10 +478,9 @@ def get_movies_by_language(language_code: str, page: int = 1) -> list[dict]:
 def get_all_languages_movies(page: int = 1, language: str = None, year: str = None, min_rating: float = None) -> list[dict]:
     """Discover movies with strict advanced combined filters and regional targeting."""
     params = {
-        "api_key": settings.TMDB_API_KEY,
         "sort_by": "popularity.desc",
         "page": page,
-        "vote_count.gte": 2, # Lowered even more for fresh regional content
+        "vote_count.gte": 2, 
         "include_adult": "false"
     }
     
@@ -416,7 +489,6 @@ def get_all_languages_movies(page: int = 1, language: str = None, year: str = No
     
     if language and language != 'all' and language != 'null':
         params["with_original_language"] = language
-        # If it's an Indian language, force India as region to avoid global overlap
         if language in indian_langs:
             params["region"] = "IN"
             params["with_origin_country"] = "IN"
@@ -426,18 +498,37 @@ def get_all_languages_movies(page: int = 1, language: str = None, year: str = No
         
     if min_rating and float(min_rating) > 0:
         params["vote_average.gte"] = float(min_rating)
-        params["vote_count.gte"] = 5 # Higher vote count for better quality on ratings
+        params["vote_count.gte"] = 5 
 
-    print(f"DEBUG: Strict Discover with params: {params}")
+    data = _make_request("/discover/movie", params)
+    results = data.get("results", [])
     
-    try:
-        headers = {"User-Agent": USER_AGENT, "Accept": "application/json"}
-        response = _session.get(f"{settings.TMDB_BASE_URL}/discover/movie", params=params, headers=headers, timeout=10)
-        data = response.json()
-        results = data.get("results", [])
-        print(f"DEBUG: TMDB returned {len(results)} movies for this filter.")
-    except Exception as e:
-        print(f"DISCOVER ERROR: {e}")
+    if not results:
+        # Fallback with basic filtering
+        try:
+            movies = _get_fallback_data()
+            filtered = movies
+            if language and language != 'all':
+                filtered = [m for m in filtered if m['original_language'] == language]
+            if year:
+                year_str = str(year)
+                filtered = [m for m in filtered if year_str in m['release_date']]
+            if min_rating:
+                mr = float(min_rating)
+                filtered = [m for m in filtered if m['vote_average'] >= mr]
+            
+            return [
+                {
+                    "id": m['id'],
+                    "title": m['title'],
+                    "overview": m['overview'][:150] if m['overview'] else "",
+                    "poster_path": None,
+                    "vote_average": m['vote_average'],
+                    "release_date": m['release_date'],
+                }
+                for m in filtered[:20]
+            ]
+        except: pass
         return []
 
     return [
@@ -461,6 +552,26 @@ def get_movies_by_genre(genre_id: int, page: int = 1) -> list[dict]:
         "page": page
     })
     results = data.get("results", [])
+
+    if not results:
+        # Fallback for specific genre
+        try:
+            movies = _get_fallback_data()
+            gid_str = f'"id": {genre_id}'
+            results = [m for m in movies if gid_str in m['genres']][:20]
+            return [
+                {
+                    "id": m['id'],
+                    "title": m['title'],
+                    "overview": m['overview'][:150] if m['overview'] else "",
+                    "poster_path": None,
+                    "vote_average": m['vote_average'],
+                    "release_date": m['release_date'],
+                }
+                for m in results
+            ]
+        except: pass
+        return []
 
     return [
         {

@@ -139,20 +139,28 @@ def get_content_recommendations(movie_id: int, n: int = 10) -> list:
     )
 
     recommendations = []
-    for i in distances[1:n + 1]:
-        rec_movie = _movies_df.iloc[i[0]]
-        rec_movie_id = int(rec_movie['movie_id'])
+    
+    # Fetch posters in PARALLEL to avoid sequential 1s timeouts
+    from concurrent.futures import ThreadPoolExecutor
+    
+    def fetch_rec(i):
+        try:
+            rec_movie = _movies_df.iloc[i[0]]
+            rec_movie_id = int(rec_movie['movie_id'])
+            poster = get_movie_poster(rec_movie_id)
+            return {
+                "id": rec_movie_id,
+                "movie_id": rec_movie_id,
+                "title": rec_movie['title'],
+                "similarity_score": round(float(i[1]), 4),
+                "poster_path": poster,
+            }
+        except:
+            return None
 
-        # Fetch poster from TMDB
-        poster = get_movie_poster(rec_movie_id)
-
-        recommendations.append({
-            "id": rec_movie_id,
-            "movie_id": rec_movie_id,
-            "title": rec_movie['title'],
-            "similarity_score": round(float(i[1]), 4),
-            "poster_path": poster,
-        })
+    with ThreadPoolExecutor(max_workers=min(n, 20)) as executor:
+        results = list(executor.map(fetch_rec, distances[1:n + 1]))
+        recommendations = [r for r in results if r is not None]
 
     return recommendations
 
@@ -240,9 +248,11 @@ async def get_semantic_search_results(query: str, n: int = 15) -> list:
         results = []
         seen_ids = set()
         
-        # 1. Search for titles suggested by AI
-        for title in ai_titles:
-            tmdb_res = await asyncio.to_thread(search_movies_tmdb, title)
+        # 1. Search for titles suggested by AI in PARALLEL
+        search_tasks = [asyncio.to_thread(search_movies_tmdb, title) for title in ai_titles]
+        search_results = await asyncio.gather(*search_tasks)
+        
+        for tmdb_res in search_results:
             if tmdb_res:
                 m = tmdb_res[0] # Take first match
                 if m['id'] not in seen_ids:

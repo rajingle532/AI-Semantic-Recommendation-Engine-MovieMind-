@@ -98,6 +98,9 @@ const HomePage: React.FC = () => {
     setHeroMovie(movie);
     try {
       const { data: details } = await api.get(`/movies/${movie.id}`);
+      if (details.error) {
+        throw new Error(details.error);
+      }
       setHeroMovie(details);
       setHeroVideo(details.trailer_key || null);
     } catch (err) {
