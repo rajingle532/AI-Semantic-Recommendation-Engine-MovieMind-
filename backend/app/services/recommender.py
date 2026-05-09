@@ -12,6 +12,10 @@ from app.services import ai_assistant
 from app.database import get_collection
 from sklearn.metrics.pairwise import cosine_similarity
 import asyncio
+import re
+
+HINDI_FILLERS = ["batao", "sanga", "dikhao", "dakhva", "ka", "ki", "ke", "hai", "hain", "ko", "se", "mein", "me", "kaisa", "kaisi", "kaun", "kab", "story", "kya"]
+ENGLISH_FILLERS = ["tell", "me", "about", "the", "movie", "film", "show", "give", "suggest", "recommend", "info", "details", "story", "plot"]
 
 try:
     from sentence_transformers import SentenceTransformer
@@ -236,91 +240,83 @@ def get_hybrid_recommendations(user_id: str, n: int = 10) -> list:
 async def get_semantic_search_results(query: str, n: int = 15) -> list:
     """
     Find movies based on natural language description.
-    Uses BERT embeddings for true semantic matching.
+    Uses Gemini-powered intent extraction followed by TMDB search.
     """
-    global _bert_model, _bert_embeddings, _movies_df
-    
-    # Fallback to Gemini-powered TMDB Search if ML libs are missing (Render optimized)
-    if not HAS_ML_LIBS:
-        print("RECOMMANDER: BERT disabled, using Gemini-TMDB Hybrid Search")
-        ai_titles = await ai_assistant.get_movie_suggestions_by_vibe(query)
-        
-        results = []
-        seen_ids = set()
-        
-        # 1. Search for titles suggested by AI in PARALLEL
-        search_tasks = [asyncio.to_thread(search_movies_tmdb, title) for title in ai_titles]
-        search_results = await asyncio.gather(*search_tasks)
-        
-        for tmdb_res in search_results:
-            if tmdb_res:
-                m = tmdb_res[0] # Take first match
-                if m['id'] not in seen_ids:
-                    results.append(m)
-                    seen_ids.add(m['id'])
-        
-        # 2. Add keyword-based matches if we don't have enough
-        if len(results) < n:
-            keyword_res = await asyncio.to_thread(search_movies_tmdb, query)
-            for m in keyword_res:
-                if m['id'] not in seen_ids:
-                    results.append(m)
-                    seen_ids.add(m['id'])
-                    
-        return results[:n]
-        
-    _load_bert_model() # Ensure model and embeddings are loaded (lazy)
-    
-    if _bert_model is None or _bert_embeddings is None or _movies_df is None:
-        print("RECOMMANDER: BERT data not ready, falling back to TMDB Search")
-        return await asyncio.to_thread(search_movies_tmdb, query)
-
     try:
+        # Fallback to Gemini-powered TMDB Search if ML libs are missing (Render optimized)
+        if not HAS_ML_LIBS:
+            print("RECOMMANDER: Using Gemini-TMDB Hybrid Search")
+            
+            # Try to extract a specific movie title first
+            extracted_title = await ai_assistant.identify_movie_from_query(query)
+            
+            ai_titles = await ai_assistant.get_movie_suggestions_by_vibe(query)
+            
+            if not isinstance(ai_titles, list):
+                ai_titles = []
+            
+            # Prioritize extracted title
+            if extracted_title and extracted_title not in ai_titles:
+                ai_titles.insert(0, extracted_title)
+                
+            results = []
+            seen_ids = set()
+            
+            # 1. Search for titles suggested by AI in PARALLEL
+            if ai_titles:
+                search_tasks = [asyncio.to_thread(search_movies_tmdb, title) for title in ai_titles]
+                search_results = await asyncio.gather(*search_tasks, return_exceptions=True)
+                
+                for tmdb_res in search_results:
+                    if isinstance(tmdb_res, list) and tmdb_res:
+                        m = tmdb_res[0] # Take first match
+                        if m['id'] not in seen_ids:
+                            results.append(m)
+                            seen_ids.add(m['id'])
+            
+            # 2. Add keyword-based matches if we don't have enough
+            if len(results) < n:
+                # Try cleaning the query first
+                clean_q = query.lower()
+                for f in HINDI_FILLERS + ENGLISH_FILLERS:
+                    clean_q = re.sub(rf'\b{f}\b', '', clean_q)
+                clean_q = re.sub(r'\s+', ' ', clean_q).strip()
+                
+                keyword_res = await asyncio.to_thread(search_movies_tmdb, clean_q if clean_q else query)
+                for m in keyword_res:
+                    if m['id'] not in seen_ids:
+                        results.append(m)
+                        seen_ids.add(m['id'])
+                        
+            return results[:n]
+            
+        _load_bert_model() # Ensure model and embeddings are loaded (lazy)
+        
+        if _bert_model is None or _bert_embeddings is None or _movies_df is None:
+            return await asyncio.to_thread(search_movies_tmdb, query)
+
         # Encode user query into a vector
         query_vec = _bert_model.encode([query])
         
-        # Calculate cosine similarity against all movies
-        sim_scores = cosine_similarity(query_vec, _bert_embeddings)[0]
+        # Calculate similarity with all movie embeddings
+        similarities = cosine_similarity(query_vec, _bert_embeddings).flatten()
         
-        # Get top-N highest score indices
-        top_indices = sim_scores.argsort()[-n:][::-1]
+        # Get top N indices
+        top_indices = similarities.argsort()[-n:][::-1]
         
-        semantic_results = []
+        recommendations = []
         for idx in top_indices:
-            movie = _movies_df.iloc[idx]
-            score = float(sim_scores[idx])
+            movie_row = _movies_df.iloc[idx]
+            recommendations.append({
+                "id": int(movie_row['id']),
+                "title": movie_row['title'],
+                "poster_path": get_movie_poster(movie_row['title']),
+                "vote_average": float(movie_row['vote_average']) if 'vote_average' in movie_row else 0.0,
+                "release_date": str(movie_row['release_date']) if 'release_date' in movie_row else ""
+            })
             
-            # Threshold to avoid random results for irrelevant queries
-            if score > 0.15: 
-                movie_id = int(movie['movie_id'])
-                semantic_results.append({
-                    "id": movie_id,
-                    "movie_id": movie_id,
-                    "title": movie['title'],
-                    "poster_path": get_movie_poster(movie_id),
-                    "relevance_score": round(score, 4),
-                    "source": "semantic"
-                })
-        
-        # Hybrid Merge: Prioritize TMDB if score is low, or merge them
-        tmdb_results = await asyncio.to_thread(search_movies_tmdb, query)
-        final_results = []
-        seen_ids = set()
-
-        # Add TMDB results first (likely a direct title/song match)
-        for m in tmdb_results:
-            if m['id'] not in seen_ids:
-                final_results.append(m)
-                seen_ids.add(m['id'])
-
-        # Add Semantic results if not already present
-        for m in semantic_results:
-            if m['id'] not in seen_ids:
-                final_results.append(m)
-                seen_ids.add(m['id'])
-                
-        return final_results[:n]
-        
+        return recommendations
     except Exception as e:
-        print(f"ERROR in BERT Search: {e}")
+        print(f"SEMANTIC_SEARCH_ERROR: {e}")
+        # Final fallback to simple TMDB search
         return await asyncio.to_thread(search_movies_tmdb, query)

@@ -8,8 +8,8 @@ import asyncio
 import requests
 import json
 
-# Model configuration — use gemini-2.5-flash (has free tier quota)
-GEMINI_MODEL = "gemini-2.5-flash"
+# Model configuration — use gemini-1.5-flash (stable free tier)
+GEMINI_MODEL = "gemini-1.5-flash"
 GEMINI_TIMEOUT = 15  # seconds — prevent server hangs
 
 def get_gemini_client():
@@ -149,22 +149,6 @@ def _fallback_movie_info(movie_data: dict, query: str = "") -> str:
     response += "_Note: Detailed AI analysis is currently limited due to high traffic, but I've fetched the core facts for you!_"
     
     return response
-    revenue = movie_data.get('revenue', 0)
-    
-    response = f"🎬 **{title}**\n\n"
-    response += f"📅 Release: {release}\n"
-    response += f"⭐ Rating: {rating}/10\n"
-    if runtime and runtime != 'N/A':
-        response += f"⏱️ Runtime: {runtime} min\n"
-    response += f"🎭 Genres: {genres}\n"
-    response += f"🌟 Cast: {cast_names}\n"
-    if budget and budget > 0:
-        response += f"💰 Budget: ${budget:,}\n"
-    if revenue and revenue > 0:
-        response += f"📊 Revenue: ${revenue:,}\n"
-    response += f"\n📖 {overview[:300]}{'...' if len(overview) > 300 else ''}"
-    
-    return response
 
 
 def search_nearby_theaters(location: str, movie_name: str = None):
@@ -233,11 +217,14 @@ async def get_movie_suggestions_by_vibe(query: str) -> list:
     if not client:
         return []
 
-    prompt = f"""The user is looking for movies with this vibe: "{query}"
-Suggest 5-8 real movie titles that match this description perfectly.
-Include both Bollywood and Hollywood movies if relevant.
-Return ONLY the titles as a comma-separated list. No numbering, no intros, no descriptions.
-Example: Inception, Interstellar, The Matrix, Shutter Island"""
+    prompt = f"""The user query is: "{query}"
+Goal: Identify if the user is asking about specific movies or describing a "vibe".
+- If they mention a specific movie (even with typos), return that movie title as the first item.
+- Suggest 5-8 real movie titles in total that match the query or vibe.
+- Include both Bollywood and Hollywood movies.
+- Return ONLY the titles as a comma-separated list. No numbering, no intros, no descriptions.
+Example 1: "tell me about pushpa 2" -> Pushpa 2, Pushpa: The Rise, KGF: Chapter 1, Waltair Veerayya
+Example 2: "something like inception" -> Inception, Interstellar, Tenet, Memento, Shutter Island"""
 
     try:
         response = await asyncio.wait_for(
