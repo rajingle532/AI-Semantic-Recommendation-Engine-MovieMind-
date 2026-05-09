@@ -74,7 +74,7 @@ def reload_models():
 
 
 def _load_bert_model():
-    """Load BERT model and embeddings (lazy loading)."""
+    """Load Multilingual BERT model and embeddings (lazy loading)."""
     global _bert_model, _bert_embeddings, _movies_df
 
     if not HAS_ML_LIBS:
@@ -86,30 +86,31 @@ def _load_bert_model():
 
     _load_models() # Ensure movies_df is loaded
 
-    embeddings_path = os.path.join(MODELS_DIR, 'bert_embeddings.pkl')
+    # Use a multilingual model to support Hindi, Marathi, etc.
+    model_name = 'paraphrase-multilingual-MiniLM-L12-v2'
+    embeddings_path = os.path.join(MODELS_DIR, f'bert_embeddings_{model_name.replace("-", "_")}.pkl')
     
     try:
-        print("Loading SentenceTransformer (LITE MODE)...")
-        # Use a very small model and ensure it doesn't use too much RAM
-        _bert_model = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
-        _bert_model.max_seq_length = 128 # Reduce context window to save RAM
+        print(f"Loading Multilingual SentenceTransformer ({model_name})...")
+        _bert_model = SentenceTransformer(model_name, device='cpu')
+        _bert_model.max_seq_length = 128
         
         if os.path.exists(embeddings_path):
             with open(embeddings_path, 'rb') as f:
                 _bert_embeddings = pickle.load(f)
-            print("Loaded pre-computed BERT embeddings")
+            print("Loaded pre-computed Multilingual BERT embeddings")
         else:
-            print("Generating BERT embeddings (first time)...")
-            # Generate embeddings for all movies in DF
-            overviews = _movies_df['tags'].tolist() # Using 'tags' which has overview + keywords
-            _bert_embeddings = _bert_model.encode(overviews, show_progress_bar=True)
-            
-            with open(embeddings_path, 'wb') as f:
-                pickle.dump(_bert_embeddings, f)
-            print("Saved BERT embeddings")
+            print(f"Generating Multilingual embeddings (first time) for {_movies_df.shape[0] if _movies_df is not None else 0} movies...")
+            if _movies_df is not None:
+                overviews = _movies_df['tags'].tolist()
+                _bert_embeddings = _bert_model.encode(overviews, show_progress_bar=True, batch_size=32)
+                
+                with open(embeddings_path, 'wb') as f:
+                    pickle.dump(_bert_embeddings, f)
+                print("Saved Multilingual BERT embeddings")
             
     except Exception as e:
-        print(f"ERROR loading BERT model: {str(e)}")
+        print(f"ERROR loading Multilingual BERT model: {str(e)}")
 
 
 def get_content_recommendations(movie_id: int, n: int = 10) -> list:
@@ -250,7 +251,7 @@ def get_semantic_search_results(query: str, n: int = 15) -> list:
         # Get top-N highest score indices
         top_indices = sim_scores.argsort()[-n:][::-1]
         
-        results = []
+        semantic_results = []
         for idx in top_indices:
             movie = _movies_df.iloc[idx]
             score = float(sim_scores[idx])
@@ -258,18 +259,33 @@ def get_semantic_search_results(query: str, n: int = 15) -> list:
             # Threshold to avoid random results for irrelevant queries
             if score > 0.15: 
                 movie_id = int(movie['movie_id'])
-                results.append({
+                semantic_results.append({
                     "id": movie_id,
                     "movie_id": movie_id,
                     "title": movie['title'],
                     "poster_path": get_movie_poster(movie_id),
                     "relevance_score": round(score, 4),
+                    "source": "semantic"
                 })
         
-        if not results:
-            return search_movies_tmdb(query)
-            
-        return results
+        # Hybrid Merge: Prioritize TMDB if score is low, or merge them
+        tmdb_results = search_movies_tmdb(query)
+        final_results = []
+        seen_ids = set()
+
+        # Add TMDB results first (likely a direct title/song match)
+        for m in tmdb_results:
+            if m['id'] not in seen_ids:
+                final_results.append(m)
+                seen_ids.add(m['id'])
+
+        # Add Semantic results if not already present
+        for m in semantic_results:
+            if m['id'] not in seen_ids:
+                final_results.append(m)
+                seen_ids.add(m['id'])
+                
+        return final_results[:n]
         
     except Exception as e:
         print(f"ERROR in BERT Search: {e}")

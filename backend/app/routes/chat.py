@@ -23,37 +23,55 @@ QUICK_PROMPTS = [
 @router.post("/")
 async def chat_response(payload: Dict[str, Any]):
     """
-    Enhanced Chat API with context awareness.
-    Input: { message: str, history: List[Dict] }
+    Enhanced Chat API with context awareness and Multilingual support.
     """
     message = payload.get("message", "").lower()
     history = payload.get("history", [])
     
-    # 1. Simple Intent Detection
-    is_greeting = any(word in message for word in ["hi", "hello", "hey", "hola", "greetings"])
+    # 1. Language Detection (Basic)
+    is_hindi = any(word in message for word in ["kaun", "hai", "dikhao", "batao", "acha", "film", "movie dikhao"])
+    is_marathi = any(word in message for word in ["konta", "aahe", "dakhva", "sang", "changla", "pahije"])
+    is_greeting = any(word in message for word in ["hi", "hello", "hey", "hola", "namaste", "namaskar"])
     
+    # 2. Greeting Handling
     if is_greeting and not history:
+        if is_marathi:
+            resp = "Namaskar! Me tumcha MovieMind AI aahe. Tumhala konta movie pahije?"
+        elif is_hindi:
+            resp = "Namaste! Main aapka MovieMind AI hoon. Aap kaunsi movie dekhna chahenge?"
+        else:
+            resp = random.choice(GREETINGS)
+            
         return {
-            "response": random.choice(GREETINGS),
+            "response": resp,
             "movies": [],
             "suggestions": QUICK_PROMPTS,
             "intent": "greeting"
         }
 
-    # 2. Get Semantic Results
-    # We pass the message to our BERT model
+    # 3. Get Hybrid Results (Multilingual BERT + TMDB)
     movies = get_semantic_search_results(message, n=5)
     
-    # 3. Build Dynamic Response
+    # 4. Build Dynamic Response
     if len(movies) > 0:
         top_movie = movies[0]
-        ai_response = f"Based on your interest in '{message}', I think you'd really enjoy **{top_movie['title']}**. It matches the vibe you're looking for!"
+        if is_marathi:
+            ai_response = f"Tumchya '{message}' pasanti nusar, mala watte tumhala **{top_movie['title']}** nakki awadel!"
+        elif is_hindi:
+            ai_response = f"Aapki '{message}' ki pasand ke hisab se, mujhe lagta hai aapko **{top_movie['title']}** bahut pasand aayegi!"
+        else:
+            ai_response = f"Based on your interest in '{message}', I think you'd really enjoy **{top_movie['title']}**. It's a perfect match for that vibe!"
         
-        # Add reasoning to each movie
         for m in movies:
-            m["reason"] = f"Matches your interest in {message}"
+            m["reason"] = "Matches your interest" if not is_hindi else "Aapki pasand ke mutabik"
     else:
-        ai_response = "I couldn't find an exact match for that specific request, but these trending titles are currently making waves:"
+        if is_marathi:
+            ai_response = "Mala tya baddal mahiti milali nahi, pan he trending movies tumhi pahu sakta:"
+        elif is_hindi:
+            ai_response = "Mujhe uske baare mein exact results nahi mile, lekin ye trending movies aapko pasand aa sakti hain:"
+        else:
+            ai_response = "I couldn't find an exact match, but these trending titles are currently making waves:"
+        
         movies = tmdb.get_trending_movies()[:5]
         for m in movies:
             m["reason"] = "Trending choice"
@@ -61,6 +79,6 @@ async def chat_response(payload: Dict[str, Any]):
     return {
         "response": ai_response,
         "movies": movies,
-        "suggestions": ["Tell me more", "Something different?", "Show me trailers"],
+        "suggestions": ["Show more", "Kuch aur dikhao", "Video trailers"],
         "intent": "recommendation"
     }
