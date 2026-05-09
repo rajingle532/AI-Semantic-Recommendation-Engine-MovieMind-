@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, X, Send, Sparkles, Movie as MovieIcon } from 'lucide-react';
+import { MessageSquare, X, Send, Sparkles, Film as MovieIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { Movie } from '../types';
