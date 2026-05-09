@@ -169,27 +169,18 @@ def detect_intent(query: str) -> str:
         if has_genre_indicator and not has_specific_title:
             return "genre"
     
-    # Movie-specific question indicators
+    # Movie-specific question indicators (Very broad to catch everything)
     movie_question_triggers = [
-        "tell me about", "what is", "about the movie", "about movie",
-        "ke baare mein", "kaisi hai", "kaisi movie", "kab aayi", "kab bani",
-        "kab release", "kitna kamaya", "kisne direct", "kisne banai", "kisne banayi",
-        "who directed", "who acted", "who is the hero", "who is the heroine",
-        "who are the actors", "cast of", "budget of", "revenue of", "plot of",
-        "story of", "rating of", "review of", "when was", "how much did",
-        "what happens", "ending of", "sequel of", "remake of",
-        "kaun hai", "hero kaun", "heroine kaun", "director kaun",
-        "details of", "information about", "know about",
-        "actor", "cast", "hero", "heroine", "star", "budget", "paisa", 
-        "kamaya", "revenue", "box office", "release", "kab aayi", 
-        "director", "producer", "role", "plot", "story", "kahani",
-        "batao", "dikhao", "dakhva", "sanga", "baddal", "kadhi", "zhali"
+        "tell me", "what is", "about", "movie", "film", "kya", "kaun", "kab", "kaisa", "kaisi",
+        "story", "plot", "cast", "hero", "heroine", "director", "rating", "review", "paisa", "kamaya",
+        "sanga", "batao", "dikhao", "dakhva", "bhari", "acha", "achhi", "suggest", "recommend",
+        "who", "when", "how", "where", "can you", "please", "help"
     ]
     if any(t in q for t in movie_question_triggers):
-        return "movie_question"
+        return "movie_chat"
     
-    # General question (might still be about a specific movie)
-    return "general_question"
+    # Default to movie_chat if it's not a greeting or theater, to ensure we always try to answer
+    return "movie_chat"
 
 
 def detect_language(query: str) -> str:
@@ -280,189 +271,48 @@ async def chat_response(payload: Dict[str, Any]):
         }
 
     # ─────────────────────────────────────
-    # 3. MOVIE-SPECIFIC QUESTION (THE MAIN BRAIN)
+    # 3. MOVIE CHAT (THE MAIN BRAIN) - Catch everything related to movies
     # ─────────────────────────────────────
-    if intent == "movie_question" or intent == "general_question":
-        # Step 1: Extract movie title (regex first, then Gemini AI)
+    if intent == "movie_chat" or intent == "genre":
+        # Try to extract a specific movie title
         title = extract_movie_title(raw_lower)
-        
         if not title:
-            # Use Gemini to intelligently extract movie name from any query
             title = await ai_assistant.identify_movie_from_query(raw_message)
         
-        if not title:
-            # Last resort: clean the query and use it as search term
-            title = clean_query(raw_lower)
+        movies = []
+        details = None
         
-        print(f"CHAT: Extracted title = '{title}'")
-        
-        if title and len(title) >= 2:
-            # Search TMDB for the movie
+        if title:
             movies = await asyncio.to_thread(tmdb.search_movies_tmdb, title)
-            
             if not movies:
-                # If direct search failed, try semantic search on the title
-                # This helps find movies with slightly different spelling in local DB
                 movies = await get_semantic_search_results(title, n=1)
             
             if movies:
-                # Found the movie — get full details
-                target = movies[0]
-                details = await asyncio.to_thread(tmdb.get_movie_details, target['id'])
-                
-                # Send to Gemini for intelligent answer
-                ai_response = await ai_assistant.smart_movie_answer(
-                    raw_message, 
-                    details, 
-                    history
-                )
-                
-                return {
-                    "response": ai_response,
-                    "movies": movies[:5],
-                    "suggestions": _get_movie_suggestions(details, lang),
-                    "intent": "movie_info"
-                }
-            else:
-                # No specific movie found in TMDB or Local DB
-                # Try to let Gemini answer from general knowledge OR suggest related things
-                ai_response = await ai_assistant.smart_movie_answer(raw_message, None, history)
-                
-                # If Gemini gave a generic fallback, try to provide some value with semantic results
-                if "database" in ai_response or "taking a bit longer" in ai_response:
-                    related = await get_semantic_search_results(raw_message, n=5)
-                    if related:
-                        if lang == "hindi":
-                            ai_response = "Mujhe iss movie ke exact details nahi mile, par shayad aap inme se kuch dhundh rahe hain?"
-                        elif lang == "marathi":
-                            ai_response = "Ya movie baddal mahiti nahi milali, pan tumhala he awadu shaktat:"
-                        else:
-                            ai_response = "I couldn't find exact details, but you might be looking for one of these:"
-                        
-                        return {
-                            "response": ai_response,
-                            "movies": related,
-                            "suggestions": QUICK_PROMPTS,
-                            "intent": "recommendation_fallback"
-                        }
-
-                return {
-                    "response": ai_response,
-                    "movies": [],
-                    "suggestions": ["Try another movie", "Suggest similar movies", "Trending movies"],
-                    "intent": "movie_info_failed"
-                }
+                details = await asyncio.to_thread(tmdb.get_movie_details, movies[0]['id'])
         
-        # If we still have no title, it might be a follow-up question 
-        # Check if there's a movie context in conversation history
-        if history:
-            # Look for the last movie discussed
-            last_movie_title = None
-            for msg in reversed(history):
-                if msg.get('role') == 'assistant':
-                    content = msg.get('content', '')
-                    bold_match = re.search(r'\*\*(.*?)\*\*', content)
-                    if bold_match:
-                        last_movie_title = bold_match.group(1)
-                        break
-            
-            if last_movie_title:
-                print(f"CHAT: Follow-up detected. Context movie: '{last_movie_title}'")
-                movies = await asyncio.to_thread(tmdb.search_movies_tmdb, last_movie_title)
-                if movies:
-                    details = await asyncio.to_thread(tmdb.get_movie_details, movies[0]['id'])
-                    ai_response = await ai_assistant.smart_movie_answer(
-                        raw_message, details, history
-                    )
-                    return {
-                        "response": ai_response,
-                        "movies": movies[:3],
-                        "suggestions": _get_movie_suggestions(details, lang),
-                        "intent": "follow_up"
-                    }
-
-    # ─────────────────────────────────────
-    # 4. GENRE / MOOD-BASED RECOMMENDATION
-    # ─────────────────────────────────────
-    if intent == "genre":
-        detected_genre_id = None
-        for kw, gid in GENRE_KEYWORDS.items():
-            if kw in raw_lower:
-                detected_genre_id = gid
-                break
+        # If no specific title found, try vibe-based search
+        if not movies:
+            movies = await get_semantic_search_results(raw_message, n=5)
         
-        if detected_genre_id:
-            movies = await asyncio.to_thread(tmdb.get_movies_by_genre, detected_genre_id)
-            genre_name = [k for k, v in GENRE_KEYWORDS.items() if v == detected_genre_id][0].title()
-            
+        # Get AI response with whatever context we found
+        ai_response = await ai_assistant.smart_movie_answer(raw_message, details, history)
+        
+        # If AI failed but we have movies, make the response more natural
+        if ("database" in ai_response or "longer than usual" in ai_response) and movies:
+            top_title = movies[0].get('title', 'this movie')
             if lang == "hindi":
-                ai_response = f"🎬 Ye rahi top **{genre_name}** movies jo aapko zaroor pasand aayengi!"
+                ai_response = f"Mujhe {top_title} ke baare mein ye jaankari mili hai. Kya aap iske baare mein aur jaanna chahte hain?"
             elif lang == "marathi":
-                ai_response = f"🎬 He top **{genre_name}** movies tumhala nakki awadtil!"
+                ai_response = f"Mala {top_title} baddal hi mahiti milali aahe. Tumhala azun kai janun ghyaycha aahe ka?"
             else:
-                ai_response = f"🎬 Here are the top **{genre_name}** movies you'll love!"
-            
-            for m in movies[:10]:
-                m["reason"] = f"Top {genre_name}"
-            
-            return {
-                "response": ai_response,
-                "movies": movies[:10],
-                "suggestions": [f"More {genre_name}", "Mix genres", "Trending now", "Bollywood hits"],
-                "intent": "genre_discovery"
-            }
+                ai_response = f"I found some info about **{top_title}**. Would you like to know more about it or see similar movies?"
 
-    # ─────────────────────────────────────
-    # 5. GENERAL RECOMMENDATION (Catch-all)
-    # ─────────────────────────────────────
-    cleaned_msg = clean_query(raw_lower)
-    
-    # Try TMDB search first
-    movies = await asyncio.to_thread(tmdb.search_movies_tmdb, cleaned_msg) if cleaned_msg and len(cleaned_msg) >= 2 else []
-    
-    # If direct search fails, try AI-powered vibe search
-    if not movies:
-        movies = await get_semantic_search_results(raw_message, n=5)
-    
-    if movies:
-        top = movies[0]
-        if lang == "hindi":
-            ai_response = f"Aapki pasand ke hisab se, ye movies aapko pasand aa sakti hain! Top pick: **{top['title']}** ⭐"
-        elif lang == "marathi":
-            ai_response = f"Tumchya pasantinusar, he movies tumhala awadtil! Top pick: **{top['title']}** ⭐"
-        else:
-            ai_response = f"Based on your query, here are some great picks! Top recommendation: **{top['title']}** ⭐"
-        
-        for m in movies:
-            m["reason"] = "Matches your interest"
-        
         return {
             "response": ai_response,
             "movies": movies[:8],
-            "suggestions": ["Tell me more about the top pick", "Show more", "Different mood", "Trending"],
-            "intent": "recommendation"
+            "suggestions": _get_movie_suggestions(details, lang) if details else QUICK_PROMPTS,
+            "intent": "movie_chat"
         }
-    
-    # Absolute fallback — show trending
-    trending = await asyncio.to_thread(tmdb.get_trending_movies)
-    trending = trending[:5] if trending else []
-    
-    if lang == "hindi":
-        fallback_resp = "Abhi ye movies trending mein hain — zaroor dekho! 🔥"
-    elif lang == "marathi":
-        fallback_resp = "Saddhya he movies trending madhe aahet — nakki bagha! 🔥"
-    else:
-        fallback_resp = "Here's what's trending right now — check these out! 🔥"
-    
-    for m in trending:
-        m["reason"] = "Trending 🔥"
-    
-    return {
-        "response": fallback_resp,
-        "movies": trending,
-        "suggestions": QUICK_PROMPTS,
-        "intent": "trending_fallback"
-    }
 
 
 def _get_movie_suggestions(details: dict, lang: str) -> list:
