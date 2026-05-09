@@ -274,30 +274,19 @@ async def chat_response(payload: Dict[str, Any]):
         }
 
     # ─────────────────────────────────────
-    # 3. MOVIE CHAT (THE MAIN BRAIN) - Catch everything related to movies
+    # 3. MOVIE CHAT (PHASE 1: SEMANTIC-FIRST)
     # ─────────────────────────────────────
     if intent == "movie_chat" or intent == "genre":
-        # Try to extract a specific movie title
-        title = extract_movie_title(raw_lower)
-        if not title:
-            title = await ai_assistant.identify_movie_from_query(raw_message)
-        
-        movies = []
+        # We use semantic search to find the movie meaning directly.
+        # This handles typos (Raja chivaji) and complex vibe queries.
+        movies = await get_semantic_search_results(raw_message, n=5)
         details = None
         
-        if title:
-            movies = await asyncio.to_thread(tmdb.search_movies_tmdb, title)
-            if not movies:
-                movies = await get_semantic_search_results(title, n=1)
-            
-            if movies:
-                details = await asyncio.to_thread(tmdb.get_movie_details, movies[0]['id'])
+        if movies:
+            target = movies[0]
+            details = await asyncio.to_thread(tmdb.get_movie_details, target['id'])
         
-        # If no specific title found, try vibe-based search
-        if not movies:
-            movies = await get_semantic_search_results(raw_message, n=5)
-        
-        # Get AI response with whatever context we found
+        # Get AI response using retrieved context (RAG)
         ai_response = await ai_assistant.smart_movie_answer(raw_message, details, history)
         
         # If AI failed but we have movies, make the response more natural
