@@ -260,7 +260,7 @@ def _get_movie_suggestions(details: dict, lang: str) -> list:
     """Generate contextual follow-up suggestions based on movie details."""
     title = details.get('title', '')
     if lang == "hindi":
-        return [f"{title} ka plot batao", f"{title} mein hero kaun hai", "Ticket book karo"]
+        return [f"{title} ka plot batao", f"{title} mein hero kaun hai"]
     elif lang == "marathi":
-        return [f"{title} chi story sanga", f"{title} madhe kaun aahe", "Ticket book kara"]
-    return [f"Tell me about {title}'s plot", f"Who is in {title}?", "Book tickets"]
+        return [f"{title} chi story sanga", f"{title} madhe kaun aahe"]
+    return [f"Tell me about {title}'s plot", f"Who is in {title}?"]

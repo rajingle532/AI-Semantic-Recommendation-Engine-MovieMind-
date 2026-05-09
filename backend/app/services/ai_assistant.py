@@ -109,12 +109,14 @@ Respond naturally as MovieMind AI:"""
         print(f"GEMINI_TIMEOUT: Request took > {GEMINI_TIMEOUT}s")
         return _fallback_movie_info(movie_data, query) if movie_data else "I'm taking a bit longer than usual, but here's what I found!"
     except Exception as e:
-        error_msg = str(e)
-        print(f"GEMINI_ERROR: {error_msg[:200]}")
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"GEMINI_ERROR: {str(e)}")
+        print(error_trace)
         # Always return a useful fallback instead of crashing
         if movie_data:
             return _fallback_movie_info(movie_data, query)
-        return "I'm experiencing a high volume of requests. Try asking about a specific movie title for the best results!"
+        return f"I'm having trouble with my AI brain right now. Error: {str(e)[:50]}... Please try again."
 
 
 async def get_ai_movie_info(query: str, movie_data: dict = None) -> str:
