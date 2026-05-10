@@ -1,45 +1,81 @@
-# 🎬 CineMatch AI — The Future of Movie Discovery
+# 🎬 MovieMind AI — The Intelligent Movie Discovery Ecosystem
 
-![CineMatch AI Banner](docs/assets/banner.png)
+![MovieMind AI Banner](https://raw.githubusercontent.com/rajingle532/AI-Semantic-Recommendation-Engine-MovieMind-/main/docs/assets/banner.png)
 
-CineMatch AI is a premium, full-stack movie recommendation platform that leverages **Hybrid Machine Learning algorithms** to deliver hyper-personalized film suggestions. Built with a sleek, Netflix-inspired dark aesthetic, it features real-time search, semantic NLP discovery, and a robust user interaction system.
+**MovieMind AI** is a state-of-the-art, full-stack movie recommendation platform that bridges the gap between traditional Machine Learning and modern Generative AI. It delivers hyper-personalized film suggestions through a sophisticated hybrid engine, featuring a premium glassmorphism UI and a multilingual AI assistant.
 
-## ✨ Key Features
+---
 
-- **🧠 Hybrid Recommendation Engine**: Combines Content-Based Filtering (Cosine Similarity) with Collaborative Filtering (SVD Matrix Factorization) for unparalleled accuracy.
-- **🔍 NLP Semantic Search**: Describe a vibe, mood, or plot theme (e.g., *"A lonely robot in space"*) and let our AI find the perfect match.
-- **🌗 Stunning UI/UX**: A high-performance React frontend with glassmorphism effects, Framer Motion animations, and responsive design.
-- **🔐 Secure Authentication**: JWT-based security with support for traditional Email/Password and **Google OAuth** integration.
-- **⭐ User Interactions**: Rate movies, maintain a personal Watchlist, and see your recommendations evolve in real-time.
-- **📱 TMDB Integration**: Live synchronization with the TMDB API for the latest posters, trailers, and movie metadata.
+## 🚀 The Innovation: Why MovieMind?
 
-## 🛠️ Tech Stack
+Unlike standard recommendation engines, MovieMind AI employs a **multi-layered intelligence strategy**:
+1.  **Hybrid Filtering**: Synergizing Content-Based (TF-IDF) and Collaborative Filtering (SVD) for data-driven accuracy.
+2.  **Generative AI (Gemini Pro)**: Powering an intelligent chatbot that understands context, mood, and multilingual queries.
+3.  **RAG (Retrieval-Augmented Generation)**: Enhancing AI responses with real-time metadata (cast, plot, reviews) from the TMDB API.
+4.  **Resilience**: A custom **Circuit Breaker** mechanism that gracefully pivots to semantic search data when AI quotas are reached.
 
-| Layer | Technology |
-| :--- | :--- |
-| **Frontend** | React 18, Vite, Framer Motion, Lucide Icons, Vanilla CSS |
-| **Backend** | FastAPI (Python 3.10+), Uvicorn |
-| **Database** | MongoDB Atlas (NoSQL) |
-| **Machine Learning** | Scikit-learn, Pandas, NumPy, NLTK |
-| **Authentication** | JWT (JSON Web Tokens), Google OAuth 2.0 |
+---
 
-## 🚀 Quick Start
+## ✨ Core Features
 
-### 1. Clone & Configure
-```bash
-git clone https://github.com/rajingle532/movies-recommender-system.git
-cd movies-recommender-system
-cp .env.example .env
+### 🧠 Advanced AI & ML
+- **Hybrid Recommendation Engine**: Delivers "Picked for You" suggestions by analyzing genres, keywords, and global user rating patterns.
+- **NLP Semantic Search**: Discover movies by describing a vibe (e.g., *"Dark psychological thrillers with a plot twist"*).
+- **Context-Aware Chatbot**: A multilingual assistant (English, Hindi, Marathi) powered by Gemini and RAG for deep film trivia and suggestions.
+
+### 🌗 Premium UI/UX
+- **Glassmorphism Design**: A sleek, Netflix-inspired dark mode built with Vanilla CSS for high performance.
+- **Interactive Animations**: Smooth transitions and micro-animations powered by **Framer Motion**.
+- **Responsive Architecture**: Fully optimized for Desktop, Tablet, and Mobile experiences.
+
+### 🔐 Robust Infrastructure
+- **Secure Authentication**: JWT-based security with encrypted password hashing and Google OAuth integration.
+- **Real-time Sync**: Live integration with **TMDB API** for up-to-the-minute movie metadata, trailers, and posters.
+- **Personalized Space**: Users can manage a dynamic Watchlist and track their rating history.
+
+---
+
+## 🛠️ Technical Architecture
+
+### **The Stack**
+- **Frontend**: React 18, Vite, Framer Motion, Lucide Icons, Vanilla CSS.
+- **Backend**: FastAPI (Asynchronous Python), Uvicorn.
+- **Database**: MongoDB Atlas (NoSQL) for scalable user data and interaction storage.
+- **AI/ML**: Google Gemini Pro, Scikit-learn, Pandas, NLTK.
+- **DevOps**: Docker ready, Render/Vercel deployment configurations.
+
+---
+
+## 📊 System Design
+
+```mermaid
+graph TD
+    A[React Frontend] -->|API Requests| B[FastAPI Gateway]
+    B -->|Auth| C[JWT / MongoDB]
+    B -->|Hybrid ML| D[Scikit-Learn Engine]
+    B -->|Generative AI| E[Gemini Pro + RAG]
+    E -->|Metadata| F[TMDB API]
+    B -->|Cache/Fallback| G[Local Semantic Data]
 ```
-*Fill in your `TMDB_API_KEY`, `MONGODB_URI`, and `GOOGLE_CLIENT_ID` in the `.env` file.*
+
+---
+
+## ⚙️ Installation & Setup
+
+### 1. Prerequisites
+- Python 3.10+
+- Node.js 18+
+- MongoDB Atlas Account
+- TMDB API Key & Gemini API Key
 
 ### 2. Backend Setup
 ```bash
 cd backend
+python -m venv venv
+source venv/bin/activate  # venv\Scripts\activate on Windows
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
-*API Documentation available at `http://localhost:8000/docs`*
 
 ### 3. Frontend Setup
 ```bash
@@ -47,28 +83,29 @@ cd frontend
 npm install
 npm run dev
 ```
-*Access the app at `http://localhost:5173`*
 
-## 📊 ML Architecture
-
-CineMatch AI uses a sophisticated pipeline:
-1. **Content Filtering**: Analyzes genres, keywords, cast, and overviews using **TF-IDF Vectorization**.
-2. **Collaborative Filtering**: Learns user preferences from global rating patterns using **SVD**.
-3. **Hybrid Scoring**: Dynamically weights both models to provide "Picked for You" suggestions.
+---
 
 ## 🤝 Contributing
 
-Contributions make the open-source community an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+We welcome contributions to make MovieMind AI even smarter!
+1. Fork the Project.
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`).
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`).
+4. Push to the Branch (`git push origin feature/AmazingFeature`).
+5. Open a Pull Request.
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+---
 
 ## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
-*Built with ❤️ by [Raj Ingle](https://github.com/rajingle532)*
+
+### 👨‍💻 Developed By
+**Omkar Ingle**
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/rajingle532)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/omkar-ingle)
+
+*Built with ❤️ for the Cinematic Community*
