@@ -60,40 +60,9 @@ graph TD
 
 ---
 
-## ⚙️ Installation & Setup
-
-### 1. Prerequisites
-- Python 3.10+
-- Node.js 18+
-- MongoDB Atlas Account
-- TMDB API Key & Gemini API Key
-
-### 2. Backend Setup
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # venv\Scripts\activate on Windows
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-
-### 3. Frontend Setup
-```bash
-cd frontend
-npm install
-npm run dev
-```
 
 ---
 
-## 🤝 Contributing
-
-We welcome contributions to make MovieMind AI even smarter!
-1. Fork the Project.
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`).
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`).
-4. Push to the Branch (`git push origin feature/AmazingFeature`).
-5. Open a Pull Request.
 
 ---
 
