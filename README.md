@@ -98,8 +98,7 @@ We welcome contributions to make MovieMind AI even smarter!
 ---
 
 ## 📄 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
+All rights reserved. Unauthorized copying, distribution, or use of this project and its source code is strictly prohibited.
 
 ---
 
