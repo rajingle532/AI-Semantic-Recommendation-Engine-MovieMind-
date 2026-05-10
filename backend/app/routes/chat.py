@@ -246,12 +246,23 @@ async def chat_response(payload: Dict[str, Any]):
         print(f"CHAT_GLOBAL_ERROR: {e}")
         import traceback
         traceback.print_exc()
-        fallback_msg = "I'm having a bit of trouble reaching my movie database. Please try asking about a specific movie title!"
+        
+        # Determine fallback message
+        fallback_msg = "I'm having a bit of trouble reaching my AI brain. But here's what I found in the database!"
         if lang == "hindi":
-            fallback_msg = "Maaf kijiye, abhi servers par thoda load hai. Kya aap movie ka naam dobara bata sakte hain?"
+            fallback_msg = "Maaf kijiye, abhi servers par thoda load hai. Mujhe ye movies mili hain:"
         elif lang == "marathi":
-            fallback_msg = "Kshamasva, server var thoda load aahe. Krupay movie che naav punha sanga."
-        return {"response": fallback_msg, "movies": [], "suggestions": QUICK_PROMPTS, "intent": "error_fallback"}
+            fallback_msg = "Kshamasva, server var thoda load aahe. Mala ya movies milalya aahet:"
+            
+        # Extract movies from locals if they exist
+        found_movies = locals().get('movies', [])
+        
+        return {
+            "response": fallback_msg, 
+            "movies": found_movies[:8], 
+            "suggestions": QUICK_PROMPTS, 
+            "intent": "error_fallback"
+        }
 
 
 def _get_movie_suggestions(details: dict, lang: str) -> list:

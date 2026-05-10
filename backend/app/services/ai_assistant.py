@@ -7,6 +7,7 @@ from app.config import settings
 import asyncio
 import requests
 import json
+import time
 
 # Model configuration — use gemini-2.5-flash (has free tier quota)
 GEMINI_MODEL = "gemini-2.5-flash"
@@ -18,20 +19,66 @@ if settings.GEMINI_API_KEY:
 else:
     client = None
 
+# Circuit Breaker state
+_circuit_open = False
+_last_failure_time = 0
+_failure_count = 0
+CIRCUIT_RECOVERY_TIME = 300 # 5 minutes
+
+
+async def _call_gemini_with_circuit_breaker(prompt: str, timeout: int = GEMINI_TIMEOUT) -> str:
+    """
+    Helper to call Gemini API with Circuit Breaker protection.
+    Ensures Phase 3 requirements: handle rate limits (429) gracefully.
+    """
+    global _circuit_open, _last_failure_time, _failure_count
+    
+    if _circuit_open:
+        if time.time() - _last_failure_time > CIRCUIT_RECOVERY_TIME:
+            print("GEMINI_CIRCUIT: Attempting recovery...")
+            _circuit_open = False
+            _failure_count = 0
+        else:
+            # Circuit is open, return empty to trigger fallbacks immediately
+            return ""
+
+    if not client:
+        return ""
+
+    try:
+        response = await asyncio.wait_for(
+            client.aio.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=prompt
+            ),
+            timeout=timeout
+        )
+        # Success: reset failure count
+        _failure_count = 0
+        return response.text.strip()
+    except Exception as e:
+        error_msg = str(e)
+        _failure_count += 1
+        print(f"GEMINI_ERROR ({_failure_count}): {error_msg[:100]}")
+        
+        # If repeated failures or specific rate limit (429), open the circuit
+        if _failure_count >= 3 or "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+            print("GEMINI_CIRCUIT: Opening circuit.")
+            _circuit_open = True
+            _last_failure_time = time.time()
+        return ""
+
 
 async def smart_movie_answer(query: str, movies: list = None, conversation_context: list = None) -> str:
     """
     Use Gemini to intelligently answer ANY movie question.
     Can handle single movie details or a list of search results.
     """
-    if not client:
-        return _fallback_movie_info(movies[0] if movies else None) if movies else "I need a Gemini API Key to answer detailed questions."
-
     # Build rich context from multiple movies if provided
     context = ""
     if movies:
         context = "=== MOVIE DATABASE (TMDB) ===\n"
-        for i, movie in enumerate(movies[:3]): # Top 3 for context density
+        for i, movie in enumerate(movies[:3]): 
             providers_info = ""
             wp = movie.get('watch_providers')
             if wp:
@@ -56,64 +103,38 @@ MOVIE #{i+1}: {movie.get('title', 'N/A')}
             role = "User" if msg.get('role') == 'user' else "MovieMind"
             history_text += f"{role}: {msg.get('content', '')}\n"
 
-    prompt = f"""You are MovieMind AI — a premium, highly knowledgeable cinema assistant. 
-You know EVERYTHING about movies: plot details, behind-the-scenes trivia, box office performance, 
-cast stories, director vision, cultural impact, awards, sequels, remakes, and more.
-
-RULES:
-1. Answer in the SAME LANGUAGE as the user's question. If they ask in Hindi/Hinglish, reply in Hinglish. 
-   If Marathi, reply in Marathi. If English, reply in English.
-2. Use the TMDB data provided as your primary source. If multiple movies are provided, focus on the most relevant one(s) 
-   to the user's query or provide a summary/comparison if they asked for recommendations.
-3. For anything not in the data, use your own knowledge but be confident.
-4. Keep responses concise but informative (3-6 sentences max for simple questions, longer for "tell me everything").
-5. Use emojis sparingly for visual appeal (🎬 ⭐ 🎭 📅 💰).
-6. Format key data points with **bold**.
-7. If the user asks about ticket booking/watching, mention available streaming platforms from the data.
-8. For follow-up questions, use conversation history to understand context.
-9. Never say "I couldn't find" — always provide a confident, helpful answer.
+    prompt = f"""You are MovieMind AI — a premium cinema assistant.
+Answer in the SAME LANGUAGE as the user's question.
+Use the TMDB data provided as your primary source.
+Keep responses concise (3-6 sentences).
+Use emojis (🎬 ⭐). Format with **bold**.
 
 {f'CONVERSATION HISTORY:{chr(10)}{history_text}' if history_text else ''}
 
 MOVIE DATA FROM DATABASE:
-{context if context else 'No specific movie data available. Answer from your general cinema knowledge.'}
+{context if context else 'No specific movie data available.'}
 
 USER QUESTION: {query}
 
 Respond naturally as MovieMind AI:"""
-
-    try:
-        # Run Gemini call with timeout to prevent server hangs
-        response = await asyncio.wait_for(
-            client.aio.models.generate_content(
-                model=GEMINI_MODEL,
-                contents=prompt
-            ),
-            timeout=GEMINI_TIMEOUT
-        )
-        return response.text.strip()
-    except asyncio.TimeoutError:
-        print(f"GEMINI_TIMEOUT: Request took > {GEMINI_TIMEOUT}s")
-        return _fallback_movie_info(movies[0] if movies else None) if movies else "I'm taking a bit longer than usual. Here's what I know from my database!"
-    except Exception as e:
-        error_msg = str(e)
-        print(f"GEMINI_ERROR: {error_msg[:200]}")
-        # Fallback to formatted TMDB data
-        return _fallback_movie_info(movies[0] if movies else None) if movies else "Let me show you what I have in my database!"
-
+    
+    response = await _call_gemini_with_circuit_breaker(prompt)
+    if response:
+        return response
+        
+    # Fallback to local data formatting if Gemini fails/rate-limited
+    return _fallback_movie_info(movies[0] if movies else None) if movies else "I'm focusing on my database right now. How else can I help?"
 
 
 async def get_ai_movie_info(query: str, movie_data: dict = None) -> str:
-    """
-    Legacy wrapper — now routes to smart_movie_answer.
-    """
+    """Legacy wrapper — now routes to smart_movie_answer."""
     return await smart_movie_answer(query, [movie_data] if movie_data else None)
 
 
 def _fallback_movie_info(movie_data: dict) -> str:
     """Generate a formatted response from TMDB data when Gemini is unavailable."""
     if not movie_data:
-        return "Sorry, I couldn't find details for this movie."
+        return "I'm having trouble reaching my AI brain, but I can still search for movies by title!"
     
     title = movie_data.get('title', 'Unknown')
     overview = movie_data.get('overview', '')
@@ -122,32 +143,19 @@ def _fallback_movie_info(movie_data: dict) -> str:
     genres = ', '.join(movie_data.get('genres', []))
     cast_list = movie_data.get('cast', [])
     cast_names = ', '.join([c['name'] for c in cast_list[:5]]) if cast_list else 'N/A'
-    runtime = movie_data.get('runtime', 'N/A')
-    budget = movie_data.get('budget', 0)
-    revenue = movie_data.get('revenue', 0)
     
     response = f"🎬 **{title}**\n\n"
     response += f"📅 Release: {release}\n"
     response += f"⭐ Rating: {rating}/10\n"
-    if runtime and runtime != 'N/A':
-        response += f"⏱️ Runtime: {runtime} min\n"
     response += f"🎭 Genres: {genres}\n"
     response += f"🌟 Cast: {cast_names}\n"
-    if budget and budget > 0:
-        response += f"💰 Budget: ${budget:,}\n"
-    if revenue and revenue > 0:
-        response += f"📊 Revenue: ${revenue:,}\n"
-    response += f"\n📖 {overview[:300]}{'...' if len(overview) > 300 else ''}"
+    response += f"\n📖 {overview[:300]}..."
     
     return response
 
 
 def search_nearby_theaters(location: str, movie_name: str = None):
-    """
-    Find nearby theaters and showtimes.
-    Uses SerpApi when available, otherwise provides BookMyShow/Paytm links.
-    """
-    # Always provide booking links
+    """Find nearby theaters and showtimes."""
     booking_links = _get_booking_links(location, movie_name)
     
     if settings.SERP_API_KEY:
@@ -166,7 +174,6 @@ def search_nearby_theaters(location: str, movie_name: str = None):
 
             response = requests.get("https://serpapi.com/search", params=params, timeout=10)
             data = response.json()
-            
             theaters = data.get("local_results", [])
             
             if theaters:
@@ -176,13 +183,11 @@ def search_nearby_theaters(location: str, movie_name: str = None):
                     rating = t.get("rating", "N/A")
                     address = t.get("address", "")
                     resp_text += f"🏛️ **{name}** ({rating}⭐)\n📍 {address}\n\n"
-                
                 resp_text += booking_links
                 return resp_text
         except Exception as e:
             print(f"SERP_ERROR: {e}")
     
-    # Fallback — always give useful booking links
     return f"🎫 **Book Tickets Online:**\n\n{booking_links}"
 
 
@@ -195,80 +200,22 @@ def _get_booking_links(location: str, movie_name: str = None) -> str:
     links += f"• [BookMyShow](https://in.bookmyshow.com/explore/movies-{city})\n"
     links += f"• [Paytm Movies](https://paytm.com/movies/{city})\n"
     links += f"• [Google Movies](https://www.google.com/search?q={bms_query.replace(' ', '+')}+tickets+{city})\n"
-    
     return links
 
 
 async def get_movie_suggestions_by_vibe(query: str) -> list:
-    """
-    Use Gemini to extract movie titles from a natural language 'vibe' or query.
-    Returns a list of movie titles.
-    """
-    if not client:
+    """Extract movie titles from vibe using Gemini."""
+    prompt = f"Vibe: {query}. Suggest 5-8 real movies. CSV ONLY. Example: Inception, Interstellar"
+    response = await _call_gemini_with_circuit_breaker(prompt)
+    if not response:
         return []
-
-    prompt = f"""The user is looking for movies with this vibe: "{query}"
-Suggest 5-8 real movie titles that match this description perfectly.
-Include both Bollywood and Hollywood movies if relevant.
-Return ONLY the titles as a comma-separated list. No numbering, no intros, no descriptions.
-Example: Inception, Interstellar, The Matrix, Shutter Island"""
-
-    try:
-        response = await asyncio.wait_for(
-            client.aio.models.generate_content(
-                model=GEMINI_MODEL,
-                contents=prompt
-            ),
-            timeout=GEMINI_TIMEOUT
-        )
-        titles = [t.strip() for t in response.text.split(",") if t.strip()]
-        return titles
-    except asyncio.TimeoutError:
-        print(f"GEMINI_VIBE_TIMEOUT")
-        return []
-    except Exception as e:
-        print(f"GEMINI_VIBE_ERROR: {str(e)[:100]}")
-        return []
+    return [t.strip() for t in response.split(",") if t.strip()]
 
 
 async def identify_movie_from_query(query: str) -> str:
-    """
-    Use Gemini to extract the movie name from ANY natural language query.
-    Handles Hindi, Hinglish, Marathi, and English queries.
-    """
-    if not client:
+    """Extract movie title from query using Gemini."""
+    prompt = f"Extract movie title from: {query}. If genre/mood, return NONE. Title or NONE only."
+    response = await _call_gemini_with_circuit_breaker(prompt)
+    if not response or response.upper() == "NONE":
         return ""
-
-    prompt = f"""Extract the MOVIE TITLE from this user query. The user might be asking in English, Hindi, Hinglish, or Marathi.
-
-Examples:
-- "tell me about the movie dhurandhar" → Dhurandhar
-- "pushpa 2 kab aayi thi" → Pushpa 2
-- "who is the hero of RRR" → RRR
-- "inception ka plot kya hai" → Inception
-- "dangal mein kaun hai" → Dangal
-- "3 idiots movie batao" → 3 Idiots
-- "suggest action movies" → NONE (this is a genre request, not a specific movie)
-- "romantic movies dikhao" → NONE
-
-If the query is about a GENRE or MOOD (not a specific movie), return NONE.
-Return ONLY the movie title, nothing else. Just the title or NONE."""
-
-    try:
-        response = await asyncio.wait_for(
-            client.aio.models.generate_content(
-                model=GEMINI_MODEL,
-                contents=f"{prompt}\n\nQuery: {query}"
-            ),
-            timeout=GEMINI_TIMEOUT
-        )
-        result = response.text.strip()
-        if result.upper() == "NONE" or len(result) > 100:
-            return ""
-        return result
-    except asyncio.TimeoutError:
-        print(f"GEMINI_IDENTIFY_TIMEOUT")
-        return ""
-    except Exception as e:
-        print(f"GEMINI_IDENTIFY_ERROR: {str(e)[:100]}")
-        return ""
+    return response
