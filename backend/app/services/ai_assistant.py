@@ -8,58 +8,46 @@ import asyncio
 import requests
 import json
 
-# Model configuration — use gemini-1.5-flash (stable free tier)
-GEMINI_MODEL = "gemini-1.5-flash"
+# Model configuration — use gemini-2.5-flash (has free tier quota)
+GEMINI_MODEL = "gemini-2.5-flash"
 GEMINI_TIMEOUT = 15  # seconds — prevent server hangs
 
-def get_gemini_client():
-    if settings.GEMINI_API_KEY:
-        return genai.Client(api_key=settings.GEMINI_API_KEY)
-    return None
+# Initialize Gemini Client if API Key is available
+if settings.GEMINI_API_KEY:
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
+else:
+    client = None
 
 
-async def smart_movie_answer(query: str, movie_data: dict = None, conversation_context: list = None) -> str:
+async def smart_movie_answer(query: str, movies: list = None, conversation_context: list = None) -> str:
     """
     Use Gemini to intelligently answer ANY movie question.
-    This is the primary brain — handles everything from "kab bani" to "who directed it".
+    Can handle single movie details or a list of search results.
     """
-    client = get_gemini_client()
     if not client:
-        return _fallback_movie_info(movie_data) if movie_data else "I need a Gemini API Key to answer detailed questions."
+        return _fallback_movie_info(movies[0] if movies else None) if movies else "I need a Gemini API Key to answer detailed questions."
 
-    # Build rich context from TMDB data
+    # Build rich context from multiple movies if provided
     context = ""
-    if movie_data:
-        # Build watch providers info
-        providers_info = ""
-        wp = movie_data.get('watch_providers')
-        if wp:
-            streaming = wp.get('flatrate', [])
-            rent = wp.get('rent', [])
-            buy = wp.get('buy', [])
-            if streaming:
-                providers_info += f"Streaming on: {', '.join([p['provider_name'] for p in streaming])}\n"
-            if rent:
-                providers_info += f"Rent on: {', '.join([p['provider_name'] for p in rent])}\n"
-            if buy:
-                providers_info += f"Buy on: {', '.join([p['provider_name'] for p in buy])}\n"
+    if movies:
+        context = "=== MOVIE DATABASE (TMDB) ===\n"
+        for i, movie in enumerate(movies[:3]): # Top 3 for context density
+            providers_info = ""
+            wp = movie.get('watch_providers')
+            if wp:
+                streaming = wp.get('flatrate', [])
+                if streaming:
+                    providers_info = f"Streaming: {', '.join([p['provider_name'] for p in streaming])}"
 
-        context = f"""
-        === MOVIE DATABASE (TMDB) ===
-        Title: {movie_data.get('title', 'N/A')}
-        Release Date: {movie_data.get('release_date', 'Unknown')}
-        Runtime: {movie_data.get('runtime', 'N/A')} minutes
-        Rating: {movie_data.get('vote_average', 0)}/10 ({movie_data.get('vote_count', 0)} votes)
-        Budget: ${movie_data.get('budget', 0):,}
-        Revenue: ${movie_data.get('revenue', 0):,}
-        Status: {movie_data.get('status', 'N/A')}
-        Tagline: {movie_data.get('tagline', '')}
-        Genres: {', '.join(movie_data.get('genres', []))}
-        Cast: {', '.join([f"{c['name']} as {c['character']}" for c in movie_data.get('cast', [])])}
-        Overview: {movie_data.get('overview', '')}
-        {providers_info}
-        """
-
+            context += f"""
+MOVIE #{i+1}: {movie.get('title', 'N/A')}
+- Release: {movie.get('release_date', 'Unknown')}
+- Rating: {movie.get('vote_average', 0)}/10
+- Cast: {', '.join([f"{c['name']} as {c['character']}" for c in movie.get('cast', [])[:5]])}
+- Overview: {movie.get('overview', '')[:500]}
+- {providers_info}
+"""
+    
     # Build conversation history for context
     history_text = ""
     if conversation_context:
@@ -75,19 +63,19 @@ cast stories, director vision, cultural impact, awards, sequels, remakes, and mo
 RULES:
 1. Answer in the SAME LANGUAGE as the user's question. If they ask in Hindi/Hinglish, reply in Hinglish. 
    If Marathi, reply in Marathi. If English, reply in English.
-2. Use the TMDB data provided as your primary source. For anything not in the data, use your own knowledge 
-   but be confident — don't say "I think" or "I'm not sure".
-3. Keep responses concise but informative (3-6 sentences max for simple questions, longer for "tell me everything").
-4. Use emojis sparingly for visual appeal (🎬 ⭐ 🎭 📅 💰).
-5. Format key data points with **bold**.
-6. If the user asks about ticket booking/watching, mention available streaming platforms from the data.
-7. For follow-up questions, use conversation history to understand context.
-8. Never say "I couldn't find" — always provide a confident, helpful answer.
-9. If a movie has $0 budget/revenue in the data, say the information is not publicly available rather than showing $0.
+2. Use the TMDB data provided as your primary source. If multiple movies are provided, focus on the most relevant one(s) 
+   to the user's query or provide a summary/comparison if they asked for recommendations.
+3. For anything not in the data, use your own knowledge but be confident.
+4. Keep responses concise but informative (3-6 sentences max for simple questions, longer for "tell me everything").
+5. Use emojis sparingly for visual appeal (🎬 ⭐ 🎭 📅 💰).
+6. Format key data points with **bold**.
+7. If the user asks about ticket booking/watching, mention available streaming platforms from the data.
+8. For follow-up questions, use conversation history to understand context.
+9. Never say "I couldn't find" — always provide a confident, helpful answer.
 
 {f'CONVERSATION HISTORY:{chr(10)}{history_text}' if history_text else ''}
 
-MOVIE DATA:
+MOVIE DATA FROM DATABASE:
 {context if context else 'No specific movie data available. Answer from your general cinema knowledge.'}
 
 USER QUESTION: {query}
@@ -97,8 +85,7 @@ Respond naturally as MovieMind AI:"""
     try:
         # Run Gemini call with timeout to prevent server hangs
         response = await asyncio.wait_for(
-            asyncio.to_thread(
-                client.models.generate_content,
+            client.aio.models.generate_content(
                 model=GEMINI_MODEL,
                 contents=prompt
             ),
@@ -107,48 +94,50 @@ Respond naturally as MovieMind AI:"""
         return response.text.strip()
     except asyncio.TimeoutError:
         print(f"GEMINI_TIMEOUT: Request took > {GEMINI_TIMEOUT}s")
-        return _fallback_movie_info(movie_data, query) if movie_data else "I'm taking a bit longer than usual, but here's what I found!"
+        return _fallback_movie_info(movies[0] if movies else None) if movies else "I'm taking a bit longer than usual. Here's what I know from my database!"
     except Exception as e:
-        import traceback
-        error_trace = traceback.format_exc()
-        print(f"GEMINI_ERROR: {str(e)}")
-        print(error_trace)
-        # Always return a useful fallback instead of crashing
-        if movie_data:
-            return _fallback_movie_info(movie_data, query)
-        return f"I'm having trouble with my AI brain right now. Error: {str(e)[:50]}... Please try again."
+        error_msg = str(e)
+        print(f"GEMINI_ERROR: {error_msg[:200]}")
+        # Fallback to formatted TMDB data
+        return _fallback_movie_info(movies[0] if movies else None) if movies else "Let me show you what I have in my database!"
+
 
 
 async def get_ai_movie_info(query: str, movie_data: dict = None) -> str:
     """
     Legacy wrapper — now routes to smart_movie_answer.
     """
-    return await smart_movie_answer(query, movie_data)
+    return await smart_movie_answer(query, [movie_data] if movie_data else None)
 
 
-def _fallback_movie_info(movie_data: dict, query: str = "") -> str:
-    """Generate a rich, structured response from TMDB data when Gemini is unavailable."""
+def _fallback_movie_info(movie_data: dict) -> str:
+    """Generate a formatted response from TMDB data when Gemini is unavailable."""
     if not movie_data:
-        return "I couldn't find exact details for that query, but here are some popular movies you might like!"
+        return "Sorry, I couldn't find details for this movie."
     
     title = movie_data.get('title', 'Unknown')
     overview = movie_data.get('overview', '')
     release = movie_data.get('release_date', 'Unknown')
     rating = movie_data.get('vote_average', 0)
-    genres = ', '.join(movie_data.get('genres', [])) if isinstance(movie_data.get('genres'), list) else 'Movie'
+    genres = ', '.join(movie_data.get('genres', []))
     cast_list = movie_data.get('cast', [])
     cast_names = ', '.join([c['name'] for c in cast_list[:5]]) if cast_list else 'N/A'
     runtime = movie_data.get('runtime', 'N/A')
+    budget = movie_data.get('budget', 0)
+    revenue = movie_data.get('revenue', 0)
     
-    # Structure a natural sounding response even without AI
-    response = f"🎬 **{title}** ({release[:4]})\n\n"
-    response += f"⭐ **Rating:** {rating}/10\n"
-    response += f"🎭 **Cast:** {cast_names}\n"
-    response += f"🕒 **Runtime:** {runtime} min\n\n"
-    response += f"📝 **Plot:** {overview}\n\n"
-    
-    # Add a friendly note if it was a rate limit fallback
-    response += "_Note: Detailed AI analysis is currently limited due to high traffic, but I've fetched the core facts for you!_"
+    response = f"🎬 **{title}**\n\n"
+    response += f"📅 Release: {release}\n"
+    response += f"⭐ Rating: {rating}/10\n"
+    if runtime and runtime != 'N/A':
+        response += f"⏱️ Runtime: {runtime} min\n"
+    response += f"🎭 Genres: {genres}\n"
+    response += f"🌟 Cast: {cast_names}\n"
+    if budget and budget > 0:
+        response += f"💰 Budget: ${budget:,}\n"
+    if revenue and revenue > 0:
+        response += f"📊 Revenue: ${revenue:,}\n"
+    response += f"\n📖 {overview[:300]}{'...' if len(overview) > 300 else ''}"
     
     return response
 
@@ -175,7 +164,7 @@ def search_nearby_theaters(location: str, movie_name: str = None):
                 "gl": "in"
             }
 
-            response = requests.get("https://serpapi.com/search", params=params, timeout=3.0)
+            response = requests.get("https://serpapi.com/search", params=params, timeout=10)
             data = response.json()
             
             theaters = data.get("local_results", [])
@@ -215,23 +204,18 @@ async def get_movie_suggestions_by_vibe(query: str) -> list:
     Use Gemini to extract movie titles from a natural language 'vibe' or query.
     Returns a list of movie titles.
     """
-    client = get_gemini_client()
     if not client:
         return []
 
-    prompt = f"""The user query is: "{query}"
-Goal: Identify if the user is asking about specific movies or describing a "vibe".
-- If they mention a specific movie (even with typos), return that movie title as the first item.
-- Suggest 5-8 real movie titles in total that match the query or vibe.
-- Include both Bollywood and Hollywood movies.
-- Return ONLY the titles as a comma-separated list. No numbering, no intros, no descriptions.
-Example 1: "tell me about pushpa 2" -> Pushpa 2, Pushpa: The Rise, KGF: Chapter 1, Waltair Veerayya
-Example 2: "something like inception" -> Inception, Interstellar, Tenet, Memento, Shutter Island"""
+    prompt = f"""The user is looking for movies with this vibe: "{query}"
+Suggest 5-8 real movie titles that match this description perfectly.
+Include both Bollywood and Hollywood movies if relevant.
+Return ONLY the titles as a comma-separated list. No numbering, no intros, no descriptions.
+Example: Inception, Interstellar, The Matrix, Shutter Island"""
 
     try:
         response = await asyncio.wait_for(
-            asyncio.to_thread(
-                client.models.generate_content,
+            client.aio.models.generate_content(
                 model=GEMINI_MODEL,
                 contents=prompt
             ),
@@ -252,7 +236,6 @@ async def identify_movie_from_query(query: str) -> str:
     Use Gemini to extract the movie name from ANY natural language query.
     Handles Hindi, Hinglish, Marathi, and English queries.
     """
-    client = get_gemini_client()
     if not client:
         return ""
 
@@ -265,7 +248,6 @@ Examples:
 - "inception ka plot kya hai" → Inception
 - "dangal mein kaun hai" → Dangal
 - "3 idiots movie batao" → 3 Idiots
-- "Inception baddal sanga" → Inception
 - "suggest action movies" → NONE (this is a genre request, not a specific movie)
 - "romantic movies dikhao" → NONE
 
@@ -274,8 +256,7 @@ Return ONLY the movie title, nothing else. Just the title or NONE."""
 
     try:
         response = await asyncio.wait_for(
-            asyncio.to_thread(
-                client.models.generate_content,
+            client.aio.models.generate_content(
                 model=GEMINI_MODEL,
                 contents=f"{prompt}\n\nQuery: {query}"
             ),

@@ -218,15 +218,13 @@ async def chat_response(payload: Dict[str, Any]):
             resp = ai_assistant.search_nearby_theaters(location, movie_name)
             return {"response": resp, "movies": [], "suggestions": ["Theaters in Mumbai", "Theaters in Pune"], "intent": "theater_search"}
 
-        # 3. MOVIE CHAT (PHASE 1: SEMANTIC-FIRST)
+        # 3. MOVIE CHAT (PHASE 2: KNOWLEDGE AUGMENTED)
         if intent == "movie_chat":
+            # get_semantic_search_results already performs Knowledge Augmentation (fetches details for top 3)
             movies = await get_semantic_search_results(raw_message, n=5)
-            details = None
-            if movies:
-                target = movies[0]
-                details = await asyncio.to_thread(tmdb.get_movie_details, target['id'])
             
-            ai_response = await ai_assistant.smart_movie_answer(raw_message, details, history)
+            # Pass all movies (with their rich metadata) to Gemini
+            ai_response = await ai_assistant.smart_movie_answer(raw_message, movies, history)
             
             if ("database" in ai_response or "longer than usual" in ai_response) and movies:
                 top_title = movies[0].get('title', 'this movie')
@@ -240,7 +238,7 @@ async def chat_response(payload: Dict[str, Any]):
             return {
                 "response": ai_response,
                 "movies": movies[:8],
-                "suggestions": _get_movie_suggestions(details, lang) if details else QUICK_PROMPTS,
+                "suggestions": _get_movie_suggestions(movies[0], lang) if movies else QUICK_PROMPTS,
                 "intent": "movie_chat"
             }
 
