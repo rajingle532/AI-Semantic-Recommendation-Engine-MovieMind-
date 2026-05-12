@@ -414,9 +414,15 @@ def get_trending_movies(page: int = 1) -> list:
 
 def _get_fallback_movies(page: int = 1) -> list:
     """Fetch movies from the local CSV dataset as a fallback when API is down."""
-        if not page_movies:
+    try:
+        movies = _get_fallback_data()
+        if not movies:
             print("FALLBACK_ERROR: Local CSV is empty or failed. Using hardcoded EMERGENCY_MOVIES.")
             return EMERGENCY_MOVIES
+            
+        # Sample based on page
+        start = ((page - 1) * 20) % (len(movies) - 20)
+        page_movies = movies[start : start + 20]
         
         fallback = []
         for m in page_movies:
