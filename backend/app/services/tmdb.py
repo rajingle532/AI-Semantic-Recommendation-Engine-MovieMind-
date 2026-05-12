@@ -16,6 +16,9 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 # In-memory caches to avoid redundant API calls
 _poster_cache = {}
 _details_cache = {}
+_genres_cache = None
+_trending_cache = {} # Key: page, Value: (timestamp, data)
+_CACHE_TTL = 3600 # 1 hour cache for trending/genres
 _fallback_movies = []
 
 # Circuit breaker for TMDB API
@@ -89,13 +92,17 @@ def _make_request(endpoint: str, params: dict = None) -> dict:
         _tmdb_disabled = True
         return {}
 
-    max_retries = 1 # Fast fail
+    max_retries = 2
     for attempt in range(max_retries):
         try:
             full_params = {"api_key": settings.TMDB_API_KEY, **(params or {})}
-            # Very short timeout to prevent blocking the event loop (1 second)
-            response = _session.get(url, params=full_params, headers=headers, timeout=1.0)
+            # Increased timeout to 5 seconds to handle slow international connections
+            response = _session.get(url, params=full_params, headers=headers, timeout=5.0)
             
+            if response.status_code == 429:
+                print(f"TMDB_API_RATE_LIMIT: {endpoint}")
+                return {}
+
             if response.status_code != 200:
                 print(f"TMDB_API_ERROR: {endpoint} returned {response.status_code}. Response: {response.text}")
                 return {}
@@ -103,10 +110,10 @@ def _make_request(endpoint: str, params: dict = None) -> dict:
             return response.json()
         except (requests.RequestException, ConnectionResetError) as e:
             if attempt == max_retries - 1:
-                print(f"TMDB API Error after {max_retries} attempts: {e}. Disabling TMDB temporarily.")
-                _tmdb_disabled = True
+                print(f"TMDB API Error after {max_retries} attempts for {endpoint}: {e}")
+                # We don't disable permanently anymore, just fail this request
                 return {}
-            print(f"TMDB API attempt {attempt + 1} failed, retrying...")
+            print(f"TMDB API attempt {attempt + 1} failed for {endpoint}, retrying...")
             continue
     return {}
 
@@ -244,15 +251,6 @@ def get_movie_poster(movie_id: int) -> Optional[str]:
     if movie_id in _poster_cache:
         return _poster_cache[movie_id]
 
-    # Try local fallback first (instant)
-    try:
-        movies = _get_fallback_data()
-        target = next((m for m in movies if m['id'] == movie_id), None)
-        # Note: CSV doesn't have poster_path, but we can't do much about that 
-        # without hitting TMDB. However, return None quickly if we know it's a fallback movie
-        # to avoid the 1s timeout.
-    except: pass
-
     data = _make_request(f"/movie/{movie_id}")
     poster = None
     if data and data.get("poster_path"):
@@ -263,20 +261,33 @@ def get_movie_poster(movie_id: int) -> Optional[str]:
 
 
 def get_trending_movies(page: int = 1) -> list:
-    """Get a mix of global trending movies and popular Hindi (Bollywood) movies."""
-    # 1. Fetch Global Trending (Hollywood/International)
-    global_data = _make_request("/trending/movie/week", {"page": page})
-    global_results = global_data.get("results", [])
+    """Get a mix of global trending movies and popular Hindi (Bollywood) movies in parallel with caching."""
+    import time
+    
+    # Check cache first
+    if page in _trending_cache:
+        timestamp, data = _trending_cache[page]
+        if time.time() - timestamp < _CACHE_TTL:
+            return data
 
-    # 2. Fetch Popular Hindi Movies (Bollywood)
-    hindi_data = _make_request("/discover/movie", {
-        "page": page,
-        "sort_by": "popularity.desc",
-        "with_original_language": "hi",
-        "region": "IN",
-        "with_origin_country": "IN"
-    })
-    hindi_results = hindi_data.get("results", [])
+    import concurrent.futures
+    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        # Submit both requests simultaneously
+        future_global = executor.submit(_make_request, "/trending/movie/week", {"page": page})
+        future_hindi = executor.submit(_make_request, "/discover/movie", {
+            "page": page,
+            "sort_by": "popularity.desc",
+            "with_original_language": "hi",
+            "region": "IN",
+            "with_origin_country": "IN"
+        })
+        
+        global_data = future_global.result()
+        hindi_data = future_hindi.result()
+
+    global_results = global_data.get("results", []) if global_data else []
+    hindi_results = hindi_data.get("results", []) if hindi_data else []
 
     # Format helper
     def format_movie(m):
@@ -290,7 +301,6 @@ def get_trending_movies(page: int = 1) -> list:
         }
 
     # Interleave results deterministically based on page to prevent repeats
-    # Odd pages start with Hindi, Even pages start with Global
     start_with_hindi = (page % 2 != 0)
     
     mixed_results = []
@@ -312,8 +322,10 @@ def get_trending_movies(page: int = 1) -> list:
         print("TMDB_API_ERROR: All TMDB requests failed. Using local fallback dataset.")
         return _get_fallback_movies(page)
 
-    # Return top 20 mixed results
-    return mixed_results[:20]
+    results = mixed_results[:20]
+    # Update cache
+    _trending_cache[page] = (time.time(), results)
+    return results
 
 
 def _get_fallback_movies(page: int = 1) -> list:
@@ -347,9 +359,20 @@ def _get_fallback_movies(page: int = 1) -> list:
 
 
 def get_genres() -> list:
-    """Get list of all movie genres from TMDB."""
+    """Get list of all movie genres from TMDB with caching."""
+    global _genres_cache
+    import time
+    
+    if _genres_cache:
+        timestamp, genres = _genres_cache
+        if time.time() - timestamp < _CACHE_TTL * 24: # Genres rarely change, cache for 24h
+            return genres
+            
     data = _make_request("/genre/movie/list")
-    return data.get("genres", [])
+    genres = data.get("genres", [])
+    if genres:
+        _genres_cache = (time.time(), genres)
+    return genres
 
 
 def get_person_details(person_id: int) -> dict:

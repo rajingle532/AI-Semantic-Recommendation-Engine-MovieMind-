@@ -313,7 +313,7 @@ async def get_semantic_search_results(query: str, n: int = 15) -> list:
                     results.append({
                         "id": int(movie_row['id']),
                         "title": movie_row['title'],
-                        "poster_path": get_movie_poster(movie_row['title']),
+                        "poster_path": get_movie_poster(int(movie_row['id'])),
                         "vote_average": float(movie_row['vote_average']) if 'vote_average' in movie_row else 0.0,
                         "release_date": str(movie_row['release_date']) if 'release_date' in movie_row else ""
                     })

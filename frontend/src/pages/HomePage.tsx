@@ -66,7 +66,6 @@ const HomePage: React.FC = () => {
         endpoint = '/movies/trending';
       }
 
-      params.cb = Date.now();
       const res = await api.get(endpoint, { params });
       let newMovies = Array.isArray(res.data) ? res.data : (res.data.results || []);
 

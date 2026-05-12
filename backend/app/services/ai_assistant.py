@@ -9,7 +9,7 @@ import requests
 import json
 import time
 
-# Model configuration — use gemini-2.5-flash (has free tier quota)
+# Model configuration — use gemini-2.5-flash (state-of-the-art for 2026)
 GEMINI_MODEL = "gemini-2.5-flash"
 GEMINI_TIMEOUT = 15  # seconds — prevent server hangs
 
