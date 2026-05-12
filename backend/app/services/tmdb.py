@@ -123,7 +123,7 @@ def get_movie_details(movie_id: int) -> dict:
     if movie_id in _details_cache:
         return _details_cache[movie_id]
 
-    data = _make_request(f"/movie/{movie_id}", {"append_to_response": "credits,videos"})
+    data = _make_request(f"/movie/{movie_id}", {"append_to_response": "credits,videos,watch/providers"})
     if not data:
         # Fallback to local CSV if TMDB fails
         try:
@@ -166,6 +166,38 @@ def get_movie_details(movie_id: int) -> dict:
                 "profile_path": f"{settings.TMDB_IMAGE_URL}{member['profile_path']}" if member.get("profile_path") else None
             })
 
+    # Extract trailer key from appended videos
+    trailer_key = None
+    videos = data.get("videos", {}).get("results", [])
+    for video in videos:
+        if video.get("site") == "YouTube" and video.get("type") == "Trailer":
+            trailer_key = video.get("key")
+            break
+    if not trailer_key and videos:
+        # Fallback to any YouTube video
+        for video in videos:
+            if video.get("site") == "YouTube":
+                trailer_key = video.get("key")
+                break
+
+    # Extract watch providers from appended data
+    raw_providers = data.get("watch/providers", {}).get("results", {})
+    country_data = raw_providers.get("IN") or raw_providers.get("US") or {}
+    
+    def format_logos(items):
+        return [{
+            "provider_id": item.get("provider_id"),
+            "provider_name": item.get("provider_name"),
+            "logo_path": f"{settings.TMDB_IMAGE_URL}{item['logo_path']}" if item.get("logo_path") else None
+        } for item in items]
+
+    watch_providers = {
+        "flatrate": format_logos(country_data.get("flatrate", [])),
+        "rent": format_logos(country_data.get("rent", [])),
+        "buy": format_logos(country_data.get("buy", [])),
+        "link": country_data.get("link", "") + f"?tag={settings.AFFILIATE_TAG}"
+    }
+
     details = {
         "id": data.get("id"),
         "title": data.get("title"),
@@ -182,8 +214,8 @@ def get_movie_details(movie_id: int) -> dict:
         "genres": [g["name"] for g in data.get("genres", [])],
         "cast": cast,
         "tagline": data.get("tagline"),
-        "trailer_key": get_movie_videos(movie_id),
-        "watch_providers": get_watch_providers(movie_id)
+        "trailer_key": trailer_key,
+        "watch_providers": watch_providers
     }
     
     print(f"DEBUG: Fetched details for movie {movie_id}. Providers: {bool(details['watch_providers'])}")

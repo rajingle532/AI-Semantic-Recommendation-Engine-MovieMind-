@@ -162,6 +162,10 @@ async def forgot_password(data: dict, background_tasks: BackgroundTasks):
         raise HTTPException(status_code=404, detail="Email not found")
     
     from app.utils.email import send_reset_password_email
+    from app.utils.security import create_reset_token
+    
+    # Generate a short-lived reset token
+    reset_token = create_reset_token(str(user["_id"]), email)
     
     # Send the email in the background for a fast UI
     background_tasks.add_task(send_reset_password_email, email, reset_token)
