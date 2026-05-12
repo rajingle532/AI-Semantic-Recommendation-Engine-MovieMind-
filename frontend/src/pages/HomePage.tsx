@@ -7,6 +7,7 @@ import api from '../services/api';
 import { Movie } from '../types';
 import MovieGrid from '../components/MovieGrid';
 import Loader from '../components/Loader';
+import Skeleton from '../components/Skeleton';
 import PageTransition from '../components/PageTransition';
 import MoodSelector from '../components/MoodSelector';
 import FilterBar from '../components/FilterBar';
@@ -94,13 +95,17 @@ const HomePage: React.FC = () => {
   };
 
   const updateHeroMovie = async (movie: Movie) => {
+    // Set basic movie info immediately (including backdrop from list if available)
     setHeroMovie(movie);
+    
     try {
+      // Fetch additional details like trailer_key
       const { data: details } = await api.get(`/movies/${movie.id}`);
       if (details.error) {
         throw new Error(details.error);
       }
-      setHeroMovie(details);
+      // Merge details with the existing movie object to preserve what we already have
+      setHeroMovie(prev => ({ ...prev, ...details }));
       setHeroVideo(details.trailer_key || null);
     } catch (err) {
       console.error("Failed to fetch hero details", err);
@@ -154,12 +159,17 @@ const HomePage: React.FC = () => {
     fetchMovies(1, false, newFilters, null, null);
   };
 
-  if (loading && movies.length === 0) return <Loader />;
+  // We don't return a blocking loader here anymore. 
+  // Instead, we show skeletons in the components below.
 
   return (
     <PageTransition>
       <div className={styles.home}>
-        {heroMovie && (
+        {!heroMovie && loading ? (
+          <section className={styles.hero}>
+            <Skeleton width="100%" height="80vh" borderRadius="0" />
+          </section>
+        ) : heroMovie && (
           <section className={styles.hero}>
             <div className={styles.heroBg}>
               {heroVideo ? (
@@ -294,7 +304,7 @@ const HomePage: React.FC = () => {
                     ? 'Filtered Results'
                     : 'Trending This Week'}
             </h2>
-            {loading ? <Loader /> : <MovieGrid movies={movies} />}
+            <MovieGrid movies={movies} loading={loading && movies.length === 0} />
           </section>
 
           {!loading && movies.length > 0 && (

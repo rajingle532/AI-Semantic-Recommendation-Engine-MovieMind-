@@ -1,4 +1,7 @@
 import requests
+import json
+import os
+import time
 from typing import Optional
 from app.config import settings
 
@@ -7,7 +10,8 @@ from urllib3.util.retry import Retry
 
 # Persistent session for connection pooling and retries
 _session = requests.Session()
-retries = Retry(total=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
+# Reduced retries and backoff for faster failure and better UX
+retries = Retry(total=2, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504])
 _session.mount('https://', HTTPAdapter(max_retries=retries))
 
 # Real browser User-Agent to avoid blocks
@@ -18,8 +22,23 @@ _poster_cache = {}
 _details_cache = {}
 _genres_cache = None
 _trending_cache = {} # Key: page, Value: (timestamp, data)
-_CACHE_TTL = 3600 # 1 hour cache for trending/genres
+_CACHE_TTL = 10800 # 3 hour cache for trending/genres (increased from 1h)
 _fallback_movies = []
+
+# Persistent Cache Directory
+CACHE_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'cache')
+if not os.path.exists(CACHE_DIR):
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+    except:
+        pass
+
+# Emergency Hardcoded Fallback (Last resort if everything else fails)
+EMERGENCY_MOVIES = [
+    {"id": 27205, "title": "Inception", "overview": "Cobb, a skilled thief who commits corporate espionage by infiltrating the subconscious of his targets is offered a chance to regain his old life.", "poster_path": "https://image.tmdb.org/t/p/w500/edv5CZv0jH9NX186hBnoivcopyO.jpg", "vote_average": 8.4, "release_date": "2010-07-15", "backdrop_path": "https://image.tmdb.org/t/p/original/8Z99vYmda69uQk6u9u5Y7976q9U.jpg"},
+    {"id": 157336, "title": "Interstellar", "overview": "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel.", "poster_path": "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6vCU67oYvBPXT.jpg", "vote_average": 8.4, "release_date": "2014-11-05", "backdrop_path": "https://image.tmdb.org/t/p/original/xJHbtvMTEvR68SnedpCid97m8pS.jpg"},
+    {"id": 671, "title": "Harry Potter and the Philosopher's Stone", "overview": "Harry Potter has lived under the stairs at his aunt and uncle's house his whole life. But on his 11th birthday, he learns he's a powerful wizard.", "poster_path": "https://image.tmdb.org/t/p/w500/wuMc08IPKEatv9rn9XvBfCUyWHp.jpg", "vote_average": 7.9, "release_date": "2001-11-16", "backdrop_path": "https://image.tmdb.org/t/p/original/hziiv1YVatUcYqllIoxvBr7oQC9.jpg"}
+]
 
 # Circuit breaker for TMDB API
 _tmdb_disabled = False
@@ -96,8 +115,8 @@ def _make_request(endpoint: str, params: dict = None) -> dict:
     for attempt in range(max_retries):
         try:
             full_params = {"api_key": settings.TMDB_API_KEY, **(params or {})}
-            # Increased timeout to 5 seconds to handle slow international connections
-            response = _session.get(url, params=full_params, headers=headers, timeout=5.0)
+            # Reduced timeout to 3.5 seconds for faster perceived performance
+            response = _session.get(url, params=full_params, headers=headers, timeout=3.5)
             
             if response.status_code == 429:
                 print(f"TMDB_API_RATE_LIMIT: {endpoint}")
@@ -116,6 +135,28 @@ def _make_request(endpoint: str, params: dict = None) -> dict:
             print(f"TMDB API attempt {attempt + 1} failed for {endpoint}, retrying...")
             continue
     return {}
+
+
+def _save_disk_cache(filename: str, data: any):
+    """Save data to a JSON file on disk."""
+    try:
+        path = os.path.join(CACHE_DIR, filename)
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump({"timestamp": time.time(), "data": data}, f)
+    except Exception as e:
+        print(f"CACHE_SAVE_ERROR: {e}")
+
+def _load_disk_cache(filename: str):
+    """Load data from a JSON file on disk."""
+    try:
+        path = os.path.join(CACHE_DIR, filename)
+        if os.path.exists(path):
+            with open(path, 'r', encoding='utf-8') as f:
+                content = json.load(f)
+                return content.get("timestamp"), content.get("data")
+    except Exception as e:
+        print(f"CACHE_LOAD_ERROR: {e}")
+    return None, None
 
 
 def get_movie_details(movie_id: int) -> dict:
@@ -294,13 +335,17 @@ def get_movie_poster(movie_id: int) -> Optional[str]:
 
 def get_trending_movies(page: int = 1) -> list:
     """Get a mix of global trending movies and popular Hindi (Bollywood) movies in parallel with caching."""
-    import time
-    
-    # Check cache first
+    # Check memory cache first
     if page in _trending_cache:
         timestamp, data = _trending_cache[page]
         if time.time() - timestamp < _CACHE_TTL:
             return data
+
+    # Check disk cache second
+    disk_ts, disk_data = _load_disk_cache(f"trending_p{page}.json")
+    if disk_ts and (time.time() - disk_ts < _CACHE_TTL * 2): # Disk cache lasts longer
+        _trending_cache[page] = (disk_ts, disk_data)
+        return disk_data
 
     import concurrent.futures
     
@@ -328,6 +373,7 @@ def get_trending_movies(page: int = 1) -> list:
             "title": m.get("title"),
             "overview": m.get("overview", "")[:150],
             "poster_path": f"{settings.TMDB_IMAGE_URL}{m['poster_path']}" if m.get("poster_path") else None,
+            "backdrop_path": f"https://image.tmdb.org/t/p/original{m['backdrop_path']}" if m.get("backdrop_path") else None,
             "vote_average": m.get("vote_average"),
             "release_date": m.get("release_date"),
         }
@@ -351,25 +397,26 @@ def get_trending_movies(page: int = 1) -> list:
                 mixed_results.append(format_movie(hindi_results[i]))
 
     if not mixed_results:
-        print("TMDB_API_ERROR: All TMDB requests failed. Using local fallback dataset.")
+        print("TMDB_API_ERROR: All TMDB requests failed. Checking disk cache or local fallback.")
+        
+        # Last attempt to use stale disk cache if available
+        if disk_data:
+            return disk_data
+            
         return _get_fallback_movies(page)
 
     results = mixed_results[:20]
-    # Update cache
+    # Update memory and disk cache
     _trending_cache[page] = (time.time(), results)
+    _save_disk_cache(f"trending_p{page}.json", results)
     return results
 
 
 def _get_fallback_movies(page: int = 1) -> list:
     """Fetch movies from the local CSV dataset as a fallback when API is down."""
-    try:
-        movies = _get_fallback_data()
-        if not movies:
-            return []
-            
-        # Sample based on page
-        start = ((page - 1) * 20) % (len(movies) - 20)
-        page_movies = movies[start : start + 20]
+        if not page_movies:
+            print("FALLBACK_ERROR: Local CSV is empty or failed. Using hardcoded EMERGENCY_MOVIES.")
+            return EMERGENCY_MOVIES
         
         fallback = []
         for m in page_movies:
@@ -378,32 +425,41 @@ def _get_fallback_movies(page: int = 1) -> list:
                 "title": m['title'],
                 "overview": m['overview'][:150] if m['overview'] else "",
                 "poster_path": None,
+                "backdrop_path": None,
                 "vote_average": m['vote_average'],
                 "release_date": m['release_date'],
             })
         
         return fallback
     except Exception as e:
-        print(f"FALLBACK ERROR: {e}")
-        return []
+        print(f"FALLBACK ERROR: {e}. Using emergency list.")
+        return EMERGENCY_MOVIES
 
 
 
 
 def get_genres() -> list:
-    """Get list of all movie genres from TMDB with caching."""
+    """Get list of all movie genres from TMDB with multi-level caching."""
     global _genres_cache
-    import time
     
+    # 1. Memory Cache
     if _genres_cache:
         timestamp, genres = _genres_cache
-        if time.time() - timestamp < _CACHE_TTL * 24: # Genres rarely change, cache for 24h
+        if time.time() - timestamp < _CACHE_TTL * 24: # Genres rarely change
             return genres
             
+    # 2. Disk Cache
+    disk_ts, disk_genres = _load_disk_cache("genres.json")
+    if disk_ts:
+        _genres_cache = (disk_ts, disk_genres)
+        return disk_genres
+
+    # 3. API Request
     data = _make_request("/genre/movie/list")
     genres = data.get("genres", [])
     if genres:
         _genres_cache = (time.time(), genres)
+        _save_disk_cache("genres.json", genres)
     return genres
 
 

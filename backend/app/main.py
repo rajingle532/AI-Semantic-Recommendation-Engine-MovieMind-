@@ -4,6 +4,7 @@ Registers all route modules and configures CORS middleware.
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from app.config import settings
 
 # Import route modules
@@ -19,6 +20,22 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+@app.on_event("startup")
+async def startup_event():
+    """Warm up caches on startup."""
+    from app.services.tmdb import get_genres, get_trending_movies
+    import asyncio
+    try:
+        # Pre-fetch genres and first page of trending movies
+        print("Warm-up: Fetching genres and trending movies...")
+        await asyncio.gather(
+            asyncio.to_thread(get_genres),
+            asyncio.to_thread(get_trending_movies, 1)
+        )
+        print("Warm-up complete.")
+    except Exception as e:
+        print(f"Warm-up failed: {e}")
 
 # ═══════════════════════════════════════════
 # CORS Middleware (allow React frontend)
@@ -39,6 +56,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Enable GZip compression for responses > 1KB
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # ═══════════════════════════════════════════
 # Register Route Modules
