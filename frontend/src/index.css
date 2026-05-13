@@ -1,17 +1,25 @@
 :root {
-  /* Default Dark Theme */
-  --bg-primary: #141414;
-  --bg-secondary: #1f1f1f;
-  --bg-tertiary: #2a2a2a;
+  /* Default Dark Theme - Premium Obsidian */
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #141414;
+  --bg-tertiary: #1a1a1a;
   --accent: #e50914;
-  --accent-hover: #f40612;
-  --text-primary: #ffffff;
-  --text-secondary: #b3b3b3;
-  --text-muted: #757575;
-  --gold: #ffd700;
-  --card-radius: 8px;
-  --transition: all 0.3s ease, background-color 0.4s ease, color 0.4s ease;
-  --navbar-height: 70px;
+  --accent-hover: #ff0f1a;
+  --accent-glow: 0 0 20px rgba(229, 9, 20, 0.4);
+  --text-primary: #f5f5f7;
+  --text-secondary: #a1a1a6;
+  --text-muted: #6e6e73;
+  --gold: #ffb800;
+  
+  /* Glassmorphism Tokens */
+  --glass-bg: rgba(20, 20, 20, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-blur: blur(12px);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+  
+  --card-radius: 12px;
+  --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --navbar-height: 72px;
   --shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
 }
 
@@ -21,11 +29,16 @@
   --bg-tertiary: #e5e5e7;
   --accent: #e50914;
   --accent-hover: #f40612;
+  --accent-glow: 0 0 20px rgba(229, 9, 20, 0.2);
   --text-primary: #1d1d1f;
   --text-secondary: #424245;
   --text-muted: #86868b;
   --gold: #f59e0b;
-  --shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 0, 0, 0.05);
+  --glass-blur: blur(10px);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
 }
 
 * {
