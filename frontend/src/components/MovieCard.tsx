@@ -20,6 +20,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, showRating = true }) => {
   return (
     <motion.div 
       className={styles.card}
+      data-testid="movie-card"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ 

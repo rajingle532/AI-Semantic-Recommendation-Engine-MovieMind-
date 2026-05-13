@@ -87,8 +87,10 @@ const SignupPage: React.FC = () => {
         <h1 className={styles.title}>Create Account</h1>
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.group}>
-            <label>Full Name</label>
+            <label htmlFor="name">Full Name</label>
             <input 
+              id="name"
+              name="name"
               type="text" 
               placeholder="John Doe"
               value={name}
@@ -97,8 +99,10 @@ const SignupPage: React.FC = () => {
             />
           </div>
           <div className={styles.group}>
-            <label>Email Address</label>
+            <label htmlFor="email">Email Address</label>
             <input 
+              id="email"
+              name="email"
               type="email" 
               placeholder="name@example.com"
               value={email}
@@ -107,8 +111,10 @@ const SignupPage: React.FC = () => {
             />
           </div>
           <div className={styles.group}>
-            <label>Mobile Number</label>
+            <label htmlFor="phone">Mobile Number</label>
             <input 
+              id="phone"
+              name="phone"
               type="tel" 
               placeholder="10 digit number"
               value={phone}
@@ -117,8 +123,10 @@ const SignupPage: React.FC = () => {
             />
           </div>
           <div className={styles.group}>
-            <label>Password</label>
+            <label htmlFor="password">Password</label>
             <input 
+              id="password"
+              name="password"
               type="password" 
               placeholder="Min. 8 characters"
               value={password}

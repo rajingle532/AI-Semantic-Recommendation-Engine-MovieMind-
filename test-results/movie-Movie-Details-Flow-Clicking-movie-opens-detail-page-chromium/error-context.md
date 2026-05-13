@@ -1,0 +1,76 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: movie.spec.ts >> Movie Details Flow >> Clicking movie opens detail page
+- Location: e2e\movie.spec.ts:4:7
+
+# Error details
+
+```
+Error: expect(locator).toBeVisible() failed
+
+Locator: locator('text=Similar Movies')
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toBeVisible" with timeout 5000ms
+  - waiting for locator('text=Similar Movies')
+
+```
+
+```yaml
+- navigation:
+  - link "MovieMind":
+    - /url: /
+    - img
+    - text: MovieMind
+  - img
+  - textbox "Search movies, actors, or genres..."
+  - button "Switch to Light Mode":
+    - img
+  - link "Login":
+    - /url: /login
+  - link "Sign Up":
+    - /url: /signup
+- button:
+  - img
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@playwright/test';
+  2  | 
+  3  | test.describe('Movie Details Flow', () => {
+  4  |   test('Clicking movie opens detail page', async ({ page }) => {
+  5  |     await page.goto('/');
+  6  |     const firstMovie = page.locator('[data-testid="movie-card"]').first();
+  7  |     const movieTitle = await firstMovie.locator('h3').innerText();
+  8  |     await firstMovie.click();
+  9  |     
+  10 |     await expect(page.locator('h1')).toContainText(movieTitle);
+> 11 |     await expect(page.locator('text=Similar Movies')).toBeVisible();
+     |                                                       ^ Error: expect(locator).toBeVisible() failed
+  12 |   });
+  13 | 
+  14 |   test('Watchlist button works (when logged in)', async ({ page }) => {
+  15 |     // Login
+  16 |     await page.goto('/login');
+  17 |     await page.fill('input[name="email"]', 'test@example.com');
+  18 |     await page.fill('input[name="password"]', 'password123');
+  19 |     await page.click('button[type="submit"]');
+  20 | 
+  21 |     await page.goto('/movie/27205'); // Inception
+  22 |     await page.click('text=Add to Watchlist');
+  23 |     await expect(page.locator('text=In Watchlist')).toBeVisible();
+  24 |   });
+  25 | });
+  26 | 
+```

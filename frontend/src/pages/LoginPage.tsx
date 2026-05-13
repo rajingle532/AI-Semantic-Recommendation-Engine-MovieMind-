@@ -54,8 +54,10 @@ const LoginPage: React.FC = () => {
         <h1 className={styles.title}>Sign In</h1>
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.group}>
-            <label>Email Address</label>
+            <label htmlFor="email">Email Address</label>
             <input
+              id="email"
+              name="email"
               type="email"
               placeholder="name@example.com"
               value={email}
@@ -65,12 +67,14 @@ const LoginPage: React.FC = () => {
           </div>
           <div className={styles.group}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label>Password</label>
+              <label htmlFor="password">Password</label>
               <Link to="/forgot-password" style={{ fontSize: '0.8rem', color: 'var(--accent)', textDecoration: 'none' }}>
                 Forgot Password?
               </Link>
             </div>
             <input
+              id="password"
+              name="password"
               type="password"
               placeholder="••••••••"
               value={password}

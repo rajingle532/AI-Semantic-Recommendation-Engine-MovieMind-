@@ -158,7 +158,7 @@ const Navbar: React.FC = () => {
                 <span style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '0.9rem' }}>
                   {user?.name}
                 </span>
-                <div className={styles.avatar}>
+                <div className={styles.avatar} data-testid="navbar-avatar">
                   {(user?.name ?? "U").charAt(0).toUpperCase()}
                 </div>
               </div>

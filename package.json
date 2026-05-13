@@ -3,6 +3,12 @@
   "version": "1.0.0",
   "scripts": {
     "build": "cd frontend && npm install && npm run build",
-    "install": "cd frontend && npm install"
+    "install": "cd frontend && npm install",
+    "test": "npm test --prefix frontend",
+    "test:backend": "cd backend && pytest tests/",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0"
   }
 }
