@@ -135,8 +135,11 @@ const HomePage: React.FC = () => {
         setMovies(newMovies);
         
         if (newMovies.length > 0) {
-          setHeroMovie(newMovies[0]);
-          updateHeroMovie(newMovies[0]);
+          // Select a random movie from the top 10 trending movies for variety
+          const randomIndex = Math.floor(Math.random() * Math.min(10, newMovies.length));
+          const selectedHero = newMovies[randomIndex];
+          setHeroMovie(selectedHero);
+          updateHeroMovie(selectedHero);
         }
       } catch (err) {
         console.error("Initial load failed", err);
