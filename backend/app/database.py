@@ -16,11 +16,12 @@ def get_database() -> Database:
     global _client, _db
 
     if _db is None:
-        # SSL/TLS is required for Atlas (+srv) but fails on local non-SSL mongo
-        is_atlas = "mongodb+srv://" in settings.MONGODB_URI
+        # Safety check for empty URI
+        uri = settings.MONGODB_URI or "mongodb://localhost:27017/movie_recommender"
+        is_atlas = "mongodb+srv://" in uri
         
         client_kwargs = {
-            "host": settings.MONGODB_URI,
+            "host": uri,
             "serverSelectionTimeoutMS": 5000
         }
         
