@@ -62,11 +62,15 @@ def _get_fallback_data():
     global _fallback_movies
     if _fallback_movies is not None:
         return _fallback_movies
+        
     try:
         import csv
         import os
         data_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data')
-        movies_path = os.path.join(data_dir, 'tmdb_5000_movies.csv')
+        # Check for smaller, faster unified dataset first
+        movies_path = os.path.join(data_dir, 'unified_indian_movies.csv')
+        if not os.path.exists(movies_path):
+            movies_path = os.path.join(data_dir, 'tmdb_5000_movies.csv')
         
         if not os.path.exists(movies_path):
             return []
@@ -75,16 +79,18 @@ def _get_fallback_data():
         with open(movies_path, mode='r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                movies.append({
-                    "id": int(row['id']),
-                    "title": row['title'],
-                    "overview": row['overview'],
-                    "vote_average": float(row['vote_average']) if row['vote_average'] else 0,
-                    "popularity": float(row['popularity']) if row['popularity'] else 0,
-                    "release_date": row['release_date'],
-                    "genres": row['genres'],
-                    "original_language": row['original_language']
-                })
+                try:
+                    movies.append({
+                        "id": int(row['id']),
+                        "title": row.get('title') or row.get('original_title', 'Untitled'),
+                        "overview": row.get('overview', ""),
+                        "vote_average": float(row['vote_average']) if row.get('vote_average') else 0,
+                        "popularity": float(row['popularity']) if row.get('popularity') else 0,
+                        "release_date": row.get('release_date', ""),
+                        "genres": row.get('genres', "[]"),
+                        "original_language": row.get('original_language', 'en')
+                    })
+                except: continue
         
         # Sort by popularity once so fallbacks are always high quality
         _fallback_movies = sorted(movies, key=lambda x: x['popularity'], reverse=True)
@@ -92,6 +98,10 @@ def _get_fallback_data():
     except Exception as e:
         print(f"ERROR loading fallback dataset: {e}")
         return []
+
+# Trigger background load on import
+import threading
+threading.Thread(target=_get_fallback_data, daemon=True).start()
 
 
 def _make_request(endpoint: str, params: dict = None) -> dict:

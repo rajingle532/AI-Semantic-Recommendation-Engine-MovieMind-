@@ -114,11 +114,35 @@ const HomePage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchMovies(1);
-    api.get('/movies/genres').then(res => {
-      const genreData = res.data;
-      setGenres(Array.isArray(genreData) ? genreData : (genreData.genres || []));
-    });
+    // Fetch genres and initial movies in parallel for much faster startup
+    const initPage = async () => {
+      try {
+        const [movieRes, genreRes] = await Promise.all([
+          api.get('/movies/trending', { params: { page: 1 } }),
+          api.get('/movies/genres')
+        ]);
+        
+        // Handle Genres
+        const genreData = genreRes.data;
+        setGenres(Array.isArray(genreData) ? genreData : (genreData.genres || []));
+
+        // Handle Movies
+        const newMovies = Array.isArray(movieRes.data) ? movieRes.data : (movieRes.data.results || []);
+        setMovies(newMovies);
+        
+        if (newMovies.length > 0) {
+          // Immediately set hero from list while we fetch its deep details in background
+          setHeroMovie(newMovies[0]);
+          updateHeroMovie(newMovies[0]);
+        }
+      } catch (err) {
+        console.error("Initial load failed", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initPage();
   }, []);
 
   const loadMore = () => {
