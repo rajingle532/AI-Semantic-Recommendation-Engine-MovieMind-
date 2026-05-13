@@ -28,7 +28,7 @@ class Settings:
     TMDB_IMAGE_URL: str = "https://image.tmdb.org/t/p/w500"
 
     # MongoDB
-    MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017/movie_recommender")
+    MONGODB_URI: str = os.getenv("MONGODB_URI") or "mongodb://localhost:27017/movie_recommender"
     DB_NAME: str = "movie_recommender"
 
     # JWT Authentication

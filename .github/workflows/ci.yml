@@ -9,6 +9,11 @@ on:
 jobs:
   backend-tests:
     runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
@@ -26,7 +31,7 @@ jobs:
           python -m pytest tests/ -v
         env:
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
-          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          MONGODB_URI: mongodb://localhost:27017/test_db
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
@@ -50,6 +55,11 @@ jobs:
   e2e-tests:
     runs-on: ubuntu-latest
     needs: [backend-tests, frontend-tests]
+    services:
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
     steps:
       - uses: actions/checkout@v3
       - name: Setup Node.js
@@ -70,8 +80,8 @@ jobs:
         run: npm run test:e2e
         env:
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
-          MONGODB_URI: ${{ secrets.MONGODB_URI }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          MONGODB_URI: mongodb://localhost:27017/e2e_db
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'test-secret-key' }}
 
   deploy:
     needs: [e2e-tests]
