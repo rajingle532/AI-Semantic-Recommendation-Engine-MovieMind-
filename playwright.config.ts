@@ -9,7 +9,7 @@ export default defineConfig({
   workers: 1,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://127.0.0.1:5173',
     trace: 'on-first-retry',
     screenshot: 'on',
   },
@@ -27,7 +27,7 @@ export default defineConfig({
       timeout: 120000,
     },
     {
-      command: 'cd backend && uvicorn app.main:app --host 127.0.0.1 --port 8000',
+      command: 'uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000',
       url: 'http://127.0.0.1:8000',
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
