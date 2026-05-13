@@ -114,9 +114,9 @@ const HomePage: React.FC = () => {
   };
 
   useEffect(() => {
-    // Fetch genres and initial movies in parallel for much faster startup
     const initPage = async () => {
       try {
+        setLoading(true);
         const [movieRes, genreRes] = await Promise.all([
           api.get('/movies/trending', { params: { page: 1 } }),
           api.get('/movies/genres')
@@ -126,12 +126,15 @@ const HomePage: React.FC = () => {
         const genreData = genreRes.data;
         setGenres(Array.isArray(genreData) ? genreData : (genreData.genres || []));
 
-        // Handle Movies
-        const newMovies = Array.isArray(movieRes.data) ? movieRes.data : (movieRes.data.results || []);
+        // Handle Movies - Robust list extraction
+        const newMovies = Array.isArray(movieRes.data) 
+          ? movieRes.data 
+          : (movieRes.data.results || movieRes.data.movies || []);
+        
+        console.log("DEBUG: Fetched movies count:", newMovies.length);
         setMovies(newMovies);
         
         if (newMovies.length > 0) {
-          // Immediately set hero from list while we fetch its deep details in background
           setHeroMovie(newMovies[0]);
           updateHeroMovie(newMovies[0]);
         }
