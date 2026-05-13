@@ -15,8 +15,9 @@ test.describe('Profile Page Flow', () => {
 
     await page.goto('/profile');
     await expect(page.locator('h1')).toContainText('Profile User');
-    await expect(page.locator('span:has-text("Watchlist")')).first().toBeVisible();
-    await expect(page.locator('span:has-text("Ratings")')).first().toBeVisible();
+    // Correct syntax: .first() inside the expect()
+    await expect(page.locator('span:has-text("Watchlist")').first()).toBeVisible();
+    await expect(page.locator('span:has-text("Ratings")').first()).toBeVisible();
     await expect(page.locator('text=Recommendations')).toBeVisible();
   });
 });
