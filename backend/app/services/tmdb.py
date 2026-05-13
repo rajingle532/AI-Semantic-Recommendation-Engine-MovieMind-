@@ -22,7 +22,7 @@ _poster_cache = {}
 _details_cache = {}
 _genres_cache = None
 _trending_cache = {} # Key: page, Value: (timestamp, data)
-_CACHE_TTL = 10800 # 3 hour cache for trending/genres (increased from 1h)
+_CACHE_TTL = 3600 # 1 hour cache for trending/genres (reduced for daily variety)
 _fallback_movies = []
 
 # Persistent Cache Directory
@@ -343,28 +343,41 @@ def get_trending_movies(page: int = 1) -> list:
 
     # Check disk cache second
     disk_ts, disk_data = _load_disk_cache(f"trending_p{page}.json")
-    if disk_ts and (time.time() - disk_ts < _CACHE_TTL * 2): # Disk cache lasts longer
+    if disk_ts and (time.time() - disk_ts < _CACHE_TTL): # Match disk TTL with memory TTL for freshness
         _trending_cache[page] = (disk_ts, disk_data)
         return disk_data
 
     import concurrent.futures
     
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        # Submit both requests simultaneously
-        future_global = executor.submit(_make_request, "/trending/movie/week", {"page": page})
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        # Submit requests simultaneously
+        # 1. Global Trending (Day instead of Week for daily changes)
+        future_global = executor.submit(_make_request, "/trending/movie/day", {"page": page})
+        
+        # 2. Popular Hindi Movies (Bollywood)
         future_hindi = executor.submit(_make_request, "/discover/movie", {
             "page": page,
             "sort_by": "popularity.desc",
             "with_original_language": "hi",
+            "region": "IN"
+        })
+        
+        # 3. Recent Indian Releases (Multi-language Indian)
+        future_indian = executor.submit(_make_request, "/discover/movie", {
+            "page": page,
+            "sort_by": "primary_release_date.desc",
             "region": "IN",
-            "with_origin_country": "IN"
+            "with_origin_country": "IN",
+            "primary_release_date.lte": time.strftime("%Y-%m-%d")
         })
         
         global_data = future_global.result()
         hindi_data = future_hindi.result()
+        indian_data = future_indian.result()
 
     global_results = global_data.get("results", []) if global_data else []
     hindi_results = hindi_data.get("results", []) if hindi_data else []
+    indian_results = indian_data.get("results", []) if indian_data else []
 
     # Format helper
     def format_movie(m):
@@ -378,23 +391,28 @@ def get_trending_movies(page: int = 1) -> list:
             "release_date": m.get("release_date"),
         }
 
-    # Interleave results deterministically based on page to prevent repeats
-    start_with_hindi = (page % 2 != 0)
-    
+    # Mix results: Priority to Hindi and Indian content
     mixed_results = []
-    max_len = max(len(global_results), len(hindi_results))
     
-    for i in range(max_len):
-        if start_with_hindi:
-            if i < len(hindi_results):
-                mixed_results.append(format_movie(hindi_results[i]))
-            if i < len(global_results):
-                mixed_results.append(format_movie(global_results[i]))
-        else:
-            if i < len(global_results):
-                mixed_results.append(format_movie(global_results[i]))
-            if i < len(hindi_results):
-                mixed_results.append(format_movie(hindi_results[i]))
+    # Take top 10 from each to create a high-quality mix
+    h_idx = g_idx = i_idx = 0
+    while len(mixed_results) < 40 and (h_idx < len(hindi_results) or g_idx < len(global_results) or i_idx < len(indian_results)):
+        # Pattern: Hindi -> Indian -> Global -> Hindi -> Global ...
+        if h_idx < len(hindi_results):
+            mixed_results.append(format_movie(hindi_results[h_idx]))
+            h_idx += 1
+            
+        if i_idx < len(indian_results):
+            mixed_results.append(format_movie(indian_results[i_idx]))
+            i_idx += 1
+            
+        if g_idx < len(global_results):
+            mixed_results.append(format_movie(global_results[g_idx]))
+            g_idx += 1
+            
+        if h_idx < len(hindi_results): # Add one more Hindi movie for weight
+            mixed_results.append(format_movie(hindi_results[h_idx]))
+            h_idx += 1
 
     if not mixed_results:
         print("TMDB_API_ERROR: All TMDB requests failed. Checking disk cache or local fallback.")
