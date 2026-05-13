@@ -16,10 +16,6 @@ import re
 
 HINDI_FILLERS = ["batao", "sanga", "dikhao", "dakhva", "ka", "ki", "ke", "hai", "hain", "ko", "se", "mein", "me", "kaisa", "kaisi", "kaun", "kab", "story", "kya"]
 ENGLISH_FILLERS = ["tell", "me", "about", "the", "movie", "film", "show", "give", "suggest", "recommend", "info", "details", "story", "plot"]
-import re
-
-HINDI_FILLERS = ["batao", "sanga", "dikhao", "dakhva", "ka", "ki", "ke", "hai", "hain", "ko", "se", "mein", "me", "kaisa", "kaisi", "kaun", "kab", "story", "kya"]
-ENGLISH_FILLERS = ["tell", "me", "about", "the", "movie", "film", "show", "give", "suggest", "recommend", "info", "details", "story", "plot"]
 
 try:
     from sentence_transformers import SentenceTransformer

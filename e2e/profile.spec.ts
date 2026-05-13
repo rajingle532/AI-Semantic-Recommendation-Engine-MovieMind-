@@ -1,16 +1,20 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Profile Page Flow', () => {
-  test.beforeEach(async ({ page }) => {
-    // Login
-    await page.goto('/login');
-    await page.fill('input[name="email"]', 'test@example.com');
-    await page.fill('input[name="password"]', 'password123');
-    await page.click('button[type="submit"]');
-  });
-
   test('Profile page shows user info and sections', async ({ page }) => {
+    // Signup first to create a valid session and user
+    const profileEmail = `profile_${Date.now()}@example.com`;
+    await page.goto('/signup');
+    await page.getByLabel(/Full Name/i).fill('Profile User');
+    await page.getByLabel(/Email Address/i).fill(profileEmail);
+    await page.getByLabel(/Password/i).fill('Password123!');
+    await page.getByLabel(/Mobile Number/i).fill('1234567890');
+    await page.click('button:has-text("Sign Up")');
+    await page.waitForURL('**/', { timeout: 15000 });
+    await expect(page).toHaveURL('/');
+
     await page.goto('/profile');
+    await expect(page.locator('h1')).toContainText('Profile User');
     await expect(page.locator('text=Watchlist')).toBeVisible();
     await expect(page.locator('text=Ratings')).toBeVisible();
     await expect(page.locator('text=Recommendations')).toBeVisible();

@@ -4,19 +4,24 @@ test.describe('Movie Details Flow', () => {
   test('Clicking movie opens detail page', async ({ page }) => {
     await page.goto('/');
     const firstMovie = page.locator('[data-testid="movie-card"]').first();
-    const movieTitle = await firstMovie.locator('h3').innerText();
-    await firstMovie.click();
+    const movieTitle = await firstMovie.locator('h3').getAttribute('title');
     
-    await expect(page.locator('h1')).toContainText(movieTitle);
+    await firstMovie.click();
+    await expect(page.locator('h1')).toContainText(movieTitle || "");
     await expect(page.locator('text=Similar Movies')).toBeVisible();
   });
 
   test('Watchlist button works (when logged in)', async ({ page }) => {
-    // Login
-    await page.goto('/login');
-    await page.fill('input[name="email"]', 'test@example.com');
-    await page.fill('input[name="password"]', 'password123');
-    await page.click('button[type="submit"]');
+    // Signup to create a valid session
+    const watchlistEmail = `watchlist_${Date.now()}@example.com`;
+    await page.goto('/signup');
+    await page.getByLabel(/Full Name/i).fill('Watchlist User');
+    await page.getByLabel(/Email Address/i).fill(watchlistEmail);
+    await page.getByLabel(/Password/i).fill('Password123!');
+    await page.getByLabel(/Mobile Number/i).fill('1234567890');
+    await page.click('button:has-text("Sign Up")');
+    await page.waitForURL('**/', { timeout: 15000 });
+    await expect(page).toHaveURL('/');
 
     await page.goto('/movie/27205'); // Inception
     await page.click('text=Add to Watchlist');
