@@ -1,3 +1,4 @@
+import { describe, test, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import Navbar from '../components/Navbar';
@@ -16,7 +17,7 @@ vi.mock('../services/api', () => ({
   },
 }));
 
-const mockAuthContext = {
+const mockAuthContext: any = {
   user: null,
   token: null,
   login: vi.fn(),
