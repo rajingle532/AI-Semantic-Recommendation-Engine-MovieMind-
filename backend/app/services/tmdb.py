@@ -466,7 +466,19 @@ def get_genres() -> list:
     if genres:
         _genres_cache = (time.time(), genres)
         _save_disk_cache("genres.json", genres)
-    return genres
+        return genres
+        
+    # 4. Emergency Fallback Genres
+    print("TMDB_API_ERROR: Using emergency fallback genres.")
+    emergency_genres = [
+        {"id": 28, "name": "Action"},
+        {"id": 35, "name": "Comedy"},
+        {"id": 18, "name": "Drama"},
+        {"id": 27, "name": "Horror"},
+        {"id": 10749, "name": "Romance"},
+        {"id": 878, "name": "Sci-Fi"}
+    ]
+    return emergency_genres
 
 
 def get_person_details(person_id: int) -> dict:

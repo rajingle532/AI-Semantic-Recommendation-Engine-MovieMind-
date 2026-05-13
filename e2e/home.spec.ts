@@ -6,7 +6,7 @@ test.describe('Home Page functionality', () => {
   });
 
   test('Home page loads with movies', async ({ page }) => {
-    await expect(page.locator('[data-testid="movie-card"]')).first().toBeVisible();
+    await expect(page.locator('[data-testid="movie-card"]').first()).toBeVisible();
   });
 
   test('Search bar finds movies', async ({ page }) => {
@@ -19,6 +19,6 @@ test.describe('Home Page functionality', () => {
   test('Genre filter works', async ({ page }) => {
     await page.click('text=Action');
     // Check if URL updates or content changes
-    await expect(page.locator('[data-testid="movie-card"]')).first().toBeVisible();
+    await expect(page.locator('[data-testid="movie-card"]').first()).toBeVisible();
   });
 });
