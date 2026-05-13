@@ -24,7 +24,8 @@ test.describe('Movie Details Flow', () => {
     await expect(page).toHaveURL('/');
 
     await page.goto('/movie/27205'); // Inception
-    await page.click('text=Add to Watchlist');
-    await expect(page.locator('text=In Watchlist')).toBeVisible();
+    // Use specific button text to avoid strict mode violation
+    await page.click('button:has-text("Add to Watchlist")');
+    await expect(page.locator('button:has-text("In Watchlist")')).toBeVisible();
   });
 });
