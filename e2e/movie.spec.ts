@@ -23,7 +23,8 @@ test.describe('Movie Details Flow', () => {
     await watchlistBtn.click();
     
     // Wait for the button to change state (Added to Watchlist)
-    // Increased timeout for CI environment latency
-    await expect(page.getByRole('button', { name: /In Watchlist/i })).toBeVisible({ timeout: 15000 });
+    // Using a more flexible text match and checking for toast message
+    await expect(page.getByText(/Added to watchlist/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /Watchlist/i })).toContainText(/In/i);
   });
 });
