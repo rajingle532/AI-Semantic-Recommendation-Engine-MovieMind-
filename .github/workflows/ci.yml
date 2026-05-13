@@ -62,26 +62,39 @@ jobs:
           - 27017:27017
     steps:
       - uses: actions/checkout@v3
+      
+      - name: Check Secrets
+        run: |
+          if [ -z "${{ secrets.TMDB_API_KEY }}" ]; then echo "WARNING: TMDB_API_KEY is missing!"; fi
+          if [ -z "${{ secrets.JWT_SECRET }}" ]; then echo "WARNING: JWT_SECRET is missing!"; fi
+          
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
+          cache: 'npm'
+          
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
+          cache: 'pip'
+          
       - name: Install Dependencies
         run: |
           npm install
           cd backend && pip install -r requirements.txt
           cd ../frontend && npm install
           npx playwright install --with-deps
+          
       - name: Run E2E tests
         run: npm run test:e2e
         env:
-          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY || 'test_key' }}
           MONGODB_URI: mongodb://localhost:27017/e2e_db
-          JWT_SECRET: ${{ secrets.JWT_SECRET || 'test-secret-key' }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'super-secret-e2e-key' }}
+          FRONTEND_URL: http://127.0.0.1:5173
+          CI: true
 
   deploy:
     needs: [e2e-tests]
