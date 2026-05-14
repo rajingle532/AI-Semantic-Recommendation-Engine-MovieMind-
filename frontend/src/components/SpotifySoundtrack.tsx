@@ -72,7 +72,14 @@ const SpotifySoundtrack: React.FC<SpotifySoundtrackProps> = ({ movieTitle }) => 
     </div>
   );
 
-  if (!data) return null;
+  if (!data && !loading) return (
+    <section className={styles.soundtrackSection}>
+      <h2 className={styles.sectionTitle}>Official Soundtrack</h2>
+      <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '1rem' }}>
+        Spotify soundtrack not available for this movie.
+      </p>
+    </section>
+  );
 
   return (
     <section className={styles.soundtrackSection}>

@@ -46,9 +46,28 @@ const MovieSongs: React.FC<MovieSongsProps> = ({ movieTitle, releaseYear }) => {
     }
   }, [movieTitle, releaseYear]);
 
-  // Graceful degradation: If no songs or error, don't render anything to avoid breaking UI
-  if (error || (!loading && songs.length === 0)) {
-    return null;
+  // If loading, show the spinner
+  if (loading) {
+    return (
+      <section className={styles.songsSection}>
+        <div className={styles.loaderContainer}>
+          <div className={styles.spinner}></div>
+          <p>Scanning for movie soundtracks...</p>
+        </div>
+      </section>
+    );
+  }
+
+  // If no songs found after loading
+  if (songs.length === 0) {
+    return (
+      <section className={styles.songsSection}>
+        <h2 className={styles.sectionTitle}>Official Music Videos</h2>
+        <div className={styles.loaderContainer} style={{ borderStyle: 'dotted' }}>
+          <p>No official music videos found for this title.</p>
+        </div>
+      </section>
+    );
   }
 
   return (
