@@ -371,6 +371,74 @@
   }
 }
 
+@media (max-width: 768px) {
+  .content {
+    padding-top: 2rem;
+  }
+
+  .mainInfo {
+    gap: 2rem;
+    margin-bottom: 3rem;
+  }
+
+  .title {
+    font-size: 2.25rem;
+  }
+
+  .meta {
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: 0.85rem;
+    justify-content: center;
+  }
+
+  .overview p {
+    font-size: 1rem;
+  }
+
+  .actions {
+    padding: 1.5rem;
+    gap: 1.5rem;
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .watchlistBtn, .trailerBtn {
+    padding: 0.8rem 1.5rem;
+    font-size: 0.95rem;
+    width: 100%;
+  }
+
+  .castAvatar {
+    width: 100px;
+    height: 100px;
+  }
+
+  .castName {
+    font-size: 0.9rem;
+  }
+
+  .sectionTitle {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 1.85rem;
+  }
+
+  .meta {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .posterWrapper {
+    max-width: 220px;
+  }
+}
+
 .providersSection {
   margin-top: 2rem;
   padding-top: 1.5rem;

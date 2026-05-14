@@ -267,3 +267,58 @@
 @keyframes spin {
   to { transform: translateY(-50%) rotate(360deg); }
 }
+
+@media (max-width: 1024px) {
+  .searchWrapper {
+    flex: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    height: 64px;
+  }
+
+  .logo span {
+    display: none;
+  }
+
+  .searchWrapper {
+    margin: 0 0.5rem;
+  }
+
+  .actions {
+    gap: 0.75rem;
+  }
+
+  .authBtns {
+    gap: 0.5rem;
+  }
+
+  .loginBtn {
+    display: none;
+  }
+
+  .signupBtn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  .profileWrapper span {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo {
+    font-size: 1.2rem;
+  }
+  
+  .searchBar {
+    padding: 0.4rem 0.8rem 0.4rem 2rem;
+  }
+  
+  .searchBar input {
+    font-size: 0.8rem;
+  }
+}

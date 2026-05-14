@@ -126,7 +126,13 @@ def _make_request(endpoint: str, params: dict = None) -> dict:
         try:
             full_params = {"api_key": settings.TMDB_API_KEY, **(params or {})}
             # Reduced timeout to 3.5 seconds for faster perceived performance
-            response = _session.get(url, params=full_params, headers=headers, timeout=3.5)
+            # Try with verification first, fallback to verify=False if it fails due to SSL in local environments
+            try:
+                response = _session.get(url, params=full_params, headers=headers, timeout=3.5)
+            except (requests.exceptions.SSLError, requests.exceptions.ConnectionError):
+                # Fallback for environments with SSL interception or issues
+                print(f"TMDB_SSL_FALLBACK: Attempting insecure request for {endpoint}")
+                response = _session.get(url, params=full_params, headers=headers, timeout=5, verify=False)
             
             if response.status_code == 429:
                 print(f"TMDB_API_RATE_LIMIT: {endpoint}")
@@ -137,10 +143,9 @@ def _make_request(endpoint: str, params: dict = None) -> dict:
                 return {}
                 
             return response.json()
-        except (requests.RequestException, ConnectionResetError) as e:
+        except Exception as e:
             if attempt == max_retries - 1:
                 print(f"TMDB API Error after {max_retries} attempts for {endpoint}: {e}")
-                # We don't disable permanently anymore, just fail this request
                 return {}
             print(f"TMDB API attempt {attempt + 1} failed for {endpoint}, retrying...")
             continue
@@ -429,9 +434,12 @@ def get_trending_movies(page: int = 1) -> list:
         
         # Last attempt to use stale disk cache if available
         if disk_data:
+            print("TMDB_CACHE: Returning stale disk cache.")
             return disk_data
             
-        return _get_fallback_movies(page)
+        fallback_data = _get_fallback_movies(page)
+        print(f"TMDB_FALLBACK: Returning {len(fallback_data)} fallback movies.")
+        return fallback_data
 
     results = mixed_results[:20]
     # Update memory and disk cache
@@ -448,9 +456,13 @@ def _get_fallback_movies(page: int = 1) -> list:
             print("FALLBACK_ERROR: Local CSV is empty or failed. Using hardcoded EMERGENCY_MOVIES.")
             return EMERGENCY_MOVIES
             
-        # Sample based on page
-        start = ((page - 1) * 20) % (len(movies) - 20)
-        page_movies = movies[start : start + 20]
+        # Robust sampling based on page
+        total = len(movies)
+        if total <= 20:
+            page_movies = movies
+        else:
+            start = ((page - 1) * 20) % (total - 20)
+            page_movies = movies[start : start + 20]
         
         fallback = []
         for m in page_movies:
