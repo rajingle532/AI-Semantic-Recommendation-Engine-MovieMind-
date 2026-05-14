@@ -113,10 +113,19 @@ const HomePage: React.FC = () => {
     }
   };
 
+  const [retryCount, setRetryCount] = useState(0);
+  const [backendWaking, setBackendWaking] = useState(false);
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY_MS = 3000;
+
   useEffect(() => {
-    const initPage = async () => {
+    const initPage = async (attempt = 0) => {
       try {
         setLoading(true);
+        if (attempt > 0) {
+          setBackendWaking(true);
+        }
+
         const [movieRes, genreRes] = await Promise.all([
           api.get('/movies/trending', { params: { page: 1 } }),
           api.get('/movies/genres')
@@ -133,6 +142,8 @@ const HomePage: React.FC = () => {
         
         console.log("DEBUG: Fetched movies count:", newMovies.length);
         setMovies(newMovies);
+        setBackendWaking(false);
+        setRetryCount(0);
         
         if (newMovies.length > 0) {
           // Select a random movie from the top 10 trending movies for variety
@@ -142,7 +153,19 @@ const HomePage: React.FC = () => {
           updateHeroMovie(selectedHero);
         }
       } catch (err) {
-        console.error("Initial load failed", err);
+        console.error(`Initial load failed (attempt ${attempt + 1}/${MAX_RETRIES + 1})`, err);
+        
+        if (attempt < MAX_RETRIES) {
+          setRetryCount(attempt + 1);
+          setBackendWaking(true);
+          console.log(`Retrying in ${RETRY_DELAY_MS / 1000}s... (backend may be waking up)`);
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+          return initPage(attempt + 1);
+        }
+        
+        // All retries exhausted
+        setBackendWaking(false);
+        toast.error("Unable to connect to server. Please refresh the page.");
       } finally {
         setLoading(false);
       }
@@ -195,6 +218,34 @@ const HomePage: React.FC = () => {
   return (
     <PageTransition>
       <div className={styles.home}>
+        {/* Backend wake-up overlay */}
+        {backendWaking && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(0,0,0,0.85)',
+            zIndex: 9999,
+            gap: '1.5rem',
+          }}>
+            <Loader />
+            <p style={{ color: '#fff', fontSize: '1.3rem', fontWeight: 600 }}>
+              Loading MovieMind...
+            </p>
+            <p style={{ color: '#aaa', fontSize: '0.95rem' }}>
+              {retryCount > 0
+                ? `Server is waking up — retry ${retryCount}/${MAX_RETRIES}...`
+                : 'Connecting to server...'}
+            </p>
+          </div>
+        )}
+
         {!heroMovie && loading ? (
           <section className={styles.hero}>
             <Skeleton width="100%" height="80vh" borderRadius="0" />
