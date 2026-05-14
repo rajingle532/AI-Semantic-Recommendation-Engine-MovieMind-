@@ -23,13 +23,13 @@ export default defineConfig({
     {
       command: 'npm run dev --prefix frontend',
       url: 'http://127.0.0.1:5173',
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: true,
       timeout: 120000,
     },
     {
       command: 'uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000',
       url: 'http://127.0.0.1:8000',
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: true,
       timeout: 120000,
     }
   ],
