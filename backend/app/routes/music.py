@@ -42,22 +42,28 @@ async def get_movie_soundtrack(movie_title: str):
     headers = {"Authorization": f"Bearer {token}"}
     
     try:
-        # Search for the album
+        # 1. Try "{movie_title} soundtrack"
         params = {"q": f"{movie_title} soundtrack", "type": "album", "limit": 1}
         search_res = requests.get(f"{SPOTIFY_API_BASE}/search", headers=headers, params=params, timeout=5)
+        data = search_res.json()
+        albums = data.get("albums", {}).get("items", [])
         
-        if search_res.status_code == 200:
+        # 2. Try "{movie_title} original motion picture soundtrack"
+        if not albums:
+            params["q"] = f"{movie_title} original motion picture soundtrack"
+            search_res = requests.get(f"{SPOTIFY_API_BASE}/search", headers=headers, params=params, timeout=5)
             data = search_res.json()
             albums = data.get("albums", {}).get("items", [])
-            
-            if not albums: # Retry with OST
-                params["q"] = f"{movie_title} OST"
-                search_res = requests.get(f"{SPOTIFY_API_BASE}/search", headers=headers, params=params, timeout=5)
-                data = search_res.json()
-                albums = data.get("albums", {}).get("items", [])
 
-            if not albums:
-                return {"results": None}
+        # 3. Last resort: Just "{movie_title}" as album
+        if not albums:
+            params["q"] = movie_title
+            search_res = requests.get(f"{SPOTIFY_API_BASE}/search", headers=headers, params=params, timeout=5)
+            data = search_res.json()
+            albums = data.get("albums", {}).get("items", [])
+
+        if not albums:
+            return {"results": None}
 
             album = albums[0]
             tracks_res = requests.get(f"{SPOTIFY_API_BASE}/albums/{album['id']}/tracks", headers=headers, timeout=5)
@@ -91,12 +97,13 @@ async def search_youtube_videos(query: str) -> Dict[str, List[Dict[str, str]]]:
         return {"results": []}
 
     try:
+        # Broader query for better results on common titles
+        search_query = f"{query} movie song"
         params = {
             "part": "snippet",
-            "q": f"{query} official song",
+            "q": search_query,
             "type": "video",
-            "videoCategoryId": "10",
-            "maxResults": 2,
+            "maxResults": 3,
             "key": settings.YOUTUBE_API_KEY
         }
         response = requests.get(YOUTUBE_API_URL, params=params, timeout=5)
