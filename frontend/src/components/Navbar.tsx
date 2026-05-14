@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, User, LogOut, Film, Sun, Moon, Shield, HelpCircle } from 'lucide-react';
+import { Search, User, LogOut, Film, Sun, Moon, Shield, HelpCircle, Headphones } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -13,10 +13,10 @@ const Navbar: React.FC = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  
+
   const searchRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
-  
+
   const { user, logout, isAuthenticated, loading } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
@@ -77,7 +77,7 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <motion.nav 
+    <motion.nav
       className={styles.navbar}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
@@ -104,7 +104,7 @@ const Navbar: React.FC = () => {
 
           <AnimatePresence>
             {showSearchSuggestions && suggestions.length > 0 && (
-              <motion.div 
+              <motion.div
                 className={styles.searchSuggestions}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -112,14 +112,14 @@ const Navbar: React.FC = () => {
                 transition={{ duration: 0.2 }}
               >
                 {suggestions.map((movie) => (
-                  <div 
-                    key={movie.id} 
+                  <div
+                    key={movie.id}
                     className={styles.suggestionItem}
                     onClick={() => handleSuggestionClick(movie.id)}
                   >
-                    <img 
-                      src={movie.poster_path || 'https://via.placeholder.com/40x60?text=?'} 
-                      alt={movie.title} 
+                    <img
+                      src={movie.poster_path || 'https://via.placeholder.com/40x60?text=?'}
+                      alt={movie.title}
                     />
                     <div className={styles.suggestionInfo}>
                       <p className={styles.suggestionTitle}>{movie.title}</p>
@@ -129,7 +129,7 @@ const Navbar: React.FC = () => {
                     </div>
                   </div>
                 ))}
-                <div 
+                <div
                   className={styles.seeAll}
                   onClick={handleSearch}
                 >
@@ -141,8 +141,8 @@ const Navbar: React.FC = () => {
         </div>
 
         <div className={styles.actions}>
-          <button 
-            className={styles.themeToggle} 
+          <button
+            className={styles.themeToggle}
             onClick={toggleTheme}
             title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
           >
@@ -151,7 +151,7 @@ const Navbar: React.FC = () => {
 
           {isAuthenticated ? (
             <div className={styles.profileWrapper} ref={profileRef}>
-              <div 
+              <div
                 style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
               >
@@ -162,16 +162,19 @@ const Navbar: React.FC = () => {
                   {(user?.name ?? "U").charAt(0).toUpperCase()}
                 </div>
               </div>
-              
+
               <AnimatePresence>
                 {showProfileMenu && (
-                  <motion.div 
+                  <motion.div
                     className={styles.dropdown}
                     initial={{ opacity: 0, scale: 0.95, y: -10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -10 }}
                     transition={{ duration: 0.2 }}
                   >
+                    <Link to="/music" onClick={() => setShowProfileMenu(false)}>
+                      <Headphones size={16} /> MediaMind Hub
+                    </Link>
                     <Link to="/profile" onClick={() => setShowProfileMenu(false)}>
                       <Film size={16} /> My Library
                     </Link>
@@ -185,8 +188,8 @@ const Navbar: React.FC = () => {
                       <HelpCircle size={16} /> Help
                     </Link>
                     <div className={styles.divider}></div>
-                    <button onClick={() => { 
-                      logout(); 
+                    <button onClick={() => {
+                      logout();
                       setShowProfileMenu(false);
                       navigate('/login');
                     }}>

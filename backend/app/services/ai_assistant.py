@@ -26,6 +26,11 @@ _failure_count = 0
 CIRCUIT_RECOVERY_TIME = 300 # 5 minutes
 
 
+async def get_ai_response(prompt: str, timeout: int = GEMINI_TIMEOUT) -> str:
+    """Exported helper to call Gemini with circuit breaker."""
+    return await _call_gemini_with_circuit_breaker(prompt, timeout)
+
+
 async def _call_gemini_with_circuit_breaker(prompt: str, timeout: int = GEMINI_TIMEOUT) -> str:
     """
     Helper to call Gemini API with Circuit Breaker protection.

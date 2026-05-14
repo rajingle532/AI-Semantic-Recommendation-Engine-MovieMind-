@@ -15,6 +15,7 @@ import MovieDetailPage from './pages/MovieDetailPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ProfilePage from './pages/ProfilePage';
+import MusicPage from './pages/MusicPage';
 import PersonDetailPage from './pages/PersonDetailPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -26,19 +27,19 @@ const App: React.FC = () => {
 
   return (
     <>
-      <Toaster 
-        position="top-center" 
+      <Toaster
+        position="top-center"
         toastOptions={{
           style: {
             background: '#333',
             color: '#fff',
             borderRadius: '8px',
           },
-        }} 
+        }}
       />
-      
+
       <Navbar />
-      
+
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           {/* Public Routes */}
@@ -55,11 +56,12 @@ const App: React.FC = () => {
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/music" element={<MusicPage />} />
             <Route path="/account" element={<AccountPage />} />
           </Route>
         </Routes>
       </AnimatePresence>
-      
+
       <ChatWidget />
     </>
   );

@@ -10,6 +10,8 @@ import Loader from '../components/Loader';
 import RatingStars from '../components/RatingStars';
 import PageTransition from '../components/PageTransition';
 import ShareModal from '../components/ShareModal';
+import MovieSongs from '../components/MovieSongs';
+import SpotifySoundtrack from '../components/SpotifySoundtrack';
 import styles from './MovieDetailPage.module.css';
 
 const MovieDetailPage: React.FC = () => {
@@ -32,10 +34,10 @@ const MovieDetailPage: React.FC = () => {
           api.get('/watchlist/my').catch(() => ({ data: { watchlist: [] } })),
           api.get('/ratings/my').catch(() => ({ data: { ratings: [] } }))
         ]);
-        
+
         setMovie(detailsRes.data);
         setSimilar(similarRes.data.recommendations || []);
-        
+
         const watchlist = watchlistRes.data.watchlist || [];
         setInWatchlist(watchlist.some((m: any) => m.movie_id === parseInt(id!)));
 
@@ -63,7 +65,7 @@ const MovieDetailPage: React.FC = () => {
         setInWatchlist(false);
         toast.success("Removed from watchlist");
       } else {
-        await api.post('/watchlist/', { 
+        await api.post('/watchlist/', {
           movie_id: movie.id,
           movie_title: movie.title,
           poster_path: movie.poster_path,
@@ -81,8 +83,8 @@ const MovieDetailPage: React.FC = () => {
   const handleRate = async (rating: number) => {
     if (!movie) return;
     try {
-      await api.post('/ratings/', { 
-        movie_id: movie.id, 
+      await api.post('/ratings/', {
+        movie_id: movie.id,
         movie_title: movie.title,
         rating: rating,
         poster_path: movie.poster_path,
@@ -107,28 +109,28 @@ const MovieDetailPage: React.FC = () => {
         {/* Modal is now here at the top level of the component */}
         <AnimatePresence>
           {showTrailer && (movie as any).trailer_key && (
-            <motion.div 
+            <motion.div
               className={styles.modalBackdrop}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowTrailer(false)}
             >
-              <motion.div 
+              <motion.div
                 className={styles.modalContent}
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.8, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
               >
-                <button 
+                <button
                   className={styles.closeModal}
                   onClick={() => setShowTrailer(false)}
                 >
                   <X size={40} />
                 </button>
                 <div className={styles.videoWrapper}>
-                  <iframe 
+                  <iframe
                     src={`https://www.youtube.com/embed/${(movie as any).trailer_key}?autoplay=1`}
                     title="YouTube video player"
                     frameBorder="0"
@@ -137,9 +139,9 @@ const MovieDetailPage: React.FC = () => {
                   ></iframe>
                 </div>
                 <div style={{ padding: '1rem', textAlign: 'center' }}>
-                  <a 
-                    href={`https://www.youtube.com/watch?v=${(movie as any).trailer_key}`} 
-                    target="_blank" 
+                  <a
+                    href={`https://www.youtube.com/watch?v=${(movie as any).trailer_key}`}
+                    target="_blank"
                     rel="noopener noreferrer"
                     style={{ color: '#aaa', fontSize: '0.8rem', textDecoration: 'underline' }}
                   >
@@ -158,7 +160,7 @@ const MovieDetailPage: React.FC = () => {
 
         <div className={`${styles.content} container`}>
           <div className={styles.mainInfo}>
-            <motion.div 
+            <motion.div
               className={styles.posterWrapper}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -168,7 +170,7 @@ const MovieDetailPage: React.FC = () => {
 
             <div className={styles.details}>
               <h1 className={styles.title}>{movie.title}</h1>
-              
+
               <div className={styles.meta}>
                 <span className={styles.ratingBadge}>
                   <Star size={16} fill="var(--gold)" color="var(--gold)" />
@@ -198,9 +200,9 @@ const MovieDetailPage: React.FC = () => {
                   <p>Rate this movie:</p>
                   <RatingStars initialRating={userRating} onRate={handleRate} />
                 </div>
-                
+
                 <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                  <button 
+                  <button
                     className={`${styles.watchlistBtn} ${inWatchlist ? styles.active : ''}`}
                     onClick={toggleWatchlist}
                   >
@@ -208,7 +210,7 @@ const MovieDetailPage: React.FC = () => {
                     {inWatchlist ? "In Watchlist" : "Add to Watchlist"}
                   </button>
 
-                  <button 
+                  <button
                     className={styles.trailerBtn}
                     onClick={() => {
                       if ((movie as any).trailer_key) {
@@ -222,12 +224,12 @@ const MovieDetailPage: React.FC = () => {
                     <Play size={20} fill="currentColor" /> Watch Trailer
                   </button>
 
-                  <button 
+                  <button
                     className={styles.shareBtn}
                     onClick={() => setShowShareModal(true)}
                     title="Share Movie"
                   >
-                    <Share2 size={20} color="var(--accent)" /> 
+                    <Share2 size={20} color="var(--accent)" />
                     <span>Share</span>
                   </button>
                 </div>
@@ -235,7 +237,7 @@ const MovieDetailPage: React.FC = () => {
                 {/* Watch Providers Section */}
                 <div className={styles.providersSection}>
                   <p className={styles.sectionSmallTitle}>Where to Watch:</p>
-                  
+
                   {(movie as any).watch_providers ? (
                     <div className={styles.providerCategories}>
                       {/* Streaming (Subscription) */}
@@ -244,10 +246,10 @@ const MovieDetailPage: React.FC = () => {
                           <span className={styles.categoryLabel}>Stream</span>
                           <div className={styles.providerList}>
                             {(movie as any).watch_providers.flatrate.map((p: any) => (
-                              <a 
-                                key={p.provider_id} 
+                              <a
+                                key={p.provider_id}
                                 href={(movie as any).watch_providers.link}
-                                target="_blank" 
+                                target="_blank"
                                 rel="noopener noreferrer"
                                 className={styles.providerItem}
                                 title={p.provider_name}
@@ -266,10 +268,10 @@ const MovieDetailPage: React.FC = () => {
                           <span className={styles.categoryLabel}>Rent</span>
                           <div className={styles.providerList}>
                             {(movie as any).watch_providers.rent.map((p: any) => (
-                              <a 
-                                key={p.provider_id} 
+                              <a
+                                key={p.provider_id}
                                 href={(movie as any).watch_providers.link}
-                                target="_blank" 
+                                target="_blank"
                                 rel="noopener noreferrer"
                                 className={styles.providerItem}
                                 title={p.provider_name}
@@ -288,10 +290,10 @@ const MovieDetailPage: React.FC = () => {
                           <span className={styles.categoryLabel}>Buy</span>
                           <div className={styles.providerList}>
                             {(movie as any).watch_providers.buy.map((p: any) => (
-                              <a 
-                                key={p.provider_id} 
+                              <a
+                                key={p.provider_id}
                                 href={(movie as any).watch_providers.link}
-                                target="_blank" 
+                                target="_blank"
                                 rel="noopener noreferrer"
                                 className={styles.providerItem}
                                 title={p.provider_name}
@@ -305,13 +307,13 @@ const MovieDetailPage: React.FC = () => {
                       )}
 
                       {/* No providers found */}
-                      {(!((movie as any).watch_providers.flatrate?.length) && 
-                        !((movie as any).watch_providers.rent?.length) && 
+                      {(!((movie as any).watch_providers.flatrate?.length) &&
+                        !((movie as any).watch_providers.rent?.length) &&
                         !((movie as any).watch_providers.buy?.length)) && (
-                        <span className={styles.noProvider}>
-                          Not available for streaming in your region.
-                        </span>
-                      )}
+                          <span className={styles.noProvider}>
+                            Not available for streaming in your region.
+                          </span>
+                        )}
                     </div>
                   ) : (
                     <span className={styles.noProvider}>Loading provider data...</span>
@@ -342,16 +344,25 @@ const MovieDetailPage: React.FC = () => {
             </div>
           </section>
 
+          {/* New Music Integration Section */}
+          <MovieSongs
+            movieTitle={movie.title}
+            releaseYear={movie.release_date || ''}
+          />
+          <SpotifySoundtrack 
+            movieTitle={movie.title}
+          />
+
           <section className={styles.similarSection}>
             <h2 className={styles.sectionTitle}>Similar Movies You Might Like</h2>
             <MovieGrid movies={similar} />
           </section>
         </div>
-        <ShareModal 
-          isOpen={showShareModal} 
-          onClose={() => setShowShareModal(false)} 
-          title={movie.title} 
-          url={`/movie/${movie.id}`} 
+        <ShareModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          title={movie.title}
+          url={`/movie/${movie.id}`}
         />
       </div>
     </PageTransition>

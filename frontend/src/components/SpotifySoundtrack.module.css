@@ -1,0 +1,183 @@
+.soundtrackSection {
+  margin: 4rem 0;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 2rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.header {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+  align-items: center;
+}
+
+.albumArt {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+}
+
+.albumArt img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.albumArt:hover .overlay {
+  opacity: 1;
+}
+
+.info {
+  flex: 1;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.albumName {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.spotifyLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #1DB954; /* Spotify Green */
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: transform 0.3s ease;
+}
+
+.spotifyLink:hover {
+  transform: translateX(5px);
+}
+
+.trackList {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 968px) {
+  .trackList {
+    grid-template-columns: 1fr;
+  }
+}
+
+.trackItem {
+  display: flex;
+  align-items: center;
+  padding: 0.85rem 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.trackItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.trackItem.active {
+  background: rgba(29, 185, 84, 0.1);
+  border-color: #1DB954;
+}
+
+.playBtn {
+  color: var(--text-secondary);
+  margin-right: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.trackItem.active .playBtn {
+  color: #1DB954;
+}
+
+.trackInfo {
+  flex: 1;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  overflow: hidden;
+}
+
+.trackNumber {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.trackName {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trackDuration {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+.loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top-color: #1DB954;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 600px) {
+  .header {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .albumArt {
+    width: 120px;
+    height: 120px;
+  }
+}

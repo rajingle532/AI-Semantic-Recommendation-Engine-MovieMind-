@@ -8,7 +8,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from app.config import settings
 
 # Import route modules
-from app.routes import auth, movies, recommend, ratings, watchlist, admin, chat
+from app.routes import auth, movies, recommend, ratings, watchlist, admin, chat, music, music_ai
 
 # ═══════════════════════════════════════════
 # Create FastAPI App
@@ -70,6 +70,8 @@ app.include_router(ratings.router)
 app.include_router(watchlist.router)
 app.include_router(admin.router)
 app.include_router(chat.router)
+app.include_router(music.router)
+app.include_router(music_ai.router)
 
 
 # ═══════════════════════════════════════════

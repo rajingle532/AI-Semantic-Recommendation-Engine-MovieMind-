@@ -48,6 +48,7 @@ class Settings:
     # External AI & Search
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     SERP_API_KEY: str = os.getenv("SERP_API_KEY", "")
+    YOUTUBE_API_KEY: str = os.getenv("YOUTUBE_API_KEY", "")
 
     # Email Settings
     RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
