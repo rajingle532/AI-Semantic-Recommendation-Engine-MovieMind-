@@ -349,7 +349,7 @@ def get_movie_poster(movie_id: int) -> Optional[str]:
 
 
 def get_trending_movies(page: int = 1) -> list:
-    """Get a mix of global trending movies and popular Hindi (Bollywood) movies in parallel with caching."""
+    """Get globally trending movies (real-world trending) with a small Indian supplement for variety."""
     # Check memory cache first
     if page in _trending_cache:
         timestamp, data = _trending_cache[page]
@@ -358,40 +358,29 @@ def get_trending_movies(page: int = 1) -> list:
 
     # Check disk cache second
     disk_ts, disk_data = _load_disk_cache(f"trending_p{page}.json")
-    if disk_ts and (time.time() - disk_ts < _CACHE_TTL): # Match disk TTL with memory TTL for freshness
+    if disk_ts and (time.time() - disk_ts < _CACHE_TTL):
         _trending_cache[page] = (disk_ts, disk_data)
         return disk_data
 
     import concurrent.futures
     
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-        # Submit requests simultaneously
-        # 1. Global Trending (Day instead of Week for daily changes)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        # 1. Global Trending — PRIMARY source (real-world trending)
         future_global = executor.submit(_make_request, "/trending/movie/day", {"page": page})
         
-        # 2. Popular Hindi Movies (Bollywood)
-        future_hindi = executor.submit(_make_request, "/discover/movie", {
-            "page": page,
-            "sort_by": "popularity.desc",
-            "with_original_language": "hi",
-            "region": "IN"
-        })
-        
-        # 3. Recent Indian Releases (Multi-language Indian)
+        # 2. Small Indian supplement — only top popular Indian movies
         future_indian = executor.submit(_make_request, "/discover/movie", {
             "page": page,
-            "sort_by": "primary_release_date.desc",
-            "region": "IN",
+            "sort_by": "popularity.desc",
             "with_origin_country": "IN",
-            "primary_release_date.lte": time.strftime("%Y-%m-%d")
+            "vote_count.gte": 50,
+            "vote_average.gte": 5.0,
         })
         
         global_data = future_global.result()
-        hindi_data = future_hindi.result()
         indian_data = future_indian.result()
 
     global_results = global_data.get("results", []) if global_data else []
-    hindi_results = hindi_data.get("results", []) if hindi_data else []
     indian_results = indian_data.get("results", []) if indian_data else []
 
     # Format helper
@@ -406,33 +395,33 @@ def get_trending_movies(page: int = 1) -> list:
             "release_date": m.get("release_date"),
         }
 
-    # Mix results: Priority to Hindi and Indian content
-    mixed_results = []
-    
-    # Take top 10 from each to create a high-quality mix
-    h_idx = g_idx = i_idx = 0
-    while len(mixed_results) < 40 and (h_idx < len(hindi_results) or g_idx < len(global_results) or i_idx < len(indian_results)):
-        # Pattern: Hindi -> Indian -> Global -> Hindi -> Global ...
-        if h_idx < len(hindi_results):
-            mixed_results.append(format_movie(hindi_results[h_idx]))
-            h_idx += 1
-            
-        if i_idx < len(indian_results):
-            mixed_results.append(format_movie(indian_results[i_idx]))
-            i_idx += 1
-            
-        if g_idx < len(global_results):
-            mixed_results.append(format_movie(global_results[g_idx]))
-            g_idx += 1
-            
-        if h_idx < len(hindi_results): # Add one more Hindi movie for weight
-            mixed_results.append(format_movie(hindi_results[h_idx]))
-            h_idx += 1
+    # Build the final list: Global trending as primary, sprinkle in 3-4 Indian movies
+    seen_ids = set()
+    final_results = []
 
-    if not mixed_results:
+    # Add global trending movies first (the bulk — ~16 movies)
+    for m in global_results:
+        if m.get("id") not in seen_ids and m.get("poster_path"):
+            seen_ids.add(m["id"])
+            final_results.append(format_movie(m))
+        if len(final_results) >= 16:
+            break
+
+    # Sprinkle in 3-4 Indian movies that aren't already in global trending
+    indian_added = 0
+    for m in indian_results:
+        if m.get("id") not in seen_ids and m.get("poster_path"):
+            seen_ids.add(m["id"])
+            # Insert at varied positions for natural mix
+            insert_pos = min(3 + (indian_added * 4), len(final_results))
+            final_results.insert(insert_pos, format_movie(m))
+            indian_added += 1
+        if indian_added >= 4:
+            break
+
+    if not final_results:
         print("TMDB_API_ERROR: All TMDB requests failed. Checking disk cache or local fallback.")
         
-        # Last attempt to use stale disk cache if available
         if disk_data:
             print("TMDB_CACHE: Returning stale disk cache.")
             return disk_data
@@ -441,7 +430,7 @@ def get_trending_movies(page: int = 1) -> list:
         print(f"TMDB_FALLBACK: Returning {len(fallback_data)} fallback movies.")
         return fallback_data
 
-    results = mixed_results[:20]
+    results = final_results[:20]
     # Update memory and disk cache
     _trending_cache[page] = (time.time(), results)
     _save_disk_cache(f"trending_p{page}.json", results)

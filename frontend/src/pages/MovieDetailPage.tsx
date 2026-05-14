@@ -234,29 +234,88 @@ const MovieDetailPage: React.FC = () => {
 
                 {/* Watch Providers Section */}
                 <div className={styles.providersSection}>
-                  <p className={styles.sectionSmallTitle}>Watch On:</p>
-                  <div className={styles.providerList}>
-                    {(movie as any).watch_providers && Array.isArray((movie as any).watch_providers.flatrate) && (movie as any).watch_providers.flatrate.length > 0 ? (
-                      (movie as any).watch_providers.flatrate.map((p: any) => (
-                        <a 
-                          key={p.provider_id} 
-                          href={(movie as any).watch_providers.link}
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className={styles.providerLogo}
-                          title={p.provider_name}
-                        >
-                          <img src={p.logo_path} alt={p.provider_name} />
-                        </a>
-                      ))
-                    ) : (
-                      <span className={styles.noProvider}>
-                        {(movie as any).watch_providers 
-                          ? "Not available for streaming in your region." 
-                          : "Loading provider data..."}
-                      </span>
-                    )}
-                  </div>
+                  <p className={styles.sectionSmallTitle}>Where to Watch:</p>
+                  
+                  {(movie as any).watch_providers ? (
+                    <div className={styles.providerCategories}>
+                      {/* Streaming (Subscription) */}
+                      {Array.isArray((movie as any).watch_providers.flatrate) && (movie as any).watch_providers.flatrate.length > 0 && (
+                        <div className={styles.providerCategory}>
+                          <span className={styles.categoryLabel}>Stream</span>
+                          <div className={styles.providerList}>
+                            {(movie as any).watch_providers.flatrate.map((p: any) => (
+                              <a 
+                                key={p.provider_id} 
+                                href={(movie as any).watch_providers.link}
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className={styles.providerItem}
+                                title={p.provider_name}
+                              >
+                                {p.logo_path && <img src={p.logo_path} alt={p.provider_name} className={styles.providerLogo} />}
+                                <span className={styles.providerName}>{p.provider_name}</span>
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Rent */}
+                      {Array.isArray((movie as any).watch_providers.rent) && (movie as any).watch_providers.rent.length > 0 && (
+                        <div className={styles.providerCategory}>
+                          <span className={styles.categoryLabel}>Rent</span>
+                          <div className={styles.providerList}>
+                            {(movie as any).watch_providers.rent.map((p: any) => (
+                              <a 
+                                key={p.provider_id} 
+                                href={(movie as any).watch_providers.link}
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className={styles.providerItem}
+                                title={p.provider_name}
+                              >
+                                {p.logo_path && <img src={p.logo_path} alt={p.provider_name} className={styles.providerLogo} />}
+                                <span className={styles.providerName}>{p.provider_name}</span>
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Buy */}
+                      {Array.isArray((movie as any).watch_providers.buy) && (movie as any).watch_providers.buy.length > 0 && (
+                        <div className={styles.providerCategory}>
+                          <span className={styles.categoryLabel}>Buy</span>
+                          <div className={styles.providerList}>
+                            {(movie as any).watch_providers.buy.map((p: any) => (
+                              <a 
+                                key={p.provider_id} 
+                                href={(movie as any).watch_providers.link}
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className={styles.providerItem}
+                                title={p.provider_name}
+                              >
+                                {p.logo_path && <img src={p.logo_path} alt={p.provider_name} className={styles.providerLogo} />}
+                                <span className={styles.providerName}>{p.provider_name}</span>
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* No providers found */}
+                      {(!((movie as any).watch_providers.flatrate?.length) && 
+                        !((movie as any).watch_providers.rent?.length) && 
+                        !((movie as any).watch_providers.buy?.length)) && (
+                        <span className={styles.noProvider}>
+                          Not available for streaming in your region.
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className={styles.noProvider}>Loading provider data...</span>
+                  )}
                 </div>
               </div>
             </div>

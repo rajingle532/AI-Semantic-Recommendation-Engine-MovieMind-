@@ -107,10 +107,34 @@ const HomePage: React.FC = () => {
       // Merge details with the existing movie object to preserve what we already have
       setHeroMovie(prev => ({ ...prev, ...details }));
       setHeroVideo(details.trailer_key || null);
+      return details.trailer_key || null;
     } catch (err) {
       console.error("Failed to fetch hero details", err);
       setHeroVideo(null);
+      return null;
     }
+  };
+
+  /**
+   * Try multiple movies until we find one with a trailer for the hero section.
+   * Falls back to the first movie if none have trailers.
+   */
+  const selectHeroWithTrailer = async (movieList: Movie[]) => {
+    const candidates = movieList.slice(0, Math.min(6, movieList.length));
+    
+    for (const candidate of candidates) {
+      setHeroMovie(candidate);
+      const trailerKey = await updateHeroMovie(candidate);
+      if (trailerKey) {
+        console.log(`Hero selected: "${candidate.title}" (has trailer)`);
+        return;
+      }
+    }
+    
+    // Fallback: use first movie even without trailer
+    console.log(`Hero fallback: "${movieList[0].title}" (no trailer found in top candidates)`);
+    setHeroMovie(movieList[0]);
+    await updateHeroMovie(movieList[0]);
   };
 
   const [retryCount, setRetryCount] = useState(0);
@@ -146,11 +170,8 @@ const HomePage: React.FC = () => {
         setRetryCount(0);
         
         if (newMovies.length > 0) {
-          // Select a random movie from the top 10 trending movies for variety
-          const randomIndex = Math.floor(Math.random() * Math.min(10, newMovies.length));
-          const selectedHero = newMovies[randomIndex];
-          setHeroMovie(selectedHero);
-          updateHeroMovie(selectedHero);
+          // Try to find a hero movie with a trailer available
+          await selectHeroWithTrailer(newMovies);
         }
       } catch (err) {
         console.error(`Initial load failed (attempt ${attempt + 1}/${MAX_RETRIES + 1})`, err);
