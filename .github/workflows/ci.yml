@@ -76,6 +76,12 @@ jobs:
           cd ../frontend && npm install
           npx playwright install --with-deps
           
+      - name: Start Backend
+        run: |
+          cd backend
+          uvicorn app.main:app --host 127.0.0.1 --port 8000 &
+          sleep 5
+          
       - name: Run E2E tests
         run: npm run test:e2e
         env:

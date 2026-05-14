@@ -9,7 +9,6 @@ test.describe('Authentication Flow', () => {
     await page.getByLabel(/Full Name/i).fill('E2E User');
     await page.getByLabel(/Email Address/i).fill(uniqueEmail);
     await page.getByLabel(/Password/i).fill(password);
-    await page.getByLabel(/Mobile Number/i).fill('1234567890');
     await page.click('button:has-text("Sign Up")');
     
     // Should be redirected to home
@@ -25,7 +24,6 @@ test.describe('Authentication Flow', () => {
     await page.getByLabel(/Full Name/i).fill('Login User');
     await page.getByLabel(/Email Address/i).fill(loginEmail);
     await page.getByLabel(/Password/i).fill(password);
-    await page.getByLabel(/Mobile Number/i).fill('1234567890');
     await page.click('button:has-text("Sign Up")');
     await page.waitForURL('**/', { timeout: 15000 });
     await expect(page).toHaveURL('/');
@@ -52,7 +50,6 @@ test.describe('Authentication Flow', () => {
     await page.getByLabel(/Full Name/i).fill('Logout User');
     await page.getByLabel(/Email Address/i).fill(logoutEmail);
     await page.getByLabel(/Password/i).fill(password);
-    await page.getByLabel(/Mobile Number/i).fill('1234567890');
     await page.click('button:has-text("Sign Up")');
     
     await page.waitForURL('**/', { timeout: 15000 });

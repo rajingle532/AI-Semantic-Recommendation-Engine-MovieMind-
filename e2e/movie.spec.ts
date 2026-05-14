@@ -9,7 +9,6 @@ test.describe('Movie Details Flow', () => {
     await page.getByLabel(/Full Name/i).fill('Test User');
     await page.getByLabel(/Email Address/i).fill(userEmail);
     await page.getByLabel(/Password/i).fill('Password123!');
-    await page.getByLabel(/Mobile Number/i).fill('1234567890');
     await page.click('button:has-text("Sign Up")');
     
     await page.waitForURL('**/', { timeout: 15000 });

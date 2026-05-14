@@ -8,7 +8,6 @@ test.describe('Profile Page Flow', () => {
     await page.getByLabel(/Full Name/i).fill('Profile User');
     await page.getByLabel(/Email Address/i).fill(profileEmail);
     await page.getByLabel(/Password/i).fill('Password123!');
-    await page.getByLabel(/Mobile Number/i).fill('1234567890');
     await page.click('button:has-text("Sign Up")');
     await page.waitForURL('**/', { timeout: 15000 });
     await expect(page).toHaveURL('/');
