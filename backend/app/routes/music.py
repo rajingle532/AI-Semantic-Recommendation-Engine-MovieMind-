@@ -32,8 +32,10 @@ def get_spotify_token():
         print(f"Spotify Auth Error: {e}")
     return None
 
-@router.get("/spotify/album/{movie_title}")
-async def get_movie_soundtrack(movie_title: str):
+@router.get("/spotify/album")
+async def get_movie_soundtrack(title: str):
+    """Search for a movie soundtrack on Spotify with multiple fallbacks."""
+    movie_title = title
     """Search for a movie soundtrack on Spotify with multiple fallbacks."""
     token = get_spotify_token()
     if not token:
@@ -83,8 +85,10 @@ async def get_movie_soundtrack(movie_title: str):
             
     return {"results": None}
 
-@router.get("/youtube/{query}")
-async def search_youtube_videos(query: str) -> Dict[str, List[Dict[str, str]]]:
+@router.get("/youtube")
+async def search_youtube_videos(q: str) -> Dict[str, List[Dict[str, str]]]:
+    """Search YouTube with aggressive fallbacks."""
+    query = q
     """Search YouTube with aggressive fallbacks."""
     if not settings.YOUTUBE_API_KEY:
         print("YOUTUBE_ERROR: Missing API Key")

@@ -50,8 +50,12 @@ async def recommend_playlists(mood: str):
         }
         return {"results": fallbacks.get(mood, [{"title": "Movie Magic", "description": "General cinematic excellence.", "query": "Movie Soundtracks"}])}
 
-@router.get("/recommend/movie/{movie_id}")
-async def recommend_for_movie(movie_id: int):
+@router.get("/recommend/movie")
+async def recommend_for_movie(id: int):
+    """
+    Suggest music based on a specific movie's vibe.
+    """
+    movie_id = id
     """
     Suggest music based on a specific movie's vibe.
     """

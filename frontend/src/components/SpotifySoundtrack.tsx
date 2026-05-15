@@ -32,7 +32,7 @@ const SpotifySoundtrack: React.FC<SpotifySoundtrackProps> = ({ movieTitle }) => 
     const fetchSoundtrack = async () => {
       try {
         setLoading(true);
-        const response = await api.get(`/music/spotify/album/${encodeURIComponent(movieTitle)}`);
+        const response = await api.get(`/music/spotify/album?title=${encodeURIComponent(movieTitle)}`);
         if (response.data && response.data.tracks && response.data.tracks.length > 0) {
           setData(response.data);
         }

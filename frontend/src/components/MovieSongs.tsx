@@ -26,7 +26,7 @@ const MovieSongs: React.FC<MovieSongsProps> = ({ movieTitle, releaseYear }) => {
         const year = releaseYear ? releaseYear.split('-')[0] : '';
         const query = `${movieTitle} ${year} official song`;
         
-        const response = await api.get(`/music/youtube/${encodeURIComponent(query)}`);
+        const response = await api.get(`/music/youtube?q=${encodeURIComponent(query)}`);
         
         if (response.data && response.data.results) {
           setSongs(response.data.results.slice(0, 2));

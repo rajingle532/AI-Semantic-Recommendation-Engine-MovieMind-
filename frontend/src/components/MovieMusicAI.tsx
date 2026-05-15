@@ -23,7 +23,7 @@ const MovieMusicAI: React.FC<MovieMusicAIProps> = ({ movieId, movieTitle }) => {
     const fetchRecommendations = async () => {
       try {
         setLoading(true);
-        const { data } = await api.get(`/music/ai/recommend/movie/${movieId}`);
+        const { data } = await api.get(`/music/ai/recommend/movie?id=${movieId}`);
         setRecommendations(data.results || []);
       } catch (err) {
         console.error("Failed to fetch AI music recommendations:", err);
