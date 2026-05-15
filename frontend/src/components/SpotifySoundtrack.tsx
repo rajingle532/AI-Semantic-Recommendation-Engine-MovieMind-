@@ -49,8 +49,8 @@ const SpotifySoundtrack: React.FC<SpotifySoundtrackProps> = ({ movieTitle }) => 
   }, [movieTitle]);
 
   const togglePlay = (track: Track) => {
-    if (!track.preview_url) {
-      window.open(`https://open.spotify.com/track/${track.id}`, '_blank');
+    if (!track.preview_url && data?.spotify_url) {
+      window.open(data.spotify_url, '_blank');
       return;
     }
 
@@ -116,7 +116,7 @@ const SpotifySoundtrack: React.FC<SpotifySoundtrackProps> = ({ movieTitle }) => 
             <div className={styles.trackInfo}>
               <span className={styles.trackNumber}>{idx + 1}.</span>
               <span className={styles.trackName}>{track.name}</span>
-              {!track.preview_url && <span className={styles.badge}>Full Song on Spotify</span>}
+              {!track.preview_url && <span className={styles.badge}>Full Song on Apple Music</span>}
             </div>
             <span className={styles.trackDuration}>
               {Math.floor(track.duration_ms / 60000)}:

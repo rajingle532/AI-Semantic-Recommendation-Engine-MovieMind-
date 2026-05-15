@@ -73,12 +73,12 @@ const MovieMusicAI: React.FC<MovieMusicAIProps> = ({ movieId, movieTitle }) => {
                   <h3>{rec.title}</h3>
                   <p>{rec.description}</p>
                   <a 
-                    href={`https://open.spotify.com/search/${encodeURIComponent(rec.query)}`}
+                    href={`https://music.youtube.com/search?q=${encodeURIComponent(rec.query)}`}
                     target="_blank" 
                     rel="noopener noreferrer"
                     className={styles.spotifyLink}
                   >
-                    Listen on Spotify <ArrowRight size={14} />
+                    Find on YT Music <ArrowRight size={14} />
                   </a>
                 </div>
               </motion.div>
