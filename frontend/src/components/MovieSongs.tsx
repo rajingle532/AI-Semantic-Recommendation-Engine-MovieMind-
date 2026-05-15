@@ -85,7 +85,7 @@ const MovieSongs: React.FC<MovieSongsProps> = ({ movieTitle, releaseYear }) => {
             <div key={song.id} className={styles.songCard}>
               <div className={styles.videoWrapper}>
                 <iframe
-                  src={`https://www.youtube.com/embed/${song.id}`}
+                  src={`https://www.youtube-nocookie.com/embed/${song.id}?autoplay=0&rel=0`}
                   title={song.title}
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

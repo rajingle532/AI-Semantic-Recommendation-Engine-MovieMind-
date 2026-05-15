@@ -33,9 +33,7 @@ const SpotifySoundtrack: React.FC<SpotifySoundtrackProps> = ({ movieTitle }) => 
       try {
         setLoading(true);
         const response = await api.get(`/music/spotify/album?title=${encodeURIComponent(movieTitle)}`);
-        if (response.data && response.data.error === "premium_required") {
-          setData({ ...response.data, premium_error: true });
-        } else if (response.data && response.data.tracks && response.data.tracks.length > 0) {
+        if (response.data && response.data.tracks && response.data.tracks.length > 0) {
           setData(response.data);
         }
       } catch (err) {
@@ -72,14 +70,12 @@ const SpotifySoundtrack: React.FC<SpotifySoundtrackProps> = ({ movieTitle }) => 
     setPlayingId(null);
   };
 
-  if (!data || (data as any).premium_error) return (
+  if (!data) return (
     <section className={styles.soundtrackSection}>
       <h2 className={styles.sectionTitle}>Official Soundtrack</h2>
       <div className={styles.noDataBox}>
         <p>
-          {loading ? "Searching Spotify..." : 
-           (data as any)?.premium_error ? "⚠️ Spotify API Error: The Developer App Owner requires an Active Premium Subscription to fetch soundtracks." : 
-           "Spotify soundtrack not available for this movie."}
+          {loading ? "Searching..." : "Soundtrack not available for this movie."}
         </p>
       </div>
     </section>
@@ -98,7 +94,7 @@ const SpotifySoundtrack: React.FC<SpotifySoundtrackProps> = ({ movieTitle }) => 
           <h2 className={styles.sectionTitle}>Official Soundtrack</h2>
           <p className={styles.albumName}>{data.album_name}</p>
           <a href={data.spotify_url} target="_blank" rel="noopener noreferrer" className={styles.spotifyLink}>
-            <ExternalLink size={16} /> Open Album
+            <ExternalLink size={16} /> Open on Apple Music
           </a>
         </div>
       </div>

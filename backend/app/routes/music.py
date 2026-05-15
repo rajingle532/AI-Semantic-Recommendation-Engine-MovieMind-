@@ -18,95 +18,51 @@ YOUTUBE_API_URL = "https://www.googleapis.com/youtube/v3/search"
 SPOTIFY_AUTH_URL = "https://accounts.spotify.com/api/token"
 SPOTIFY_API_BASE = "https://api.spotify.com/v1"
 
-def get_spotify_token():
-    """Get Spotify access token using Client Credentials flow."""
-    if not settings.SPOTIFY_CLIENT_ID or not settings.SPOTIFY_CLIENT_SECRET:
-        return None
-    
-    auth_string = f"{settings.SPOTIFY_CLIENT_ID}:{settings.SPOTIFY_CLIENT_SECRET}"
-    auth_base64 = base64.b64encode(auth_string.encode("utf-8")).decode("utf-8")
-    
-    headers = {
-        "Authorization": f"Basic {auth_base64}",
-        "Content-Type": "application/x-www-form-urlencoded"
-    }
-    data = {"grant_type": "client_credentials"}
-    
-    try:
-        response = session.post(SPOTIFY_AUTH_URL, headers=headers, data=data, timeout=10)
-        if response.status_code == 200:
-            return response.json().get("access_token")
-    except Exception as e:
-        print(f"Spotify Auth Error: {e}")
-    return None
+ITUNES_API_URL = "https://itunes.apple.com/search"
+ITUNES_LOOKUP_URL = "https://itunes.apple.com/lookup"
 
 @router.get("/spotify/album")
 async def get_movie_soundtrack(title: str):
-    """Search for a movie soundtrack on Spotify with multiple fallbacks."""
+    """Search for a movie soundtrack on iTunes (replaces Spotify due to Premium restrictions)."""
     movie_title = title
-    """Search for a movie soundtrack on Spotify with multiple fallbacks."""
-    token = get_spotify_token()
-    if not token:
-        print("SPOTIFY_ERROR: No token available")
-        return {"results": None}
-
-    headers = {"Authorization": f"Bearer {token}"}
+    
     queries = [
-        f"{movie_title} soundtrack",
         f"{movie_title} original motion picture soundtrack",
-        f"{movie_title} OST",
-        movie_title # Extreme fallback
+        f"{movie_title} soundtrack",
+        f"{movie_title} ost"
     ]
     
     for q in queries:
         try:
-            params = {"q": q, "type": "album", "limit": 1}
-            search_res = session.get(f"{SPOTIFY_API_BASE}/search", headers=headers, params=params, timeout=15)
+            params = {"term": q, "entity": "album", "limit": 1}
+            search_res = session.get(ITUNES_API_URL, params=params, timeout=15)
             if search_res.status_code == 200:
                 data = search_res.json()
-                albums = data.get("albums", {}).get("items", [])
-            elif search_res.status_code == 403:
-                print("SPOTIFY_ERROR: Premium required")
-                return {"results": None, "error": "premium_required"}
-                if albums:
-                    album_id = albums[0]["id"]
-                    tracks_res = session.get(f"{SPOTIFY_API_BASE}/albums/{album_id}/tracks", headers=headers, timeout=15)
+                if data.get("resultCount", 0) > 0:
+                    album = data["results"][0]
+                    collection_id = album["collectionId"]
+                    
+                    # Fetch tracks
+                    lookup_params = {"id": collection_id, "entity": "song"}
+                    tracks_res = session.get(ITUNES_LOOKUP_URL, params=lookup_params, timeout=15)
                     if tracks_res.status_code == 200:
                         tracks_data = tracks_res.json()
+                        tracks = [item for item in tracks_data.get("results", []) if item.get("wrapperType") == "track"]
+                        
                         return {
-                            "album_name": albums[0]["name"],
-                            "album_image": albums[0]["images"][0]["url"] if albums[0]["images"] else None,
+                            "album_name": album.get("collectionName"),
+                            "album_image": album.get("artworkUrl100", "").replace("100x100bb", "600x600bb"), # Get high-res
+                            "spotify_url": album.get("collectionViewUrl"), # Link to Apple Music
                             "tracks": [{
-                                "id": t["id"],
-                                "name": t["name"],
-                                "preview_url": t.get("preview_url"),
-                                "duration_ms": t["duration_ms"]
-                            } for t in tracks_data.get("items", [])]
+                                "id": str(t.get("trackId")),
+                                "name": t.get("trackName"),
+                                "preview_url": t.get("previewUrl"),
+                                "duration_ms": t.get("trackTimeMillis", 0)
+                            } for t in tracks]
                         }
         except Exception as e:
-            print(f"Spotify Query Error for '{q}': {e}")
+            print(f"iTunes Query Error for '{q}': {e}")
             
-    # Final fallback: Search for top tracks with the movie name
-    try:
-        params = {"q": movie_title, "type": "track", "limit": 10}
-        search_res = session.get(f"{SPOTIFY_API_BASE}/search", headers=headers, params=params, timeout=15)
-        if search_res.status_code == 200:
-            data = search_res.json()
-            tracks = data.get("tracks", {}).get("items", [])
-            if tracks:
-                return {
-                    "album_name": f"{movie_title} - Top Tracks",
-                    "album_image": tracks[0]["album"]["images"][0]["url"] if tracks[0]["album"]["images"] else None,
-                    "tracks": [{
-                        "id": t["id"],
-                        "name": t["name"],
-                        "preview_url": t.get("preview_url"),
-                        "duration_ms": t["duration_ms"]
-                    } for t in tracks]
-                }
-    except Exception as e:
-        print(f"Spotify Final Fallback Error: {e}")
-
     return {"results": None}
 
 @router.get("/youtube")
@@ -120,10 +76,9 @@ async def search_youtube_videos(q: str) -> Dict[str, List[Dict[str, str]]]:
 
     base_query = query.replace("official song", "").replace("movie", "").strip()
     queries = [
-        f"{base_query} official soundtrack",
-        f"{base_query} main theme",
-        f"{base_query} music video",
-        f"{base_query} ost"
+        f"{base_query} official soundtrack lyric video",
+        f"{base_query} main theme audio only",
+        f"{base_query} music video lyrics"
     ]
     
     for q in queries:
