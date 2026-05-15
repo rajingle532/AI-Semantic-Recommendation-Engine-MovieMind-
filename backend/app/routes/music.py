@@ -1,8 +1,16 @@
 from fastapi import APIRouter, HTTPException
 from typing import List, Dict
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 import base64
 from app.config import settings
+
+# Configure a robust requests session with retries for unstable networks
+session = requests.Session()
+retries = Retry(total=3, backoff_factor=1, status_forcelist=[ 500, 502, 503, 504 ])
+session.mount('http://', HTTPAdapter(max_retries=retries))
+session.mount('https://', HTTPAdapter(max_retries=retries))
 
 router = APIRouter(prefix="/api/music", tags=["Music"])
 
@@ -25,7 +33,7 @@ def get_spotify_token():
     data = {"grant_type": "client_credentials"}
     
     try:
-        response = requests.post(SPOTIFY_AUTH_URL, headers=headers, data=data, timeout=5)
+        response = session.post(SPOTIFY_AUTH_URL, headers=headers, data=data, timeout=10)
         if response.status_code == 200:
             return response.json().get("access_token")
     except Exception as e:
@@ -53,13 +61,16 @@ async def get_movie_soundtrack(title: str):
     for q in queries:
         try:
             params = {"q": q, "type": "album", "limit": 1}
-            search_res = requests.get(f"{SPOTIFY_API_BASE}/search", headers=headers, params=params, timeout=15)
+            search_res = session.get(f"{SPOTIFY_API_BASE}/search", headers=headers, params=params, timeout=15)
             if search_res.status_code == 200:
                 data = search_res.json()
                 albums = data.get("albums", {}).get("items", [])
+            elif search_res.status_code == 403:
+                print("SPOTIFY_ERROR: Premium required")
+                return {"results": None, "error": "premium_required"}
                 if albums:
                     album_id = albums[0]["id"]
-                    tracks_res = requests.get(f"{SPOTIFY_API_BASE}/albums/{album_id}/tracks", headers=headers, timeout=15)
+                    tracks_res = session.get(f"{SPOTIFY_API_BASE}/albums/{album_id}/tracks", headers=headers, timeout=15)
                     if tracks_res.status_code == 200:
                         tracks_data = tracks_res.json()
                         return {
@@ -75,6 +86,27 @@ async def get_movie_soundtrack(title: str):
         except Exception as e:
             print(f"Spotify Query Error for '{q}': {e}")
             
+    # Final fallback: Search for top tracks with the movie name
+    try:
+        params = {"q": movie_title, "type": "track", "limit": 10}
+        search_res = session.get(f"{SPOTIFY_API_BASE}/search", headers=headers, params=params, timeout=15)
+        if search_res.status_code == 200:
+            data = search_res.json()
+            tracks = data.get("tracks", {}).get("items", [])
+            if tracks:
+                return {
+                    "album_name": f"{movie_title} - Top Tracks",
+                    "album_image": tracks[0]["album"]["images"][0]["url"] if tracks[0]["album"]["images"] else None,
+                    "tracks": [{
+                        "id": t["id"],
+                        "name": t["name"],
+                        "preview_url": t.get("preview_url"),
+                        "duration_ms": t["duration_ms"]
+                    } for t in tracks]
+                }
+    except Exception as e:
+        print(f"Spotify Final Fallback Error: {e}")
+
     return {"results": None}
 
 @router.get("/youtube")
@@ -88,10 +120,10 @@ async def search_youtube_videos(q: str) -> Dict[str, List[Dict[str, str]]]:
 
     base_query = query.replace("official song", "").replace("movie", "").strip()
     queries = [
-        f"{base_query} official audio",
-        f"{base_query} theme song",
-        f"{base_query} soundtrack",
-        f"{base_query} music video"
+        f"{base_query} official soundtrack",
+        f"{base_query} main theme",
+        f"{base_query} music video",
+        f"{base_query} ost"
     ]
     
     for q in queries:
@@ -105,7 +137,7 @@ async def search_youtube_videos(q: str) -> Dict[str, List[Dict[str, str]]]:
                 "maxResults": 3,
                 "key": settings.YOUTUBE_API_KEY
             }
-            response = requests.get(YOUTUBE_API_URL, params=params, timeout=15)
+            response = session.get(YOUTUBE_API_URL, params=params, timeout=15)
             if response.status_code == 200:
                 data = response.json()
                 items = data.get("items", [])

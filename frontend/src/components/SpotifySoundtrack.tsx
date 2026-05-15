@@ -33,7 +33,9 @@ const SpotifySoundtrack: React.FC<SpotifySoundtrackProps> = ({ movieTitle }) => 
       try {
         setLoading(true);
         const response = await api.get(`/music/spotify/album?title=${encodeURIComponent(movieTitle)}`);
-        if (response.data && response.data.tracks && response.data.tracks.length > 0) {
+        if (response.data && response.data.error === "premium_required") {
+          setData({ ...response.data, premium_error: true });
+        } else if (response.data && response.data.tracks && response.data.tracks.length > 0) {
           setData(response.data);
         }
       } catch (err) {
@@ -70,12 +72,14 @@ const SpotifySoundtrack: React.FC<SpotifySoundtrackProps> = ({ movieTitle }) => 
     setPlayingId(null);
   };
 
-  if (!data) return (
+  if (!data || (data as any).premium_error) return (
     <section className={styles.soundtrackSection}>
       <h2 className={styles.sectionTitle}>Official Soundtrack</h2>
       <div className={styles.noDataBox}>
         <p>
-          {loading ? "Searching Spotify..." : "Spotify soundtrack not available for this movie."}
+          {loading ? "Searching Spotify..." : 
+           (data as any)?.premium_error ? "⚠️ Spotify API Error: The Developer App Owner requires an Active Premium Subscription to fetch soundtracks." : 
+           "Spotify soundtrack not available for this movie."}
         </p>
       </div>
     </section>

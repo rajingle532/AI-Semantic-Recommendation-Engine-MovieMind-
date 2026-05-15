@@ -92,6 +92,26 @@ const MovieSongs: React.FC<MovieSongsProps> = ({ movieTitle, releaseYear }) => {
                   allowFullScreen
                 ></iframe>
               </div>
+              <a 
+                href={`https://www.youtube.com/watch?v=${song.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.ytFallbackLink}
+                style={{
+                  display: 'block',
+                  textAlign: 'center',
+                  padding: '8px',
+                  marginTop: '8px',
+                  backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                  color: '#ff4444',
+                  textDecoration: 'none',
+                  borderRadius: '6px',
+                  fontSize: '0.9rem',
+                  fontWeight: 'bold'
+                }}
+              >
+                If video is unavailable, click here to Watch on YouTube ↗
+              </a>
             </div>
           ))}
         </div>
