@@ -101,7 +101,8 @@ async def search_youtube_videos(q: str) -> Dict[str, List[Dict[str, str]]]:
                 "q": q,
                 "type": "video",
                 "videoEmbeddable": "true",
-                "maxResults": 5,
+                "videoSyndicated": "true",
+                "maxResults": 3,
                 "key": settings.YOUTUBE_API_KEY
             }
             response = requests.get(YOUTUBE_API_URL, params=params, timeout=15)
