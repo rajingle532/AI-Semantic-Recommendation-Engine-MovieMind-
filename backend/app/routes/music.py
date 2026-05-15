@@ -53,32 +53,24 @@ async def get_movie_soundtrack(title: str):
     for q in queries:
         try:
             params = {"q": q, "type": "album", "limit": 1}
-            search_res = requests.get(f"{SPOTIFY_API_BASE}/search", headers=headers, params=params, timeout=5)
+            search_res = requests.get(f"{SPOTIFY_API_BASE}/search", headers=headers, params=params, timeout=15)
             if search_res.status_code == 200:
                 data = search_res.json()
                 albums = data.get("albums", {}).get("items", [])
                 if albums:
-                    album = albums[0]
-                    tracks_res = requests.get(f"{SPOTIFY_API_BASE}/albums/{album['id']}/tracks", headers=headers, timeout=5)
-                    tracks_data = tracks_res.json()
-                    
-                    tracks = []
-                    for t in tracks_data.get("items", []):
-                        if t.get("preview_url"):
-                            tracks.append({
+                    album_id = albums[0]["id"]
+                    tracks_res = requests.get(f"{SPOTIFY_API_BASE}/albums/{album_id}/tracks", headers=headers, timeout=15)
+                    if tracks_res.status_code == 200:
+                        tracks_data = tracks_res.json()
+                        return {
+                            "album_name": albums[0]["name"],
+                            "album_image": albums[0]["images"][0]["url"] if albums[0]["images"] else None,
+                            "tracks": [{
                                 "id": t["id"],
                                 "name": t["name"],
-                                "preview_url": t["preview_url"],
-                                "duration_ms": t["duration_ms"],
-                                "track_number": t["track_number"]
-                            })
-                    
-                    if tracks:
-                        return {
-                            "album_name": album["name"],
-                            "album_image": album["images"][0]["url"] if album["images"] else None,
-                            "spotify_url": album["external_urls"]["spotify"],
-                            "tracks": tracks[:10]
+                                "preview_url": t.get("preview_url"),
+                                "duration_ms": t["duration_ms"]
+                            } for t in tracks_data.get("items", [])]
                         }
         except Exception as e:
             print(f"Spotify Query Error for '{q}': {e}")
@@ -94,13 +86,12 @@ async def search_youtube_videos(q: str) -> Dict[str, List[Dict[str, str]]]:
         print("YOUTUBE_ERROR: Missing API Key")
         return {"results": []}
 
-    # Clean the query and create variations
     base_query = query.replace("official song", "").replace("movie", "").strip()
     queries = [
-        query, 
-        f"{base_query} official soundtrack",
-        f"{base_query} movie songs",
-        f"{base_query} trailer music"
+        f"{base_query} official audio",
+        f"{base_query} theme song",
+        f"{base_query} soundtrack",
+        f"{base_query} music video"
     ]
     
     for q in queries:
@@ -109,10 +100,11 @@ async def search_youtube_videos(q: str) -> Dict[str, List[Dict[str, str]]]:
                 "part": "snippet",
                 "q": q,
                 "type": "video",
-                "maxResults": 2,
+                "videoEmbeddable": "true",
+                "maxResults": 5,
                 "key": settings.YOUTUBE_API_KEY
             }
-            response = requests.get(YOUTUBE_API_URL, params=params, timeout=8)
+            response = requests.get(YOUTUBE_API_URL, params=params, timeout=15)
             if response.status_code == 200:
                 data = response.json()
                 items = data.get("items", [])

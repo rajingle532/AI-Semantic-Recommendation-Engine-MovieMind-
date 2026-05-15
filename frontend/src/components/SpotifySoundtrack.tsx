@@ -49,6 +49,11 @@ const SpotifySoundtrack: React.FC<SpotifySoundtrackProps> = ({ movieTitle }) => 
   }, [movieTitle]);
 
   const togglePlay = (track: Track) => {
+    if (!track.preview_url) {
+      window.open(`https://open.spotify.com/track/${track.id}`, '_blank');
+      return;
+    }
+
     if (playingId === track.id) {
       audioRef.current?.pause();
       setPlayingId(null);
@@ -68,9 +73,11 @@ const SpotifySoundtrack: React.FC<SpotifySoundtrackProps> = ({ movieTitle }) => 
   if (!data) return (
     <section className={styles.soundtrackSection}>
       <h2 className={styles.sectionTitle}>Official Soundtrack</h2>
-      <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '1rem' }}>
-        {loading ? "Searching Spotify..." : "Spotify soundtrack not available for this movie."}
-      </p>
+      <div className={styles.noDataBox}>
+        <p>
+          {loading ? "Searching Spotify..." : "Spotify soundtrack not available for this movie."}
+        </p>
+      </div>
     </section>
   );
 
@@ -87,24 +94,29 @@ const SpotifySoundtrack: React.FC<SpotifySoundtrackProps> = ({ movieTitle }) => 
           <h2 className={styles.sectionTitle}>Official Soundtrack</h2>
           <p className={styles.albumName}>{data.album_name}</p>
           <a href={data.spotify_url} target="_blank" rel="noopener noreferrer" className={styles.spotifyLink}>
-            <ExternalLink size={16} /> Open on Spotify
+            <ExternalLink size={16} /> Open Album
           </a>
         </div>
       </div>
 
       <div className={styles.trackList}>
-        {data.tracks.map((track) => (
+        {data.tracks.map((track, idx) => (
           <div 
             key={track.id} 
-            className={`${styles.trackItem} ${playingId === track.id ? styles.active : ''}`}
+            className={`${styles.trackItem} ${playingId === track.id ? styles.active : ''} ${!track.preview_url ? styles.noPreview : ''}`}
             onClick={() => togglePlay(track)}
           >
             <div className={styles.playBtn}>
-              {playingId === track.id ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+              {!track.preview_url ? (
+                <ExternalLink size={18} />
+              ) : (
+                playingId === track.id ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />
+              )}
             </div>
             <div className={styles.trackInfo}>
-              <span className={styles.trackNumber}>{track.track_number}.</span>
+              <span className={styles.trackNumber}>{idx + 1}.</span>
               <span className={styles.trackName}>{track.name}</span>
+              {!track.preview_url && <span className={styles.badge}>Full Song on Spotify</span>}
             </div>
             <span className={styles.trackDuration}>
               {Math.floor(track.duration_ms / 60000)}:
