@@ -90,8 +90,14 @@ async def search_youtube_videos(query: str) -> Dict[str, List[Dict[str, str]]]:
         print("YOUTUBE_ERROR: Missing API Key")
         return {"results": []}
 
-    # Try different query variations
-    queries = [query, query.replace("movie song", "official trailer music"), query.split(" ")[0] + " movie songs"]
+    # Clean the query and create variations
+    base_query = query.replace("official song", "").replace("movie", "").strip()
+    queries = [
+        query, 
+        f"{base_query} official soundtrack",
+        f"{base_query} movie songs",
+        f"{base_query} trailer music"
+    ]
     
     for q in queries:
         try:
@@ -99,10 +105,10 @@ async def search_youtube_videos(query: str) -> Dict[str, List[Dict[str, str]]]:
                 "part": "snippet",
                 "q": q,
                 "type": "video",
-                "maxResults": 3,
+                "maxResults": 2,
                 "key": settings.YOUTUBE_API_KEY
             }
-            response = requests.get(YOUTUBE_API_URL, params=params, timeout=5)
+            response = requests.get(YOUTUBE_API_URL, params=params, timeout=8)
             if response.status_code == 200:
                 data = response.json()
                 items = data.get("items", [])
@@ -112,9 +118,10 @@ async def search_youtube_videos(query: str) -> Dict[str, List[Dict[str, str]]]:
                         "title": item["snippet"]["title"],
                         "thumbnail": item["snippet"]["thumbnails"]["medium"]["url"]
                     } for item in items]}
-            else:
-                print(f"YouTube API Status {response.status_code}: {response.text}")
+            elif response.status_code == 403:
+                print(f"YouTube API Error 403: Quota exceeded or invalid key.")
+                break # Don't keep trying if key is bad
         except Exception as e:
-            print(f"YouTube Error: {e}")
+            print(f"YouTube Error for '{q}': {e}")
             
     return {"results": []}

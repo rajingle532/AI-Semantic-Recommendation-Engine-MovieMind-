@@ -29,7 +29,7 @@ const MovieSongs: React.FC<MovieSongsProps> = ({ movieTitle, releaseYear }) => {
         const response = await api.get(`/music/youtube/${encodeURIComponent(query)}`);
         
         if (response.data && response.data.results) {
-          setSongs(response.data.results);
+          setSongs(response.data.results.slice(0, 2));
         } else {
           setError(true);
         }

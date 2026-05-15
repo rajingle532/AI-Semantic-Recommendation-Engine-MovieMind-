@@ -12,6 +12,7 @@ import PageTransition from '../components/PageTransition';
 import ShareModal from '../components/ShareModal';
 import MovieSongs from '../components/MovieSongs';
 import SpotifySoundtrack from '../components/SpotifySoundtrack';
+import MovieMusicAI from '../components/MovieMusicAI';
 import styles from './MovieDetailPage.module.css';
 
 const MovieDetailPage: React.FC = () => {
@@ -23,6 +24,7 @@ const MovieDetailPage: React.FC = () => {
   const [userRating, setUserRating] = useState(0);
   const [showTrailer, setShowTrailer] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'watch' | 'music'>('overview');
 
   useEffect(() => {
     const fetchMovieData = async () => {
@@ -323,35 +325,194 @@ const MovieDetailPage: React.FC = () => {
             </div>
           </div>
 
-          <section className={styles.castSection}>
-            <h2 className={styles.sectionTitle}>Top Cast</h2>
-            <div className={styles.castList}>
-              {Array.isArray((movie as any).cast) && (movie as any).cast.map((member: any) => (
-                <Link to={`/person/${member.id}`} key={member.id} className={styles.castCard}>
-                  <div className={styles.castAvatar}>
-                    {member.profile_path ? (
-                      <img src={member.profile_path} alt={member.name} />
+          {/* Tabs Navigation */}
+          <div className={styles.tabsContainer}>
+            <div className={styles.tabs}>
+              <button 
+                className={`${styles.tabBtn} ${activeTab === 'overview' ? styles.active : ''}`}
+                onClick={() => setActiveTab('overview')}
+              >
+                Overview
+              </button>
+              <button 
+                className={`${styles.tabBtn} ${activeTab === 'watch' ? styles.active : ''}`}
+                onClick={() => setActiveTab('watch')}
+              >
+                Watch
+              </button>
+              <button 
+                className={`${styles.tabBtn} ${activeTab === 'music' ? styles.active : ''}`}
+                onClick={() => setActiveTab('music')}
+              >
+                Music
+              </button>
+            </div>
+          </div>
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              {activeTab === 'overview' && (
+                <>
+                  <section className={styles.overviewSection}>
+                    <div className={styles.overviewText}>
+                      <h2 className={styles.sectionTitle}>The Story</h2>
+                      <p>{movie.overview}</p>
+                    </div>
+                  </section>
+
+                  <section className={styles.castSection}>
+                    <h2 className={styles.sectionTitle}>Top Cast</h2>
+                    <div className={styles.castList}>
+                      {Array.isArray((movie as any).cast) && (movie as any).cast.map((member: any) => (
+                        <Link to={`/person/${member.id}`} key={member.id} className={styles.castCard}>
+                          <div className={styles.castAvatar}>
+                            {member.profile_path ? (
+                              <img src={member.profile_path} alt={member.name} />
+                            ) : (
+                              <div className={styles.avatarPlaceholder}>{member.name[0]}</div>
+                            )}
+                          </div>
+                          <div className={styles.castInfo}>
+                            <p className={styles.castName}>{member.name}</p>
+                            <p className={styles.castCharacter}>{member.character}</p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </section>
+                </>
+              )}
+
+              {activeTab === 'watch' && (
+                <section className={styles.watchSection}>
+                  <h2 className={styles.sectionTitle}>Where to Watch</h2>
+                  <div className={styles.providersFull}>
+                    {(movie as any).watch_providers ? (
+                      <div className={styles.providerCategories}>
+                        {/* Streaming (Subscription) */}
+                        {Array.isArray((movie as any).watch_providers.flatrate) && (movie as any).watch_providers.flatrate.length > 0 && (
+                          <div className={styles.providerCategory}>
+                            <span className={styles.categoryLabel}>Stream</span>
+                            <div className={styles.providerList}>
+                              {(movie as any).watch_providers.flatrate.map((p: any) => (
+                                <a
+                                  key={p.provider_id}
+                                  href={(movie as any).watch_providers.link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={styles.providerItem}
+                                  title={p.provider_name}
+                                >
+                                  {p.logo_path && <img src={p.logo_path} alt={p.provider_name} className={styles.providerLogo} />}
+                                  <span className={styles.providerName}>{p.provider_name}</span>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Rent */}
+                        {Array.isArray((movie as any).watch_providers.rent) && (movie as any).watch_providers.rent.length > 0 && (
+                          <div className={styles.providerCategory}>
+                            <span className={styles.categoryLabel}>Rent</span>
+                            <div className={styles.providerList}>
+                              {(movie as any).watch_providers.rent.map((p: any) => (
+                                <a
+                                  key={p.provider_id}
+                                  href={(movie as any).watch_providers.link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={styles.providerItem}
+                                  title={p.provider_name}
+                                >
+                                  {p.logo_path && <img src={p.logo_path} alt={p.provider_name} className={styles.providerLogo} />}
+                                  <span className={styles.providerName}>{p.provider_name}</span>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Buy */}
+                        {Array.isArray((movie as any).watch_providers.buy) && (movie as any).watch_providers.buy.length > 0 && (
+                          <div className={styles.providerCategory}>
+                            <span className={styles.categoryLabel}>Buy</span>
+                            <div className={styles.providerList}>
+                              {(movie as any).watch_providers.buy.map((p: any) => (
+                                <a
+                                  key={p.provider_id}
+                                  href={(movie as any).watch_providers.link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={styles.providerItem}
+                                  title={p.provider_name}
+                                >
+                                  {p.logo_path && <img src={p.logo_path} alt={p.provider_name} className={styles.providerLogo} />}
+                                  <span className={styles.providerName}>{p.provider_name}</span>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* No providers found */}
+                        {(!((movie as any).watch_providers.flatrate?.length) &&
+                          !((movie as any).watch_providers.rent?.length) &&
+                          !((movie as any).watch_providers.buy?.length)) && (
+                            <div className={styles.noProviderBig}>
+                              <p>Not available for streaming in your region.</p>
+                            </div>
+                          )}
+                      </div>
                     ) : (
-                      <div className={styles.avatarPlaceholder}>{member.name[0]}</div>
+                      <div className={styles.noProviderBig}>
+                        <p>Loading provider data...</p>
+                      </div>
                     )}
                   </div>
-                  <div className={styles.castInfo}>
-                    <p className={styles.castName}>{member.name}</p>
-                    <p className={styles.castCharacter}>{member.character}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
 
-          {/* New Music Integration Section */}
-          <MovieSongs
-            movieTitle={movie.title}
-            releaseYear={movie.release_date || ''}
-          />
-          <SpotifySoundtrack 
-            movieTitle={movie.title}
-          />
+                  {(movie as any).trailer_key && (
+                    <div className={styles.trailerPreview}>
+                      <h3 className={styles.sectionSmallTitle}>Official Trailer</h3>
+                      <div className={styles.videoWrapper}>
+                        <iframe
+                          src={`https://www.youtube.com/embed/${(movie as any).trailer_key}`}
+                          title="YouTube video player"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        ></iframe>
+                      </div>
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {activeTab === 'music' && (
+                <div className={styles.musicTab}>
+                  <MovieMusicAI
+                    movieId={movie.id}
+                    movieTitle={movie.title}
+                  />
+                  
+                  <MovieSongs
+                    movieTitle={movie.title}
+                    releaseYear={movie.release_date || ''}
+                  />
+                  
+                  <SpotifySoundtrack 
+                    movieTitle={movie.title}
+                  />
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
 
           <section className={styles.similarSection}>
             <h2 className={styles.sectionTitle}>Similar Movies You Might Like</h2>

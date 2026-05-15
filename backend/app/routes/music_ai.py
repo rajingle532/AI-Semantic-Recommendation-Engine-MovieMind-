@@ -49,3 +49,18 @@ async def recommend_playlists(mood: str):
             "mystery": [{"title": "Deep Focus Mystery", "description": "Ambient synth-wave for solving puzzles.", "query": "Mystery Ambient"}]
         }
         return {"results": fallbacks.get(mood, [{"title": "Movie Magic", "description": "General cinematic excellence.", "query": "Movie Soundtracks"}])}
+
+@router.get("/recommend/movie/{movie_id}")
+async def recommend_for_movie(movie_id: int):
+    """
+    Suggest music based on a specific movie's vibe.
+    """
+    from app.services.tmdb import get_movie_details
+    from app.services.ai_assistant import get_music_suggestions_for_movie
+    
+    details = get_movie_details(movie_id)
+    if not details:
+        raise HTTPException(status_code=404, detail="Movie not found")
+        
+    suggestions = await get_music_suggestions_for_movie(details)
+    return {"results": suggestions}

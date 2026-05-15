@@ -224,3 +224,48 @@ async def identify_movie_from_query(query: str) -> str:
     if not response or response.upper() == "NONE":
         return ""
     return response
+
+
+async def get_music_suggestions_for_movie(movie_details: dict) -> list:
+    """Suggest Spotify playlists based on movie vibe."""
+    title = movie_details.get('title')
+    genres = movie_details.get('genres', [])
+    overview = movie_details.get('overview', '')
+    
+    prompt = f"""
+    The user liked the movie '{title}' (Genres: {', '.join(genres)}).
+    Overview: {overview[:300]}...
+    
+    Suggest 5 distinct types of Spotify playlists/genres that match the 'vibe' or 'tone' of this movie.
+    For each suggestion, provide:
+    1. A catchy title (e.g., 'Since you liked the dark tone of {title}...')
+    2. A brief description (max 15 words)
+    3. A search query to find this on Spotify (e.g., 'dark synth-wave')
+    
+    Return the response as a JSON list of objects with keys: title, description, query.
+    Do not include any other text.
+    """
+    
+    response = await _call_gemini_with_circuit_breaker(prompt)
+    if not response:
+        # Fallback based on genres
+        genres = movie_details.get('genres', [])
+        if any(g in genres for g in ['Action', 'Adventure', 'Sci-Fi']):
+            return [{"title": "Epic Hero Soundscapes", "description": "Powerful orchestral and synth tracks for a grand adventure.", "query": "Epic Movie Scores"}]
+        if any(g in genres for g in ['Horror', 'Thriller', 'Mystery']):
+            return [{"title": "Dark Suspense Vibes", "description": "Eerie and atmospheric sounds for a tense night.", "query": "Dark Ambient Movie Music"}]
+        if any(g in genres for g in ['Comedy', 'Animation', 'Family']):
+            return [{"title": "Feel-Good Cinematic Hits", "description": "Upbeat and joyful melodies to brighten your day.", "query": "Happy Movie Soundtracks"}]
+        return [{"title": "Cinematic Essentials", "description": "Classic and modern masterpieces of film music.", "query": "Movie Soundtracks"}]
+    
+    try:
+        # Simple JSON cleaning
+        json_str = response.strip()
+        if "```json" in json_str:
+            json_str = json_str.split("```json")[1].split("```")[0].strip()
+        elif "```" in json_str:
+            json_str = json_str.split("```")[1].split("```")[0].strip()
+            
+        return json.loads(json_str)
+    except:
+        return []
