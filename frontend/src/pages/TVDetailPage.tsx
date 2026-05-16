@@ -299,7 +299,7 @@ const TVDetailPage: React.FC = () => {
 
         </div>
       </div>
-      {showShareModal && <ShareModal movie={{ id: tvShow.id, title: tvShow.title, poster_path: tvShow.poster_path }} onClose={() => setShowShareModal(false)} />}
+      <ShareModal isOpen={showShareModal} title={tvShow.title} url={`/tv/${tvShow.id}`} onClose={() => setShowShareModal(false)} />
     </PageTransition>
   );
 };
