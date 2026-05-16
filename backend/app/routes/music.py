@@ -76,9 +76,9 @@ async def search_youtube_videos(q: str) -> Dict[str, List[Dict[str, str]]]:
 
     base_query = query.replace("official song", "").replace("movie", "").strip()
     queries = [
-        f"{base_query} official soundtrack lyric video",
-        f"{base_query} main theme audio only",
-        f"{base_query} music video lyrics"
+        f"{base_query} official music video",
+        f"{base_query} video song",
+        f"{base_query} full song"
     ]
     
     for q in queries:
