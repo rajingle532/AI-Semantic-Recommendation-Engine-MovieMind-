@@ -15,7 +15,9 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, showRating = true }) => {
   const placeholderUrl = 'https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=2059&auto=format&fit=crop';
   const posterUrl = !imageError && movie.poster_path ? movie.poster_path : placeholderUrl;
   const movieId = movie.id || (movie as any).movie_id;
-  const movieTitle = movie.title || (movie as any).movie_title;
+  const movieTitle = movie.title || (movie as any).movie_title || movie.name;
+  const mediaType = movie.media_type || 'movie';
+  const basePath = mediaType === 'tv' ? '/tv' : '/movie';
 
   return (
     <motion.div 
@@ -34,8 +36,11 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, showRating = true }) => {
         damping: 20
       }}
     >
-      <Link to={`/movie/${movieId}`} className={styles.link}>
+      <Link to={`${basePath}/${movieId}`} className={styles.link}>
         <div className={styles.posterWrapper}>
+          {mediaType === 'tv' && (
+            <div className={styles.tvBadge}>TV</div>
+          )}
           <img 
             src={posterUrl} 
             alt={movieTitle} 

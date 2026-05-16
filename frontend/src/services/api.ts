@@ -37,4 +37,10 @@ api.interceptors.response.use(
   }
 );
 
+export const getTrendingTV = (page = 1) => api.get(`/tv/trending?page=${page}`);
+export const searchTV = (query: string, page = 1) => api.get(`/tv/search?q=${query}&page=${page}`);
+export const getTVDetails = (id: number) => api.get(`/tv/${id}`);
+export const getTVSeason = (id: number, season: number) => api.get(`/tv/${id}/season/${season}`);
+export const getTVByLanguage = (code: string, page = 1) => api.get(`/tv/language/${code}?page=${page}`);
+
 export default api;

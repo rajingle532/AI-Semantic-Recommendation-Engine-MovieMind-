@@ -33,6 +33,7 @@ def rate_movie(rating_data: RatingCreate, current_user: dict = Depends(get_curre
             "poster_path": rating_data.poster_path,
             "release_date": rating_data.release_date,
             "vote_average": rating_data.vote_average,
+            "media_type": rating_data.media_type,
         }},
         upsert=True
     )

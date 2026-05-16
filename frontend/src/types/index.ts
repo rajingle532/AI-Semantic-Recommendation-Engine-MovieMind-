@@ -10,6 +10,7 @@ export interface Movie {
   director?: string;
   similarity_score?: number;
   relevance_score?: number;
+  media_type?: string;
 }
 
 export interface AuthResponse {

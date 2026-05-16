@@ -31,6 +31,7 @@ def add_to_watchlist(item: WatchlistCreate, current_user: dict = Depends(get_cur
         "poster_path": item.poster_path,
         "release_date": item.release_date,
         "vote_average": item.vote_average,
+        "media_type": item.media_type,
     })
 
     return {"message": "Added to watchlist", "movie_id": item.movie_id}

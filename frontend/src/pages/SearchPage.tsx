@@ -14,15 +14,28 @@ const SearchPage: React.FC = () => {
   const [results, setResults] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'title' | 'nlp'>('title');
+  const [mediaType, setMediaType] = useState<'all' | 'movie' | 'tv'>('all');
 
   useEffect(() => {
     const performSearch = async () => {
       if (!query) return;
       setLoading(true);
       try {
-        const endpoint = mode === 'nlp' ? '/movies/semantic' : '/movies/search';
-        const { data } = await api.get(`${endpoint}?q=${encodeURIComponent(query)}`);
-        setResults(data.results || []);
+        let allResults: Movie[] = [];
+        if (mode === 'nlp') {
+          const { data } = await api.get(`/movies/semantic?q=${encodeURIComponent(query)}`);
+          allResults = data.results || [];
+        } else {
+          const [moviesRes, tvRes] = await Promise.all([
+            (mediaType === 'all' || mediaType === 'movie') ? api.get(`/movies/search?q=${encodeURIComponent(query)}`) : Promise.resolve({ data: { results: [] } }),
+            (mediaType === 'all' || mediaType === 'tv') ? api.get(`/tv/search?q=${encodeURIComponent(query)}`) : Promise.resolve({ data: { results: [] } })
+          ]);
+          allResults = [...(moviesRes.data.results || []), ...(tvRes.data.results || [])];
+          
+          // Sort by popularity/vote_average if available, or just interleave them
+          allResults.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+        }
+        setResults(allResults);
       } catch (err) {
         console.error("Search failed", err);
       } finally {
@@ -31,7 +44,7 @@ const SearchPage: React.FC = () => {
     };
 
     performSearch();
-  }, [query, mode]);
+  }, [query, mode, mediaType]);
 
   return (
     <PageTransition>
@@ -42,19 +55,42 @@ const SearchPage: React.FC = () => {
             <p className={styles.subtitle}>Found {results.length} matches</p>
           </div>
 
-          <div className={styles.toggleContainer}>
-            <button 
-              className={`${styles.toggleBtn} ${mode === 'title' ? styles.active : ''}`}
-              onClick={() => setMode('title')}
-            >
-              <SearchIcon size={16} /> Title Search
-            </button>
-            <button 
-              className={`${styles.toggleBtn} ${mode === 'nlp' ? styles.active : ''}`}
-              onClick={() => setMode('nlp')}
-            >
-              <Brain size={16} /> NLP Search
-            </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'flex-end' }}>
+            <div className={styles.toggleContainer}>
+              <button 
+                className={`${styles.toggleBtn} ${mediaType === 'all' ? styles.active : ''}`}
+                onClick={() => { setMediaType('all'); setMode('title'); }}
+              >
+                All
+              </button>
+              <button 
+                className={`${styles.toggleBtn} ${mediaType === 'movie' ? styles.active : ''}`}
+                onClick={() => setMediaType('movie')}
+              >
+                Movies
+              </button>
+              <button 
+                className={`${styles.toggleBtn} ${mediaType === 'tv' ? styles.active : ''}`}
+                onClick={() => { setMediaType('tv'); setMode('title'); }}
+              >
+                TV Shows
+              </button>
+            </div>
+
+            <div className={styles.toggleContainer}>
+              <button 
+                className={`${styles.toggleBtn} ${mode === 'title' ? styles.active : ''}`}
+                onClick={() => setMode('title')}
+              >
+                <SearchIcon size={16} /> Title Search
+              </button>
+              <button 
+                className={`${styles.toggleBtn} ${mode === 'nlp' ? styles.active : ''}`}
+                onClick={() => { setMode('nlp'); setMediaType('movie'); }}
+              >
+                <Brain size={16} /> NLP Search
+              </button>
+            </div>
           </div>
         </header>
 

@@ -13,6 +13,7 @@ class RatingCreate(BaseModel):
     poster_path: Optional[str] = None
     release_date: Optional[str] = None
     vote_average: Optional[float] = None
+    media_type: str = "movie"
 
 
 class RatingResponse(BaseModel):
@@ -23,6 +24,7 @@ class RatingResponse(BaseModel):
     poster_path: Optional[str] = None
     release_date: Optional[str] = None
     vote_average: Optional[float] = None
+    media_type: str = "movie"
 
 
 class WatchlistCreate(BaseModel):
@@ -32,6 +34,7 @@ class WatchlistCreate(BaseModel):
     poster_path: Optional[str] = None
     release_date: Optional[str] = None
     vote_average: Optional[float] = None
+    media_type: str = "movie"
 
 
 class WatchlistResponse(BaseModel):
@@ -41,3 +44,4 @@ class WatchlistResponse(BaseModel):
     poster_path: Optional[str] = None
     release_date: Optional[str] = None
     vote_average: Optional[float] = None
+    media_type: str = "movie"

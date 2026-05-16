@@ -20,6 +20,7 @@ const Navbar: React.FC = () => {
   const { user, logout, isAuthenticated, loading } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const location = window.location;
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -88,6 +89,11 @@ const Navbar: React.FC = () => {
           <Film size={28} className={styles.logoIcon} />
           <span>MovieMind</span>
         </Link>
+
+        <div className={styles.mediaToggle}>
+          <Link to="/" className={`${styles.toggleBtn} ${location.pathname === '/' ? styles.active : ''}`}>🎬 Movies</Link>
+          <Link to="/tv" className={`${styles.toggleBtn} ${location.pathname.startsWith('/tv') ? styles.active : ''}`}>📺 Web Series</Link>
+        </div>
 
         <div className={styles.searchWrapper} ref={searchRef}>
           <form className={styles.searchBar} onSubmit={handleSearch}>

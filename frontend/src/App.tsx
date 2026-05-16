@@ -10,8 +10,10 @@ import ChatWidget from './components/ChatWidget';
 
 // Pages
 import HomePage from './pages/HomePage';
+import TVPage from './pages/TVPage';
 import SearchPage from './pages/SearchPage';
 import MovieDetailPage from './pages/MovieDetailPage';
+import TVDetailPage from './pages/TVDetailPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ProfilePage from './pages/ProfilePage';
@@ -44,8 +46,10 @@ const App: React.FC = () => {
         <Routes location={location} key={location.pathname}>
           {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
+          <Route path="/tv" element={<TVPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/movie/:id" element={<MovieDetailPage />} />
+          <Route path="/tv/:id" element={<TVDetailPage />} />
           <Route path="/person/:id" element={<PersonDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
