@@ -104,8 +104,11 @@ async def search_youtube_videos(q: str) -> Dict[str, List[Dict[str, str]]]:
                     } for item in items]}
             elif response.status_code == 403:
                 print(f"YouTube API Error 403: Quota exceeded or invalid key.")
-                break # Don't keep trying if key is bad
+                from fastapi import HTTPException
+                raise HTTPException(status_code=429, detail="YouTube API Quota Exceeded")
         except Exception as e:
             print(f"YouTube Error for '{q}': {e}")
+            if hasattr(e, 'status_code') and e.status_code == 429:
+                raise e
             
     return {"results": []}

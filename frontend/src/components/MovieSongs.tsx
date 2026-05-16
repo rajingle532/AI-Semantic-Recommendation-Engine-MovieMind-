@@ -63,8 +63,28 @@ const MovieSongs: React.FC<MovieSongsProps> = ({ movieTitle, releaseYear }) => {
     return (
       <section className={styles.songsSection}>
         <h2 className={styles.sectionTitle}>Official Music Videos</h2>
-        <div className={styles.loaderContainer} style={{ borderStyle: 'dotted' }}>
-          <p>No official music videos found for this title.</p>
+        <div className={styles.loaderContainer} style={{ borderStyle: 'dotted', padding: '2rem' }}>
+          <p style={{ marginBottom: '1rem', color: '#ff4444' }}>
+            {error ? "YouTube API Quota Exceeded." : "No embedded videos found for this title."}
+          </p>
+          <a 
+            href={`https://www.youtube.com/results?search_query=${encodeURIComponent(movieTitle + ' official songs')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-block',
+              padding: '10px 20px',
+              backgroundColor: '#ff0000',
+              color: 'white',
+              textDecoration: 'none',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              fontSize: '1rem',
+              transition: 'transform 0.2s'
+            }}
+          >
+            🎬 Watch {movieTitle} songs on YouTube ↗
+          </a>
         </div>
       </section>
     );
