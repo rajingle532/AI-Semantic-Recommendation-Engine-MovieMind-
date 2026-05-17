@@ -42,7 +42,8 @@ def search_tv(q: str = Query(..., description="Search query"), page: int = 1):
 
 @router.get("/language/{code}")
 def get_tv_by_language(code: str, page: int = 1):
-    results = tmdb.get_trending_tv_language(code, page)
+    data = tmdb.get_trending_tv_language(code, page)
+    results = data.get("results", [])
     
     formatted = []
     for t in results:
