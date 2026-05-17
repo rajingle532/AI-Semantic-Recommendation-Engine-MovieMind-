@@ -1,75 +1,186 @@
 .page {
-  padding-top: 100px;
   min-height: 100vh;
+  padding-bottom: 6rem;
 }
 
-.header {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 24px;
-  padding: 3rem;
-  margin-bottom: 3rem;
+/* ── Hero Banner ───────────────────────────── */
+.heroBanner {
+  position: relative;
+  padding: 5rem 0 3rem;
+  overflow: hidden;
+}
+
+.heroBg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #0f0005 0%, #0d0d0d 50%, #020a1a 100%);
+  z-index: 0;
+}
+
+.heroBg::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  left: -60px;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(ellipse, rgba(229,9,20,0.10) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.heroBg::after {
+  content: '';
+  position: absolute;
+  bottom: -80px;
+  right: -80px;
+  width: 360px;
+  height: 360px;
+  background: radial-gradient(ellipse, rgba(99,102,241,0.08) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  backdrop-filter: blur(10px);
+  gap: 2rem;
+  flex-wrap: wrap;
 }
 
-.headerTitle h1 {
-  font-size: 2.5rem;
-  font-weight: 800;
-  margin-bottom: 0.5rem;
+.avatarRing {
+  flex-shrink: 0;
+  padding: 3px;
+  background: linear-gradient(135deg, #e50914, #ff4444, #6366f1);
+  border-radius: 50%;
+  box-shadow: 0 0 30px rgba(229,9,20,0.3);
 }
 
-.headerTitle p {
-  color: var(--text-secondary);
-  font-size: 1rem;
-}
-
-.stats {
+.avatar {
+  width: 80px;
+  height: 80px;
+  background: #1a0a0a;
+  border-radius: 50%;
   display: flex;
-  gap: 3rem;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 900;
+  color: #e50914;
+  letter-spacing: -1px;
 }
 
-.statItem {
+.heroInfo {
+  flex: 1;
+  min-width: 140px;
+}
+
+.heroInfo h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.heroInfo p {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.45);
+}
+
+.heroStats {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 1rem 1.75rem;
+  backdrop-filter: blur(8px);
+}
+
+.heroStat {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 3px;
 }
 
-.statValue {
-  font-size: 2rem;
-  font-weight: 800;
+.heroStatIcon {
   color: var(--accent);
+  margin-bottom: 2px;
 }
 
-.statLabel {
-  font-size: 0.9rem;
-  color: var(--text-muted);
+.heroStatValue {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+
+.heroStatLabel {
+  font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 1px;
-  margin-top: 0.25rem;
+  color: rgba(255,255,255,0.4);
 }
 
-/* Tabs Styling */
-.tabs {
+.heroStatDivider {
+  width: 1px;
+  height: 40px;
+  background: rgba(255,255,255,0.1);
+}
+
+.editProfileBtn {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 2.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 0.5rem;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.75);
+  padding: 0.65rem 1.2rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.25s ease;
+  margin-left: auto;
+}
+
+.editProfileBtn:hover {
+  background: var(--accent);
+  border-color: transparent;
+  color: white;
+}
+
+/* ── Main Content ──────────────────────────── */
+.main {
+  padding-top: 2.5rem;
+}
+
+/* ── Tabs ──────────────────────────────────── */
+.tabsRow {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--border, rgba(255,255,255,0.08));
+  padding-bottom: 0;
 }
 
 .tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   background: none;
   border: none;
+  border-bottom: 2px solid transparent;
   color: var(--text-muted);
-  padding: 1rem 2rem;
-  font-size: 1rem;
+  padding: 0.85rem 1.25rem;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  position: relative;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
+  margin-bottom: -1px;
+  white-space: nowrap;
 }
 
 .tab:hover {
@@ -78,134 +189,251 @@
 
 .activeTab {
   color: var(--text-primary);
+  border-bottom-color: var(--accent);
 }
 
-.activeTab::after {
+.tabBadge {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: 20px;
+  min-width: 22px;
+  text-align: center;
+  transition: all 0.25s ease;
+}
+
+.tabBadgeActive {
+  background: rgba(229,9,20,0.15);
+  color: var(--accent);
+}
+
+/* ── AI Section ────────────────────────────── */
+.aiInsightBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(229,9,20,0.06));
+  border: 1px solid rgba(99,102,241,0.15);
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.aiInsightBanner::before {
   content: '';
   position: absolute;
-  bottom: -0.6rem;
+  top: 0;
   left: 0;
-  width: 100%;
-  height: 3px;
-  background: var(--accent);
-  border-radius: 3px;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(to bottom, #6366f1, #e50914);
 }
 
-.tabContent {
-  animation: fadeIn 0.5s ease;
-}
-
-.emptyAI {
-  text-align: center;
-  padding: 5rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 2px dashed rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  color: var(--text-muted);
-  font-size: 1.1rem;
-}
-
-/* Account Card Styles */
-.accountCard {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  padding: 2.5rem;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.accountHeader {
+.aiInsightIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(99,102,241,0.15);
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 2.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  padding-bottom: 1.5rem;
+  justify-content: center;
+  color: #6366f1;
+  flex-shrink: 0;
 }
 
-.accountHeader h3 {
-  font-size: 1.5rem;
+.aiInsightText {
+  flex: 1;
+}
+
+.aiInsightText h3 {
+  font-size: 0.95rem;
   font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
 }
 
-.editBtn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
-  padding: 0.6rem 1.2rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
+.aiInsightText p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.refreshBtn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text-muted);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  align-self: center;
 }
 
-.editBtn:hover {
-  background: white;
-  color: black;
+.refreshBtn:hover {
+  background: rgba(99,102,241,0.15);
+  color: #6366f1;
+  border-color: rgba(99,102,241,0.3);
 }
 
-.accountGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 2rem;
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-.accountItem label {
-  display: block;
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+.aiSubtitle {
   font-size: 0.8rem;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* AI Empty State */
+.aiEmptyState {
+  text-align: center;
+  padding: 3.5rem 2rem;
+  background: var(--bg-card, var(--bg-secondary));
+  border: 2px dashed var(--border, rgba(255,255,255,0.08));
+  border-radius: 20px;
+}
+
+.aiEmptyIcon {
+  width: 72px;
+  height: 72px;
+  background: rgba(229,9,20,0.08);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  margin: 0 auto 1.25rem;
+}
+
+.aiEmptyState h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
   margin-bottom: 0.5rem;
 }
 
-.accountItem p {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--text-primary);
+.aiEmptyState > p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  max-width: 380px;
+  margin: 0 auto 2rem;
+  line-height: 1.6;
 }
 
-.statusActive {
-  color: #00ff88 !important;
-  text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+.aiSteps {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+.aiStep {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border, rgba(255,255,255,0.06));
+  border-radius: 12px;
+  padding: 0.75rem 1.2rem;
+  max-width: 200px;
+}
+
+.aiStep span {
+  width: 26px;
+  height: 26px;
+  background: var(--accent);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.aiStep p {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  text-align: left;
+}
+
+.browseCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent);
+  color: white;
+  padding: 0.75rem 1.75rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 15px rgba(229,9,20,0.3);
+}
+
+.browseCta:hover {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(229,9,20,0.4);
+}
+
+/* ── Shimmer Loading ────────────────────────── */
+.shimmerGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1.25rem;
+}
+
+.shimmerCard {
+  aspect-ratio: 2/3;
+  border-radius: var(--card-radius);
+  background: linear-gradient(
+    90deg,
+    var(--bg-secondary) 25%,
+    var(--bg-tertiary) 50%,
+    var(--bg-secondary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 @media (max-width: 768px) {
-  .header {
-    flex-direction: column;
-    text-align: center;
-    gap: 2rem;
-    padding: 2rem;
+  .heroContent {
+    gap: 1.25rem;
   }
-  
-  .userSection {
-    flex-direction: column;
+  .heroInfo h1 { font-size: 1.4rem; }
+  .heroStats {
     gap: 1rem;
+    padding: 0.85rem 1.25rem;
   }
-  
-  .stats {
-    gap: 2rem;
-  }
-  
-  .tabs {
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  
-  .tabs::-webkit-scrollbar {
-    display: none;
-  }
-  
-  .tab {
-    padding: 0.8rem 1rem;
-    font-size: 0.9rem;
-    white-space: nowrap;
-  }
+  .heroStatValue { font-size: 1.25rem; }
+  .editProfileBtn { margin-left: 0; width: 100%; justify-content: center; }
+  .tabsRow { overflow-x: auto; scrollbar-width: none; }
+  .tabsRow::-webkit-scrollbar { display: none; }
+  .aiSteps { flex-direction: column; align-items: center; }
 }
