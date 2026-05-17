@@ -17,6 +17,9 @@
   --glass-blur: blur(12px);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
   
+  --hero-text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.8);
+  --btn-text: #ffffff;
+  
   --card-radius: 12px;
   --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   --navbar-height: 72px;
@@ -39,6 +42,9 @@
   --glass-border: rgba(0, 0, 0, 0.05);
   --glass-blur: blur(10px);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  
+  --hero-text-shadow: 1px 1px 0px rgba(255, 255, 255, 1), 0 2px 15px rgba(255, 255, 255, 0.8);
+  --btn-text: #1d1d1f;
 }
 
 * {
