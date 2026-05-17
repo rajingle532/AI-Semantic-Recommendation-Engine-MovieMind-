@@ -39,7 +39,8 @@ vi.mock('lucide-react', () => {
   const icons = [
     'Film', 'Star', 'Info', 'Play', 'X', 'Search', 'User', 'LogOut', 
     'Settings', 'Heart', 'ChevronLeft', 'ChevronRight', 'Sun', 'Moon',
-    'Shield', 'HelpCircle', 'ArrowRight', 'Eye', 'Calendar', 'Clock'
+    'Shield', 'HelpCircle', 'ArrowRight', 'Eye', 'Calendar', 'Clock',
+    'Tv', 'ChevronDown', 'ChevronUp', 'Share2', 'Headphones'
   ];
   const mockIcons: any = {};
   icons.forEach(icon => {
