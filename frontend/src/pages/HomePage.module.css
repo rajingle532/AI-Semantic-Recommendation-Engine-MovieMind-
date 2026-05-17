@@ -149,14 +149,14 @@
 
 .genreChip {
   white-space: nowrap;
-  background: var(--glass-bg);
+  background: var(--bg-tertiary, var(--glass-bg));
   backdrop-filter: var(--glass-blur);
   color: var(--text-secondary);
   padding: 0.7rem 1.6rem;
   border-radius: 50px;
   font-size: 0.85rem;
   font-weight: 700;
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--border, var(--glass-border));
   transition: var(--transition);
 }
 

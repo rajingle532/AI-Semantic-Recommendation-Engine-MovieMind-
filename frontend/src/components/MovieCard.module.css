@@ -1,17 +1,19 @@
 .card {
-  background: var(--bg-secondary);
+  background: var(--bg-card, var(--bg-secondary));
   border-radius: var(--card-radius);
   overflow: hidden;
   transition: var(--transition);
   height: 100%;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--border, var(--glass-border));
   position: relative;
+  box-shadow: var(--shadow);
 }
 
 .card:hover {
   transform: translateY(-8px);
+  background: var(--card-hover, var(--bg-secondary));
   border-color: var(--accent);
   box-shadow: var(--accent-glow);
   z-index: 10;

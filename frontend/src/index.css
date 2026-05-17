@@ -27,24 +27,31 @@
 }
 
 [data-theme='light'] {
-  --bg-primary: #f5f5f7;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #e5e5e7;
+  --bg-primary: #f5f5f1;
+  --bg-secondary: #e8e8e4;
+  --bg-tertiary: #d4d4d0;
+  --bg-card: #ffffff;
+  --navbar-bg: #ffffff;
+  --card-hover: #f0f0ec;
+  --border: #d4d4d0;
+  
   --accent: #e50914;
   --accent-hover: #f40612;
   --accent-glow: 0 0 20px rgba(229, 9, 20, 0.2);
-  --text-primary: #1d1d1f;
-  --text-secondary: #424245;
-  --text-muted: #86868b;
+  
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --text-muted: #8a8a8a;
   --gold: #f59e0b;
   
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(0, 0, 0, 0.05);
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(0, 0, 0, 0.08);
   --glass-blur: blur(10px);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
   
-  --hero-text-shadow: 1px 1px 0px rgba(255, 255, 255, 1), 0 2px 15px rgba(255, 255, 255, 0.8);
-  --btn-text: #1d1d1f;
+  --hero-text-shadow: 2px 2px 15px rgba(0, 0, 0, 0.9);
+  --btn-text: #1a1a1a;
+  --shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
 * {
