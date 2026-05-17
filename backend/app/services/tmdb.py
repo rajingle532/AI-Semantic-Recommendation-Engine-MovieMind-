@@ -481,22 +481,25 @@ def get_genres() -> list:
     if _genres_cache:
         timestamp, genres = _genres_cache
         if time.time() - timestamp < _CACHE_TTL * 24: # Genres rarely change
-            return genres
+            return [g for g in genres if g.get("name", "").lower() != "documentary"]
             
     # 2. Disk Cache
     disk_ts, disk_genres = _load_disk_cache("genres.json")
     if disk_ts:
-        _genres_cache = (disk_ts, disk_genres)
-        return disk_genres
+        filtered = [g for g in disk_genres if g.get("name", "").lower() != "documentary"]
+        _genres_cache = (disk_ts, filtered)
+        return filtered
 
     # 3. API Request
     data = _make_request("/genre/movie/list")
     genres = data.get("genres", [])
     if genres:
+        # Filter out Documentary to keep the platform clean
+        genres = [g for g in genres if g.get("name", "").lower() != "documentary"]
+        
         _genres_cache = (time.time(), genres)
         _save_disk_cache("genres.json", genres)
         return genres
-        
     # 4. Emergency Fallback Genres
     print("TMDB_API_ERROR: Using emergency fallback genres.")
     emergency_genres = [
