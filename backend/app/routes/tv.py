@@ -92,6 +92,19 @@ def get_tv_details(tv_id: int):
         "link": country_data.get("link", "")
     }
 
+    # Extract trailer key from appended videos
+    trailer_key = None
+    videos = data.get("videos", {}).get("results", [])
+    for video in videos:
+        if video.get("site") == "YouTube" and video.get("type") == "Trailer":
+            trailer_key = video.get("key")
+            break
+    if not trailer_key and videos:
+        for video in videos:
+            if video.get("site") == "YouTube":
+                trailer_key = video.get("key")
+                break
+
     return {
         "id": data.get("id"),
         "title": data.get("name"),
@@ -107,6 +120,7 @@ def get_tv_details(tv_id: int):
         "seasons": data.get("seasons", []),
         "similar": similar,
         "watch_providers": watch_providers,
+        "trailer_key": trailer_key,
         "media_type": "tv"
     }
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Info, Play } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Info, Play, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../services/api';
@@ -14,11 +14,25 @@ import styles from './HomePage.module.css';
 const TVPage: React.FC = () => {
   const [tvShows, setTvShows] = useState<Movie[]>([]);
   const [heroShow, setHeroShow] = useState<Movie | null>(null);
+  const [heroVideo, setHeroVideo] = useState<string | null>(null);
+  const [showTrailer, setShowTrailer] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [activeLanguage, setActiveLanguage] = useState<string>('all');
   const [page, setPage] = useState(1);
   const navigate = useNavigate();
+
+  // Lock scroll when modal is open
+  useEffect(() => {
+    if (showTrailer) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showTrailer]);
 
   const languages = [
     { code: 'all', name: 'All' },
@@ -32,6 +46,32 @@ const TVPage: React.FC = () => {
     { code: 'tr', name: 'Turkish' },
     { code: 'zh', name: 'Chinese' }
   ];
+
+  const updateHeroShow = async (show: Movie) => {
+    setHeroShow(show);
+    try {
+      const { data: details } = await api.get(`/tv/${show.id}`);
+      if (details.error) throw new Error(details.error);
+      setHeroShow(prev => ({ ...prev, ...details }));
+      setHeroVideo(details.trailer_key || null);
+      return details.trailer_key || null;
+    } catch (err) {
+      console.error("Failed to fetch hero details", err);
+      setHeroVideo(null);
+      return null;
+    }
+  };
+
+  const selectHeroWithTrailer = async (showList: Movie[]) => {
+    const candidates = showList.slice(0, Math.min(6, showList.length));
+    for (const candidate of candidates) {
+      setHeroShow(candidate);
+      const trailerKey = await updateHeroShow(candidate);
+      if (trailerKey) return;
+    }
+    setHeroShow(showList[0]);
+    await updateHeroShow(showList[0]);
+  };
 
   const fetchTVShows = async (pageToLoad: number, language: string, isLoadMore = false) => {
     if (isLoadMore) setLoadingMore(true);
@@ -52,8 +92,8 @@ const TVPage: React.FC = () => {
         });
         const finalShows = Array.from(uniqueMap.values());
 
-        if (pageToLoad === 1 && finalShows.length > 0 && language === 'all') {
-          setHeroShow(finalShows[0]);
+        if (pageToLoad === 1 && finalShows.length > 0) {
+          selectHeroWithTrailer(finalShows);
         }
 
         return finalShows;
@@ -85,14 +125,26 @@ const TVPage: React.FC = () => {
   return (
     <PageTransition>
       <div className={styles.home}>
-        {!heroShow && loading && activeLanguage === 'all' ? (
+        {!heroShow && loading ? (
           <section className={styles.hero}>
             <Skeleton width="100%" height="80vh" borderRadius="0" />
           </section>
-        ) : heroShow && activeLanguage === 'all' && (
+        ) : heroShow && (
           <section className={styles.hero}>
             <div className={styles.heroBg}>
-              <img src={(heroShow as any).backdrop_path || heroShow.poster_path || ''} alt={heroShow.title} />
+              {heroVideo ? (
+                <div className={styles.videoWrapper}>
+                  <iframe
+                    src={`https://www.youtube.com/embed/${heroVideo}?autoplay=1&mute=1&controls=0&loop=1&playlist=${heroVideo}&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1`}
+                    title="Hero Trailer"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                </div>
+              ) : (
+                <img src={(heroShow as any).backdrop_path || heroShow.poster_path || ''} alt={heroShow.title} />
+              )}
               <div className={styles.heroOverlay}></div>
             </div>
             <div className={`${styles.heroContent} container`}>
@@ -114,9 +166,15 @@ const TVPage: React.FC = () => {
               <div className={styles.heroActions}>
                 <button
                   className={styles.playBtn}
-                  onClick={() => navigate(`/tv/${heroShow.id}`)}
+                  onClick={() => {
+                    if (heroVideo) {
+                      setShowTrailer(true);
+                    } else {
+                      toast.error("Trailer not available for this show");
+                    }
+                  }}
                 >
-                  <Play size={20} fill="currentColor" /> Watch
+                  <Play size={20} fill="currentColor" /> Play
                 </button>
                 <button
                   className={styles.infoBtn}
@@ -129,7 +187,53 @@ const TVPage: React.FC = () => {
           </section>
         )}
 
-        <main className={`${styles.main} container`} style={{ marginTop: activeLanguage === 'all' ? '0' : '100px' }}>
+        <AnimatePresence>
+          {showTrailer && heroVideo && (
+            <motion.div
+              className={styles.modalBackdrop}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowTrailer(false)}
+            >
+              <motion.div
+                className={styles.modalContent}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  className={styles.closeModal}
+                  onClick={() => setShowTrailer(false)}
+                >
+                  <X size={40} />
+                </button>
+                <div className={styles.videoWrapperModal}>
+                  <iframe
+                    src={`https://www.youtube.com/embed/${heroVideo}?autoplay=1`}
+                    title="Hero Trailer Player"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                </div>
+                <div style={{ padding: '1rem', textAlign: 'center' }}>
+                  <a
+                    href={`https://www.youtube.com/watch?v=${heroVideo}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#aaa', fontSize: '0.8rem', textDecoration: 'underline' }}
+                  >
+                    Having trouble? Watch on YouTube
+                  </a>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <main className={`${styles.main} container`} style={{ marginTop: '0' }}>
           
           {/* Language Filters */}
           <div className={styles.genreStrip} style={{ marginBottom: '2rem' }}>
