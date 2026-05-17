@@ -86,7 +86,7 @@ const Navbar: React.FC = () => {
     >
       <div className={`${styles.container} container`}>
         <Link to="/" className={styles.logo}>
-          <Film size={28} className={styles.logoIcon} />
+          <img src="/logo.png" alt="MovieMind Logo" style={{ width: '28px', height: '28px', borderRadius: '4px' }} />
           <span>MovieMind</span>
         </Link>
 
