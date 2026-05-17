@@ -34,32 +34,43 @@ async def get_movie_soundtrack(title: str):
     
     for q in queries:
         try:
-            params = {"term": q, "entity": "album", "limit": 1}
+            params = {"term": q, "entity": "album", "limit": 3}
             search_res = session.get(ITUNES_API_URL, params=params, timeout=15)
             if search_res.status_code == 200:
                 data = search_res.json()
                 if data.get("resultCount", 0) > 0:
-                    album = data["results"][0]
-                    collection_id = album["collectionId"]
-                    
-                    # Fetch tracks
-                    lookup_params = {"id": collection_id, "entity": "song"}
-                    tracks_res = session.get(ITUNES_LOOKUP_URL, params=lookup_params, timeout=15)
-                    if tracks_res.status_code == 200:
-                        tracks_data = tracks_res.json()
-                        tracks = [item for item in tracks_data.get("results", []) if item.get("wrapperType") == "track"]
+                    for album in data["results"]:
+                        album_name = album.get("collectionName", "").lower()
                         
-                        return {
-                            "album_name": album.get("collectionName"),
-                            "album_image": album.get("artworkUrl100", "").replace("100x100bb", "600x600bb"), # Get high-res
-                            "spotify_url": album.get("collectionViewUrl"), # Link to Apple Music
-                            "tracks": [{
-                                "id": str(t.get("trackId")),
-                                "name": t.get("trackName"),
-                                "preview_url": t.get("previewUrl"),
-                                "duration_ms": t.get("trackTimeMillis", 0)
-                            } for t in tracks]
-                        }
+                        # Validate the album is actually related to the movie
+                        movie_words = [w.lower() for w in movie_title.split() if w.lower() not in ["the", "a", "an", "of", "and", "in", "on", "to"]]
+                        if not movie_words:
+                            movie_words = [movie_title.lower()]
+                            
+                        # If the album name doesn't contain any word from the movie title, skip it
+                        if not any(word in album_name for word in movie_words) and movie_title.lower() not in album_name:
+                            continue
+                            
+                        collection_id = album["collectionId"]
+                        
+                        # Fetch tracks
+                        lookup_params = {"id": collection_id, "entity": "song"}
+                        tracks_res = session.get(ITUNES_LOOKUP_URL, params=lookup_params, timeout=15)
+                        if tracks_res.status_code == 200:
+                            tracks_data = tracks_res.json()
+                            tracks = [item for item in tracks_data.get("results", []) if item.get("wrapperType") == "track"]
+                            
+                            return {
+                                "album_name": album.get("collectionName"),
+                                "album_image": album.get("artworkUrl100", "").replace("100x100bb", "600x600bb"), # Get high-res
+                                "spotify_url": album.get("collectionViewUrl"), # Link to Apple Music
+                                "tracks": [{
+                                    "id": str(t.get("trackId")),
+                                    "name": t.get("trackName"),
+                                    "preview_url": t.get("previewUrl"),
+                                    "duration_ms": t.get("trackTimeMillis", 0)
+                                } for t in tracks]
+                            }
         except Exception as e:
             print(f"iTunes Query Error for '{q}': {e}")
             
