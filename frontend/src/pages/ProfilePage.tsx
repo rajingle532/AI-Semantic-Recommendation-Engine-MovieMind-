@@ -30,45 +30,30 @@ const ProfilePage: React.FC = () => {
     else setActiveTab('watchlist');
   }, [location.hash]);
 
-  const fetchRecommendations = async (ratingsRaw: any[]) => {
-    if (ratingsRaw.length === 0) return;
+  const [tasteProfile, setTasteProfile] = useState<{ top_genres: string[]; top_language: string; rated_count: number; watchlist_count: number } | null>(null);
+
+  const fetchRecommendations = async () => {
     setAiLoading(true);
-    const topRated = [...ratingsRaw]
-      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-      .slice(0, 5);
+    try {
+      const res = await api.get('/recommend/smart/me?n=20');
+      const recs = res.data.recommendations || [];
+      const profile = res.data.profile;
+      setRecommendations(recs);
+      setTasteProfile(profile);
 
-    const allRecs: any[] = [];
-    const seenIds = new Set<number>();
-    const genres = new Set<string>();
-
-    for (const movie of topRated) {
-      const movieId = movie.movie_id || movie.id;
-      if (!movieId) continue;
-      try {
-        const res = await api.get(`/recommend/${movieId}`);
-        const moviesList = res.data.recommendations ||
-          (Array.isArray(res.data) ? res.data : []) ||
-          (res.data.results) || [];
-        moviesList.forEach((m: any) => {
-          const mid = m.id || m.movie_id;
-          if (mid && !seenIds.has(mid)) {
-            seenIds.add(mid);
-            allRecs.push({ ...m, id: mid });
-            if (m.genres) m.genres.forEach((g: any) => genres.add(g.name || g));
-          }
-        });
-      } catch (e) {
-        // silent fail
+      if (profile && recs.length > 0) {
+        const genreList = (profile.top_genres || []).slice(0, 3).join(', ');
+        const langMap: Record<string, string> = { hi: 'Hindi', en: 'English', ko: 'Korean', ja: 'Japanese', ta: 'Tamil', te: 'Telugu', fr: 'French', es: 'Spanish', de: 'German' };
+        const langName = langMap[profile.top_language] || profile.top_language?.toUpperCase() || 'English';
+        setAiInsight(`Based on your ${profile.rated_count} ratings & ${profile.watchlist_count} watchlist movies — you love ${genreList} films in ${langName}. Here are ${recs.length} handpicked picks!`);
+      } else if (recs.length > 0) {
+        setAiInsight(`Rate and add movies to your watchlist to get hyper-personalized picks. Showing popular recommendations for now.`);
       }
+    } catch (e) {
+      console.warn('Smart recommendation fetch failed', e);
+    } finally {
+      setAiLoading(false);
     }
-    const finalRecs = allRecs.slice(0, 12);
-    setRecommendations(finalRecs);
-
-    // Generate insight text
-    const topMovie = topRated[0];
-    const avgRating = (ratingsRaw.reduce((s: number, r: any) => s + (r.rating || 0), 0) / ratingsRaw.length).toFixed(1);
-    setAiInsight(`Based on your ${ratingsRaw.length} ratings (avg ★${avgRating}), especially your love for "${topMovie?.movie_title || topMovie?.title}", our AI found ${finalRecs.length} movies you'll likely enjoy.`);
-    setAiLoading(false);
   };
 
   useEffect(() => {
@@ -97,7 +82,7 @@ const ProfilePage: React.FC = () => {
 
         setWatchlist(watchlistFormatted);
         setRatings(ratingsFormatted);
-        await fetchRecommendations(ratingsRaw);
+        await fetchRecommendations();
       } catch (err) {
         console.error('Failed to fetch profile data:', err);
       } finally {
@@ -231,10 +216,15 @@ const ProfilePage: React.FC = () => {
                           ? 'Analyzing your taste profile...'
                           : aiInsight || 'Rate some movies to let our AI learn your taste!'}
                       </p>
+                      {tasteProfile?.top_genres && (
+                        <div className={styles.genreChips}>
+                          {tasteProfile.top_genres.map(g => <span key={g} className={styles.genreChip}>{g}</span>)}
+                        </div>
+                      )}
                     </div>
                     <button
                       className={styles.refreshBtn}
-                      onClick={() => fetchRecommendations(ratings.map(r => ({ ...r, movie_id: r.id, rating: r.vote_average })))}
+                      onClick={() => fetchRecommendations()}
                       title="Refresh recommendations"
                     >
                       <RefreshCw size={16} className={aiLoading ? styles.spinning : ''} />
