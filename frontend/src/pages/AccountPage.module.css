@@ -1,176 +1,493 @@
 .page {
-  padding-top: 120px;
+  min-height: 100vh;
   padding-bottom: 5rem;
-  max-width: 800px;
+  max-width: 760px;
   margin: 0 auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
 }
 
-.header {
-  text-align: center;
-  margin-bottom: 3rem;
+/* ── Hero Banner ─────────────────────────────── */
+.heroBanner {
+  position: relative;
+  border-radius: 0 0 28px 28px;
+  overflow: hidden;
+  margin-bottom: 2.5rem;
+  padding: 3.5rem 2.5rem 2.5rem;
 }
 
-.header h1 {
-  font-size: 2.5rem;
-  font-weight: 800;
-  margin-bottom: 0.5rem;
+.heroBannerBg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #1a0a0a 0%, #0d0d0d 50%, #0a0a14 100%);
+  z-index: 0;
 }
 
-.header p {
-  color: var(--text-secondary);
+.heroBannerBg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 20% 50%, rgba(229,9,20,0.12) 0%, transparent 60%);
 }
 
-.accountCard {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 24px;
-  padding: 3rem;
-  margin-bottom: 2rem;
-  backdrop-filter: blur(10px);
-}
-
-.cardHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 3rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  padding-bottom: 2rem;
-}
-
-.avatarSection {
+.heroBannerContent {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1.75rem;
+  flex-wrap: wrap;
+}
+
+.avatarWrapper {
+  position: relative;
+  flex-shrink: 0;
 }
 
 .avatar {
-  width: 80px;
-  height: 80px;
-  background: var(--accent);
+  width: 90px;
+  height: 90px;
+  background: linear-gradient(135deg, #e50914, #ff4444);
   color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
+  font-size: 2.4rem;
+  font-weight: 900;
+  box-shadow: 0 0 0 4px rgba(229,9,20,0.2), 0 15px 35px rgba(229,9,20,0.25);
+  letter-spacing: -1px;
+}
+
+.cameraBtn {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 26px;
+  height: 26px;
+  background: var(--bg-secondary);
+  border: 2px solid var(--bg-primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.cameraBtn:hover {
+  background: var(--accent);
+  color: white;
+}
+
+.heroInfo {
+  flex: 1;
+  min-width: 160px;
+}
+
+.heroInfo h1 {
+  font-size: 1.8rem;
   font-weight: 800;
-  box-shadow: 0 10px 20px rgba(229, 9, 20, 0.2);
+  color: #ffffff;
+  margin-bottom: 0.2rem;
 }
 
-.headerInfo h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 0.25rem;
+.heroInfo p {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 0.75rem;
 }
 
-.headerInfo p {
-  color: var(--text-muted);
-  font-size: 0.95rem;
+.memberBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(229,9,20,0.15);
+  border: 1px solid rgba(229,9,20,0.25);
+  color: #ff6b6b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  letter-spacing: 0.3px;
 }
 
 .editBtn {
-  background: white;
-  color: black;
-  border: none;
-  padding: 0.6rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: white;
+  padding: 0.7rem 1.4rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(8px);
+  margin-left: auto;
 }
 
 .editBtn:hover {
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(229,9,20,0.8);
+  border-color: transparent;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(229,9,20,0.3);
 }
 
-.detailsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2.5rem;
-}
-
-.detailItem {
+/* ── Content Area ─────────────────────────────── */
+.content {
   display: flex;
-  gap: 1rem;
-  align-items: center;
+  flex-direction: column;
+  gap: 2rem;
 }
 
-.itemIcon {
-  width: 40px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.05);
+.section {}
+
+.sectionTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 1rem;
+  padding-left: 0.25rem;
+}
+
+/* ── Info Card ─────────────────────────────────── */
+.infoCard,
+.settingsCard {
+  background: var(--bg-card, var(--bg-secondary));
+  border: 1px solid var(--border, var(--glass-border));
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.infoRow,
+.settingsRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.1rem 1.4rem;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-primary);
+  transition: background 0.2s ease;
+}
+
+.infoRow:hover,
+.settingsRow:hover {
+  background: var(--card-hover, rgba(255,255,255,0.03));
+}
+
+.infoIcon {
+  width: 38px;
+  height: 38px;
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent);
+  flex-shrink: 0;
 }
 
-.itemContent label {
-  display: block;
-  font-size: 0.8rem;
+.infoContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.infoLabel {
+  font-size: 0.75rem;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 0.25rem;
+  font-weight: 500;
 }
 
-.itemContent p {
-  font-size: 1.1rem;
+.infoValue {
+  font-size: 1rem;
   font-weight: 600;
+  color: var(--text-primary);
 }
 
-.statusActive {
-  color: #00ff88 !important;
+.infoValueSmall {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
 }
 
-.secondaryActions {
+.divider {
+  height: 1px;
+  background: var(--border, rgba(255,255,255,0.05));
+  margin: 0 1.4rem;
+}
+
+.rowEditBtn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.rowEditBtn:hover {
+  color: var(--accent);
+  background: rgba(229,9,20,0.08);
+}
+
+.verifiedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #10b981;
+  background: rgba(16,185,129,0.1);
+  border: 1px solid rgba(16,185,129,0.2);
+  padding: 0.25rem 0.65rem;
+  border-radius: 20px;
+}
+
+/* ── Stats Grid ────────────────────────────────── */
+.statsGrid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
 }
 
-.actionCard {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+.statCard {
+  background: var(--bg-card, var(--bg-secondary));
+  border: 1px solid var(--border, var(--glass-border));
   border-radius: 16px;
-  padding: 2rem;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.statIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.statLabel {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.statValue {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ── Edit Modal ────────────────────────────────── */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(12px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.modal {
+  background: var(--bg-card, var(--bg-secondary));
+  border: 1px solid var(--border, rgba(255,255,255,0.1));
+  border-radius: 24px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.75rem 1.75rem 1.25rem;
+  border-bottom: 1px solid var(--border, rgba(255,255,255,0.06));
+}
+
+.modalHeader h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin-bottom: 3px;
+}
+
+.modalHeader p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.closeBtn {
+  background: var(--bg-tertiary);
+  border: none;
+  color: var(--text-secondary);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.closeBtn:hover {
+  background: var(--accent);
+  color: white;
+  transform: rotate(90deg);
+}
+
+.modalForm {
+  padding: 1.5rem 1.75rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.modalAvatar {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #e50914, #ff4444);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 900;
+  margin: 0 auto 0.5rem;
+  box-shadow: 0 8px 20px rgba(229,9,20,0.25);
+}
+
+.formGroup {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.actionCard h3 {
-  font-size: 1.2rem;
-  font-weight: 700;
-  margin-top: 0.5rem;
-}
-
-.actionCard p {
+.formGroup label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
   color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.formGroup input {
+  background: var(--bg-tertiary);
+  border: 1.5px solid var(--border, rgba(255,255,255,0.08));
+  color: var(--text-primary);
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
   font-size: 0.95rem;
-  margin-bottom: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
 }
 
-.secondaryBtn {
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 0.6rem 1.2rem;
-  border-radius: 6px;
+.formGroup input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(229,9,20,0.12);
+}
+
+.disabledInput {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
+.helperText {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.modalActions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.cancelBtn {
+  flex: 1;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border, rgba(255,255,255,0.08));
+  color: var(--text-secondary);
+  padding: 0.85rem;
+  border-radius: 10px;
+  font-weight: 600;
   cursor: pointer;
-  width: fit-content;
+  transition: all 0.2s ease;
 }
 
-@media (max-width: 768px) {
-  .cardHeader {
+.cancelBtn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.saveBtn {
+  flex: 2;
+  background: var(--accent);
+  border: none;
+  color: white;
+  padding: 0.85rem;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 15px rgba(229,9,20,0.3);
+}
+
+.saveBtn:hover:not(:disabled) {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(229,9,20,0.4);
+}
+
+.saveBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .heroBannerContent {
     flex-direction: column;
-    gap: 1.5rem;
-    align-items: center;
-    text-align: center;
+    align-items: flex-start;
+    text-align: left;
   }
-  .avatarSection {
-    flex-direction: column;
+  .editBtn {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+  .statsGrid {
+    grid-template-columns: 1fr;
   }
 }

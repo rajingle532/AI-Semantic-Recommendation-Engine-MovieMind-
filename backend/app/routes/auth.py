@@ -146,7 +146,7 @@ def google_auth(data: GoogleLogin):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid Google token"
         )
-@router.post("/forgot-password")
+@router.post(\"/forgot-password\")
 async def forgot_password(data: dict, background_tasks: BackgroundTasks):
     """Handle password reset request."""
     email = data.get("email", "").lower().strip()
@@ -212,3 +212,51 @@ def reset_password(data: dict):
     except Exception as e:
         print(f"RESET ERROR: {e}")
         raise HTTPException(status_code=500, detail="Failed to update password")
+
+
+@router.patch("/update-profile")
+def update_profile(data: dict):
+    """Update user profile (name, phone). Requires Bearer token."""
+    from fastapi import Request
+    from app.utils.security import decode_token
+
+    token = data.get("token")
+    name = data.get("name", "").strip()
+    phone = data.get("phone", "").strip()
+
+    if not token:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+        user_id = payload.get("sub") or payload.get("user_id")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Session expired, please log in again")
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    update_fields: dict = {}
+    if name:
+        update_fields["name"] = name
+    if phone:
+        update_fields["phone"] = phone
+
+    if not update_fields:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    users = get_collection("users")
+    result = users.update_one({"_id": ObjectId(user_id)}, {"$set": update_fields})
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    updated = users.find_one({"_id": ObjectId(user_id)})
+    return UserResponse(
+        id=str(updated["_id"]),
+        name=updated["name"],
+        email=updated["email"],
+        phone=updated.get("phone")
+    )
+
