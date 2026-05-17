@@ -151,15 +151,30 @@ def get_content_recommendations(movie_id: int, n: int = 10) -> list:
         try:
             rec_movie = _movies_df.iloc[i[0]]
             rec_movie_id = int(rec_movie['movie_id'])
-            poster = get_movie_poster(rec_movie_id)
+
+            # Use get_movie_details (cached) — gives poster, vote_average, release_date in one call
+            details = get_movie_details(rec_movie_id)
+            if details and details.get("poster_path"):
+                poster = details["poster_path"]
+                vote_avg = details.get("vote_average", float(rec_movie.get('vote_average', 0)))
+                rel_date = details.get("release_date", str(rec_movie.get('release_date', '')))
+            else:
+                # Fallback: construct poster URL directly from TMDB id — no extra call needed
+                poster = get_movie_poster(rec_movie_id)
+                vote_avg = float(rec_movie.get('vote_average', 0))
+                rel_date = str(rec_movie.get('release_date', ''))
+
             return {
                 "id": rec_movie_id,
                 "movie_id": rec_movie_id,
                 "title": rec_movie['title'],
                 "similarity_score": round(float(i[1]), 4),
                 "poster_path": poster,
+                "vote_average": vote_avg,
+                "release_date": rel_date,
             }
-        except:
+        except Exception as e:
+            print(f"RECOMMENDER: fetch_rec error for idx {i[0]}: {e}")
             return None
 
     with ThreadPoolExecutor(max_workers=min(n, 20)) as executor:
