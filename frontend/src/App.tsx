@@ -45,12 +45,6 @@ const App: React.FC = () => {
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           {/* Public Routes */}
-          <Route path="/" element={<HomePage />} />
-          <Route path="/tv" element={<TVPage />} />
-          <Route path="/search" element={<SearchPage />} />
-          <Route path="/movie/:id" element={<MovieDetailPage />} />
-          <Route path="/tv/:id" element={<TVDetailPage />} />
-          <Route path="/person/:id" element={<PersonDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -59,6 +53,12 @@ const App: React.FC = () => {
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/tv" element={<TVPage />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/movie/:id" element={<MovieDetailPage />} />
+            <Route path="/tv/:id" element={<TVDetailPage />} />
+            <Route path="/person/:id" element={<PersonDetailPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/music" element={<MusicPage />} />
             <Route path="/account" element={<AccountPage />} />

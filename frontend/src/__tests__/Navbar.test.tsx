@@ -55,7 +55,8 @@ describe('Navbar Component', () => {
   });
 
   test('search bar works', () => {
-    renderWithRouter(<Navbar />);
+    const authenticatedUser = { ...mockAuthContext, isAuthenticated: true };
+    renderWithRouter(<Navbar />, { authProps: authenticatedUser });
     const searchInput = screen.getByPlaceholderText(/Search movies/i);
     fireEvent.change(searchInput, { target: { value: 'Inception' } });
     expect(searchInput).toHaveValue('Inception');
