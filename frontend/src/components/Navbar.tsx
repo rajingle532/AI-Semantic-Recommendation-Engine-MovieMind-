@@ -90,65 +90,69 @@ const Navbar: React.FC = () => {
           <span>MovieMind</span>
         </Link>
 
-        <div className={styles.mediaToggle}>
-          <Link to="/" className={`${styles.toggleBtn} ${location.pathname === '/' ? styles.active : ''}`}>
-            <Film size={16} style={{ marginRight: '6px' }} /> Movies
-          </Link>
-          <Link to="/tv" className={`${styles.toggleBtn} ${location.pathname.startsWith('/tv') ? styles.active : ''}`}>
-            <Tv size={16} style={{ marginRight: '6px' }} /> Web Series
-          </Link>
-        </div>
+        {isAuthenticated && (
+          <>
+            <div className={styles.mediaToggle}>
+              <Link to="/" className={`${styles.toggleBtn} ${location.pathname === '/' ? styles.active : ''}`}>
+                <Film size={16} style={{ marginRight: '6px' }} /> Movies
+              </Link>
+              <Link to="/tv" className={`${styles.toggleBtn} ${location.pathname.startsWith('/tv') ? styles.active : ''}`}>
+                <Tv size={16} style={{ marginRight: '6px' }} /> Web Series
+              </Link>
+            </div>
 
-        <div className={styles.searchWrapper} ref={searchRef}>
-          <form className={styles.searchBar} onSubmit={handleSearch}>
-            <Search size={18} className={styles.searchIcon} />
-            <input
-              type="text"
-              placeholder="Search movies, actors, or genres..."
-              value={query}
-              onChange={handleInputChange}
-              onFocus={() => query.length >= 2 && setShowSearchSuggestions(true)}
-            />
-            {isSearching && <div className={styles.searchLoader}></div>}
-          </form>
+            <div className={styles.searchWrapper} ref={searchRef}>
+              <form className={styles.searchBar} onSubmit={handleSearch}>
+                <Search size={18} className={styles.searchIcon} />
+                <input
+                  type="text"
+                  placeholder="Search movies, actors, or genres..."
+                  value={query}
+                  onChange={handleInputChange}
+                  onFocus={() => query.length >= 2 && setShowSearchSuggestions(true)}
+                />
+                {isSearching && <div className={styles.searchLoader}></div>}
+              </form>
 
-          <AnimatePresence>
-            {showSearchSuggestions && suggestions.length > 0 && (
-              <motion.div
-                className={styles.searchSuggestions}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.2 }}
-              >
-                {suggestions.map((movie) => (
-                  <div
-                    key={movie.id}
-                    className={styles.suggestionItem}
-                    onClick={() => handleSuggestionClick(movie.id)}
+              <AnimatePresence>
+                {showSearchSuggestions && suggestions.length > 0 && (
+                  <motion.div
+                    className={styles.searchSuggestions}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ duration: 0.2 }}
                   >
-                    <img
-                      src={movie.poster_path || 'https://via.placeholder.com/40x60?text=?'}
-                      alt={movie.title}
-                    />
-                    <div className={styles.suggestionInfo}>
-                      <p className={styles.suggestionTitle}>{movie.title}</p>
-                      <p className={styles.suggestionYear}>
-                        {movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}
-                      </p>
+                    {suggestions.map((movie) => (
+                      <div
+                        key={movie.id}
+                        className={styles.suggestionItem}
+                        onClick={() => handleSuggestionClick(movie.id)}
+                      >
+                        <img
+                          src={movie.poster_path || 'https://via.placeholder.com/40x60?text=?'}
+                          alt={movie.title}
+                        />
+                        <div className={styles.suggestionInfo}>
+                          <p className={styles.suggestionTitle}>{movie.title}</p>
+                          <p className={styles.suggestionYear}>
+                            {movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                    <div
+                      className={styles.seeAll}
+                      onClick={handleSearch}
+                    >
+                      See all results for "{query}"
                     </div>
-                  </div>
-                ))}
-                <div
-                  className={styles.seeAll}
-                  onClick={handleSearch}
-                >
-                  See all results for "{query}"
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </>
+        )}
 
         <div className={styles.actions}>
           <button
