@@ -71,12 +71,14 @@
   flex: 0 1 500px;
   position: relative;
   background: var(--bg-secondary, rgba(255, 255, 255, 0.05));
-  border-radius: 24px;
-  padding: 0.5rem 1rem 0.5rem 2.75rem;
+  border-radius: 30px;
+  padding: 0.65rem 1.5rem 0.65rem 2.8rem;
   margin: 0;
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--border, var(--glass-border));
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+  display: flex;
+  align-items: center;
 }
 
 .searchWrapper {
@@ -94,7 +96,7 @@
 
 .searchIcon {
   position: absolute;
-  left: 1rem;
+  left: 1.1rem;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-muted);
@@ -109,7 +111,9 @@
   width: 100%;
   background: transparent;
   color: var(--text-primary);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  border: none;
+  outline: none;
 }
 
 .actions {
@@ -118,25 +122,52 @@
   gap: 1.5rem;
 }
 
-.themeToggle {
+.themeTogglePill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 60px;
+  height: 30px;
+  background: var(--bg-tertiary);
+  border-radius: 30px;
+  padding: 0 4px;
+  cursor: pointer;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.themeToggleBg {
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  width: 22px;
+  height: 22px;
+  background: var(--bg-secondary);
+  border-radius: 50%;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+.themeToggleBg[data-theme='dark'] {
+  transform: translateX(28px);
+}
+
+.themeIcon {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  color: var(--text-primary);
-  background: var(--bg-tertiary);
-  cursor: pointer;
-  transition: var(--transition);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 22px;
+  height: 22px;
+  color: var(--text-muted);
+  transition: color 0.3s ease;
 }
 
-.themeToggle:hover {
-  transform: rotate(15deg);
-  background: var(--bg-secondary);
-  border-color: var(--accent);
-  color: var(--gold);
+.activeIcon {
+  color: var(--accent);
 }
 
 .authBtns {

@@ -155,13 +155,19 @@ const Navbar: React.FC = () => {
         )}
 
         <div className={styles.actions}>
-          <button
-            className={styles.themeToggle}
+          <div
+            className={styles.themeTogglePill}
             onClick={toggleTheme}
             title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
           >
-            {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-          </button>
+            <div className={styles.themeToggleBg} data-theme={theme}></div>
+            <div className={`${styles.themeIcon} ${theme === 'light' ? styles.activeIcon : ''}`}>
+              <Sun size={14} />
+            </div>
+            <div className={`${styles.themeIcon} ${theme === 'dark' ? styles.activeIcon : ''}`}>
+              <Moon size={14} />
+            </div>
+          </div>
 
           {isAuthenticated ? (
             <div className={styles.profileWrapper} ref={profileRef}>
