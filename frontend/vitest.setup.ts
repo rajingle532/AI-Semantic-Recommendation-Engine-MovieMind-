@@ -37,11 +37,17 @@ vi.mock('framer-motion', () => ({
 
 vi.mock('lucide-react', () => {
   const icons = [
-    'Film', 'Star', 'Info', 'Play', 'X', 'Search', 'User', 'LogOut', 
+    // Navigation & UI
+    'Film', 'Star', 'Info', 'Play', 'X', 'Search', 'User', 'LogOut',
     'Settings', 'Heart', 'ChevronLeft', 'ChevronRight', 'Sun', 'Moon',
     'Shield', 'HelpCircle', 'ArrowRight', 'Eye', 'Calendar', 'Clock',
-    'Tv', 'ChevronDown', 'ChevronUp', 'Share2', 'Headphones', 'Smile', 
-    'Flame', 'CloudRain'
+    'Tv', 'ChevronDown', 'ChevronUp', 'Share2', 'Headphones',
+    // Mood icons
+    'Smile', 'Flame', 'CloudRain',
+    // Profile / Account page icons
+    'Bookmark', 'Brain', 'TrendingUp', 'Zap', 'RefreshCw',
+    'Mail', 'Phone', 'Lock', 'Bell', 'Camera', 'Edit3',
+    'CheckCircle2', 'Crown', 'Sparkles',
   ];
   const mockIcons: any = {};
   icons.forEach(icon => {
