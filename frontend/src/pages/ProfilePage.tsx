@@ -21,6 +21,7 @@ const ProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiInsight, setAiInsight] = useState('');
+  const [aiError, setAiError] = useState(false);
 
   useEffect(() => {
     const hash = location.hash;
@@ -34,6 +35,7 @@ const ProfilePage: React.FC = () => {
 
   const fetchRecommendations = async () => {
     setAiLoading(true);
+    setAiError(false);
     try {
       const res = await api.get('/recommend/smart/me?n=20');
       const recs = res.data.recommendations || [];
@@ -51,6 +53,7 @@ const ProfilePage: React.FC = () => {
       }
     } catch (e) {
       console.warn('Smart recommendation fetch failed', e);
+      setAiError(true);
     } finally {
       setAiLoading(false);
     }
@@ -231,8 +234,24 @@ const ProfilePage: React.FC = () => {
                     </button>
                   </div>
 
+                   {/* Error state retry block */}
+                  {aiError && !aiLoading && (
+                    <div className={styles.aiEmptyState} style={{ borderColor: 'rgba(239, 68, 68, 0.2)', background: 'linear-gradient(180deg, rgba(239, 68, 68, 0.05) 0%, rgba(20, 20, 20, 0.95) 100%)' }}>
+                      <div className={styles.aiEmptyIcon} style={{ color: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
+                        <RefreshCw size={40} className={styles.spinning} style={{ animationDuration: '4s' }} />
+                      </div>
+                      <h3 style={{ color: '#fca5a5' }}>AI Engine Connection Interrupted</h3>
+                      <p style={{ maxWidth: '480px', margin: '0 auto 24px' }}>
+                        The smart recommendation engine is currently waking up or experiencing a brief latency spike.
+                      </p>
+                      <button onClick={() => fetchRecommendations()} className={styles.browseCta} style={{ background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)', border: 'none', cursor: 'pointer' }}>
+                        <RefreshCw size={16} /> Reconnect AI Engine
+                      </button>
+                    </div>
+                  )}
+
                   {/* How it works */}
-                  {recommendations.length === 0 && !aiLoading && (
+                  {!aiError && recommendations.length === 0 && !aiLoading && (
                     <div className={styles.aiEmptyState}>
                       <div className={styles.aiEmptyIcon}>
                         <Film size={40} />

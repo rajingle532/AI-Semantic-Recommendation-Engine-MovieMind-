@@ -73,7 +73,13 @@ def recommend_smart(n: int = 20, current_user: dict = Depends(get_current_user))
                 details = get_movie_details(mid)
                 if not details:
                     return None
-                genres = [g["name"] for g in (details.get("genres") or [])]
+                raw_genres = details.get("genres") or []
+                genres = []
+                for g in raw_genres:
+                    if isinstance(g, dict) and "name" in g:
+                        genres.append(g["name"])
+                    elif isinstance(g, str):
+                        genres.append(g)
                 lang = details.get("original_language", "")
                 return genres, lang, weight
             except Exception as e:
@@ -138,7 +144,13 @@ def recommend_smart(n: int = 20, current_user: dict = Depends(get_current_user))
                 details = get_movie_details(mid)
                 if not details:
                     return mid, 1.0
-                rec_genres = [g["name"] for g in (details.get("genres") or [])]
+                raw_genres = details.get("genres") or []
+                rec_genres = []
+                for g in raw_genres:
+                    if isinstance(g, dict) and "name" in g:
+                        rec_genres.append(g["name"])
+                    elif isinstance(g, str):
+                        rec_genres.append(g)
                 rec_lang = details.get("original_language", "en")
                 genre_boost = sum(genre_weights.get(g, 0) for g in rec_genres)
                 lang_boost = 1.15 if rec_lang == top_language else 1.0
