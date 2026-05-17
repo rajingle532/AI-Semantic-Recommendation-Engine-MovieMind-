@@ -34,6 +34,39 @@
   color: var(--accent);
 }
 
+.mediaToggle {
+  display: flex;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.25rem;
+  border-radius: 50px;
+  border: 1px solid var(--glass-border);
+  margin: 0 1rem;
+}
+
+.toggleBtn {
+  display: flex;
+  align-items: center;
+  padding: 0.4rem 1rem;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.toggleBtn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.toggleBtn.active {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);
+}
+
 .searchBar {
   flex: 0 1 500px;
   position: relative;

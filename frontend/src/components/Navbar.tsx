@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, User, LogOut, Film, Sun, Moon, Shield, HelpCircle, Headphones } from 'lucide-react';
+import { Search, User, LogOut, Film, Sun, Moon, Shield, HelpCircle, Headphones, Tv } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -91,8 +91,12 @@ const Navbar: React.FC = () => {
         </Link>
 
         <div className={styles.mediaToggle}>
-          <Link to="/" className={`${styles.toggleBtn} ${location.pathname === '/' ? styles.active : ''}`}>🎬 Movies</Link>
-          <Link to="/tv" className={`${styles.toggleBtn} ${location.pathname.startsWith('/tv') ? styles.active : ''}`}>📺 Web Series</Link>
+          <Link to="/" className={`${styles.toggleBtn} ${location.pathname === '/' ? styles.active : ''}`}>
+            <Film size={16} style={{ marginRight: '6px' }} /> Movies
+          </Link>
+          <Link to="/tv" className={`${styles.toggleBtn} ${location.pathname.startsWith('/tv') ? styles.active : ''}`}>
+            <Tv size={16} style={{ marginRight: '6px' }} /> Web Series
+          </Link>
         </div>
 
         <div className={styles.searchWrapper} ref={searchRef}>

@@ -762,3 +762,34 @@ def get_similar_movies(movie_id: int) -> list:
         }
         for m in data["results"][:15]
     ]
+
+# ═══════════════════════════════════════════
+# TV Shows & Web Series Support
+# ═══════════════════════════════════════════
+
+def get_trending_tv(page=1):
+    """Fetch trending TV shows."""
+    return _make_request("/trending/tv/day", {"page": page})
+
+def search_tv(query: str, page=1):
+    """Search for TV shows."""
+    return _make_request("/search/tv", {"query": query, "page": page})
+
+def get_tv_details(tv_id: int):
+    """Get full TV show details including seasons and providers."""
+    return _make_request(f"/tv/{tv_id}", {
+        "append_to_response": "credits,similar,watch/providers,videos"
+    })
+
+def get_tv_season(tv_id: int, season_number: int):
+    """Get episodes for a specific TV show season."""
+    return _make_request(f"/tv/{tv_id}/season/{season_number}")
+
+def get_trending_tv_language(language_code: str, page=1):
+    """Fetch trending TV shows and filter by original language."""
+    # Since TMDB doesn't natively filter trending by language, fetch discover
+    return _make_request("/discover/tv", {
+        "with_original_language": language_code,
+        "sort_by": "popularity.desc",
+        "page": page
+    })
