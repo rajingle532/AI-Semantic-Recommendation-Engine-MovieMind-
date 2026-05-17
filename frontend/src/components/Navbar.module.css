@@ -72,10 +72,11 @@
   position: relative;
   background: var(--bg-secondary, rgba(255, 255, 255, 0.05));
   border-radius: 24px;
-  padding: 0.5rem 1rem 0.5rem 2.5rem;
+  padding: 0.5rem 1rem 0.5rem 2.75rem;
   margin: 0;
   border: 1px solid var(--glass-border);
-  transition: var(--transition);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
 }
 
 .searchWrapper {
@@ -85,16 +86,23 @@
 }
 
 .searchBar:focus-within {
-  background: var(--bg-tertiary);
-  border-color: rgba(229, 9, 20, 0.3);
+  background: var(--bg-card, var(--bg-tertiary));
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.15), 0 4px 12px rgba(0,0,0,0.05);
+  transform: translateY(-1px);
 }
 
 .searchIcon {
   position: absolute;
-  left: 0.8rem;
+  left: 1rem;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-muted);
+  transition: color 0.3s ease;
+}
+
+.searchBar:focus-within .searchIcon {
+  color: var(--accent);
 }
 
 .searchBar input {

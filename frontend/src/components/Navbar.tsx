@@ -156,7 +156,7 @@ const Navbar: React.FC = () => {
             onClick={toggleTheme}
             title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
           >
-            {theme === 'light' ? '☀️' : '🌙'}
+            {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
           </button>
 
           {isAuthenticated ? (
