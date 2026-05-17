@@ -146,7 +146,7 @@ def google_auth(data: GoogleLogin):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid Google token"
         )
-@router.post(\"/forgot-password\")
+@router.post("/forgot-password")
 async def forgot_password(data: dict, background_tasks: BackgroundTasks):
     """Handle password reset request."""
     email = data.get("email", "").lower().strip()
