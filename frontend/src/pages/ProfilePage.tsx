@@ -222,7 +222,7 @@ const ProfilePage: React.FC = () => {
           const labelX = centerX + labelRadius * Math.cos(p.angle);
           const labelY = centerY + labelRadius * Math.sin(p.angle) + 4;
           
-          let textAnchor = 'middle';
+          let textAnchor: 'middle' | 'start' | 'end' = 'middle';
           if (Math.cos(p.angle) > 0.1) textAnchor = 'start';
           else if (Math.cos(p.angle) < -0.1) textAnchor = 'end';
           
