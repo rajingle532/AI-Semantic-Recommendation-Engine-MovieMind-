@@ -193,7 +193,7 @@ const Navbar: React.FC = () => {
                 style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
               >
-                <span style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '0.9rem' }}>
+                <span style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
                   {user?.name}
                 </span>
                 <div className={styles.avatar} data-testid="navbar-avatar">
