@@ -67,12 +67,11 @@ def recommend_smart(n: int = 20, current_user: dict = Depends(get_current_user))
         language_weights: dict[str, float] = {}
         seen_ids = set(all_movie_ids.keys())
 
-        def enrich(pair):
-            mid, weight = pair
+        for mid, weight in list(all_movie_ids.items()):
             try:
                 details = get_movie_details(mid)
                 if not details:
-                    return None
+                    continue
                 raw_genres = details.get("genres") or []
                 genres = []
                 for g in raw_genres:
@@ -81,22 +80,13 @@ def recommend_smart(n: int = 20, current_user: dict = Depends(get_current_user))
                     elif isinstance(g, str):
                         genres.append(g)
                 lang = details.get("original_language", "")
-                return genres, lang, weight
+                
+                for g in genres:
+                    genre_weights[g] = genre_weights.get(g, 0) + weight
+                if lang:
+                    language_weights[lang] = language_weights.get(lang, 0) + weight
             except Exception as e:
                 print(f"SMART_REC: enrich error for {mid}: {e}")
-                return None
-
-        with ThreadPoolExecutor(max_workers=8) as ex:
-            enriched = list(ex.map(enrich, all_movie_ids.items()))
-
-        for item in enriched:
-            if not item:
-                continue
-            genres, lang, weight = item
-            for g in genres:
-                genre_weights[g] = genre_weights.get(g, 0) + weight
-            if lang:
-                language_weights[lang] = language_weights.get(lang, 0) + weight
 
         top_genres = sorted(genre_weights, key=lambda k: genre_weights[k], reverse=True)[:5]
         top_language = max(language_weights, key=lambda k: language_weights[k]) if language_weights else "en"
@@ -107,35 +97,27 @@ def recommend_smart(n: int = 20, current_user: dict = Depends(get_current_user))
         seed_pairs = sorted(all_movie_ids.items(), key=lambda x: x[1], reverse=True)[:6]
         score_map: dict[int, dict] = {}
 
-        def fetch_seed(pair):
-            seed_mid, seed_weight = pair
+        for seed_mid, seed_weight in seed_pairs:
             try:
-                # fetch_metadata=False for super-fast candidate similarity retrieval
                 recs = get_content_recommendations(seed_mid, n=25, fetch_metadata=False)
-                return recs, seed_weight
-            except Exception:
-                return [], seed_weight
-
-        with ThreadPoolExecutor(max_workers=6) as ex:
-            rec_results = list(ex.map(fetch_seed, seed_pairs))
-
-        for recs, seed_weight in rec_results:
-            for rec in recs:
-                rec_id = rec.get("movie_id") or rec.get("id")
-                if not rec_id or rec_id in seen_ids:
-                    continue
-                sim = rec.get("similarity_score", 0.5)
-                ws = sim * seed_weight
-                if rec_id in score_map:
-                    score_map[rec_id]["score"] += ws
-                    score_map[rec_id]["count"] += 1
-                else:
-                    score_map[rec_id] = {
-                        "id": rec_id, "movie_id": rec_id,
-                        "title": rec.get("title", ""),
-                        "poster_path": rec.get("poster_path"),
-                        "score": ws, "count": 1,
-                    }
+                for rec in recs:
+                    rec_id = rec.get("movie_id") or rec.get("id")
+                    if not rec_id or rec_id in seen_ids:
+                        continue
+                    sim = rec.get("similarity_score", 0.5)
+                    ws = sim * seed_weight
+                    if rec_id in score_map:
+                        score_map[rec_id]["score"] += ws
+                        score_map[rec_id]["count"] += 1
+                    else:
+                        score_map[rec_id] = {
+                            "id": rec_id, "movie_id": rec_id,
+                            "title": rec.get("title", ""),
+                            "poster_path": rec.get("poster_path"),
+                            "score": ws, "count": 1,
+                        }
+            except Exception as e:
+                print(f"SMART_REC: seed error for {seed_mid}: {e}")
 
         print(f"SMART_REC: candidate pool size={len(score_map)}")
 
@@ -143,10 +125,9 @@ def recommend_smart(n: int = 20, current_user: dict = Depends(get_current_user))
         top_candidates = sorted(score_map.values(), key=lambda x: x["score"] / x["count"], reverse=True)[:n + 10]
         final_list = []
 
-        def process_candidate(cand):
+        for cand in top_candidates:
             mid = cand["movie_id"]
             try:
-                # Fetch details (cached or single parallel fast TMDB request)
                 details = get_movie_details(mid)
                 if details:
                     raw_genres = details.get("genres") or []
@@ -163,7 +144,7 @@ def recommend_smart(n: int = 20, current_user: dict = Depends(get_current_user))
                     boost_multiplier = (1.0 + genre_boost * 0.15) * lang_boost
                     final_score = round((cand["score"] / cand["count"]) * boost_multiplier, 4)
                     
-                    return {
+                    final_list.append({
                         "id": mid,
                         "movie_id": mid,
                         "title": details.get("title", cand["title"]),
@@ -171,7 +152,8 @@ def recommend_smart(n: int = 20, current_user: dict = Depends(get_current_user))
                         "vote_average": details.get("vote_average", 0.0),
                         "release_date": details.get("release_date", ""),
                         "score": final_score
-                    }
+                    })
+                    continue
             except Exception as e:
                 print(f"SMART_REC: process_candidate error for {mid}: {e}")
             
@@ -183,7 +165,7 @@ def recommend_smart(n: int = 20, current_user: dict = Depends(get_current_user))
                 except Exception:
                     fallback_poster = None
 
-            return {
+            final_list.append({
                 "id": mid,
                 "movie_id": mid,
                 "title": cand.get("title", ""),
@@ -191,10 +173,7 @@ def recommend_smart(n: int = 20, current_user: dict = Depends(get_current_user))
                 "vote_average": 0.0,
                 "release_date": "",
                 "score": round(cand["score"] / cand["count"], 4)
-            }
-
-        with ThreadPoolExecutor(max_workers=10) as ex:
-            final_list = [res for res in ex.map(process_candidate, top_candidates) if res is not None]
+            })
 
         # ── 5. Sort and return ───────────────────────────────────────
         final = sorted(final_list, key=lambda x: x["score"], reverse=True)
