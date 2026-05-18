@@ -110,7 +110,8 @@ def recommend_smart(n: int = 20, current_user: dict = Depends(get_current_user))
         def fetch_seed(pair):
             seed_mid, seed_weight = pair
             try:
-                recs = get_content_recommendations(seed_mid, n=25)
+                # fetch_metadata=False for super-fast candidate similarity retrieval
+                recs = get_content_recommendations(seed_mid, n=25, fetch_metadata=False)
                 return recs, seed_weight
             except Exception:
                 return [], seed_weight
@@ -138,36 +139,58 @@ def recommend_smart(n: int = 20, current_user: dict = Depends(get_current_user))
 
         print(f"SMART_REC: candidate pool size={len(score_map)}")
 
-        # ── 4. Genre-boost re-ranking ─────────────────────────────────
-        def boost(mid):
+        # ── 4. Retrieve details and apply Genre-boost on top candidates only ──
+        top_candidates = sorted(score_map.values(), key=lambda x: x["score"] / x["count"], reverse=True)[:n + 10]
+        final_list = []
+
+        def process_candidate(cand):
+            mid = cand["movie_id"]
             try:
+                # Fetch details (cached or single parallel fast TMDB request)
                 details = get_movie_details(mid)
-                if not details:
-                    return mid, 1.0
-                raw_genres = details.get("genres") or []
-                rec_genres = []
-                for g in raw_genres:
-                    if isinstance(g, dict) and "name" in g:
-                        rec_genres.append(g["name"])
-                    elif isinstance(g, str):
-                        rec_genres.append(g)
-                rec_lang = details.get("original_language", "en")
-                genre_boost = sum(genre_weights.get(g, 0) for g in rec_genres)
-                lang_boost = 1.15 if rec_lang == top_language else 1.0
-                return mid, (1.0 + genre_boost * 0.1) * lang_boost
-            except Exception:
-                return mid, 1.0
+                if details:
+                    raw_genres = details.get("genres") or []
+                    rec_genres = []
+                    for g in raw_genres:
+                        if isinstance(g, dict) and "name" in g:
+                            rec_genres.append(g["name"])
+                        elif isinstance(g, str):
+                            rec_genres.append(g)
+                    rec_lang = details.get("original_language", "en")
+                    genre_boost = sum(genre_weights.get(g, 0) for g in rec_genres)
+                    lang_boost = 1.15 if rec_lang == top_language else 1.0
+                    
+                    boost_multiplier = (1.0 + genre_boost * 0.15) * lang_boost
+                    final_score = round((cand["score"] / cand["count"]) * boost_multiplier, 4)
+                    
+                    return {
+                        "id": mid,
+                        "movie_id": mid,
+                        "title": details.get("title", cand["title"]),
+                        "poster_path": details.get("poster_path") or cand["poster_path"],
+                        "vote_average": details.get("vote_average", 0.0),
+                        "release_date": details.get("release_date", ""),
+                        "score": final_score
+                    }
+            except Exception as e:
+                print(f"SMART_REC: process_candidate error for {mid}: {e}")
+            
+            # Fallback using whatever basic info we have
+            return {
+                "id": mid,
+                "movie_id": mid,
+                "title": cand["title"],
+                "poster_path": cand["poster_path"] or get_movie_poster(mid),
+                "vote_average": 0.0,
+                "release_date": "",
+                "score": round(cand["score"] / cand["count"], 4)
+            }
 
         with ThreadPoolExecutor(max_workers=10) as ex:
-            boost_results = dict(ex.map(boost, list(score_map.keys())[:50]))
-
-        for mid, bval in boost_results.items():
-            if mid in score_map:
-                raw = score_map[mid]["score"] / score_map[mid]["count"]
-                score_map[mid]["score"] = round(raw * bval, 4)
+            final_list = [res for res in ex.map(process_candidate, top_candidates) if res is not None]
 
         # ── 5. Sort and return ───────────────────────────────────────
-        final = sorted(score_map.values(), key=lambda x: x["score"], reverse=True)
+        final = sorted(final_list, key=lambda x: x["score"], reverse=True)
         print(f"SMART_REC: returning {min(len(final), n)} recommendations")
 
         return {

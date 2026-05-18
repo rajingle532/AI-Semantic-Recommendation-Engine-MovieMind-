@@ -119,7 +119,7 @@ def _load_bert_model():
         print(f"ERROR loading Multilingual BERT model: {str(e)}")
 
 
-def get_content_recommendations(movie_id: int, n: int = 10) -> list:
+def get_content_recommendations(movie_id: int, n: int = 10, fetch_metadata: bool = True) -> list:
     """
     Get top-N similar movies using content-based filtering (cosine similarity).
     """
@@ -144,6 +144,25 @@ def get_content_recommendations(movie_id: int, n: int = 10) -> list:
 
     recommendations = []
     
+    if not fetch_metadata:
+        # Fast path: bypass all TMDB API calls when fetching candidates
+        for i in distances[1:n + 1]:
+            try:
+                rec_movie = _movies_df.iloc[i[0]]
+                rec_movie_id = int(rec_movie['movie_id'])
+                recommendations.append({
+                    "id": rec_movie_id,
+                    "movie_id": rec_movie_id,
+                    "title": rec_movie['title'],
+                    "similarity_score": round(float(i[1]), 4),
+                    "poster_path": None,
+                    "vote_average": float(rec_movie.get('vote_average', 0.0)),
+                    "release_date": str(rec_movie.get('release_date', '')),
+                })
+            except Exception as e:
+                print(f"RECOMMENDER: fast_fetch error: {e}")
+        return recommendations
+
     # Fetch posters in PARALLEL to avoid sequential 1s timeouts
     from concurrent.futures import ThreadPoolExecutor
     
