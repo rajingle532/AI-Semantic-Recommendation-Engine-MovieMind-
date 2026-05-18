@@ -8,7 +8,7 @@ from app.services.recommender import (
     get_hybrid_recommendations,
 )
 from app.database import get_collection
-from app.services.tmdb import get_movie_details
+from app.services.tmdb import get_movie_details, get_movie_poster
 from concurrent.futures import ThreadPoolExecutor
 
 router = APIRouter(prefix="/api/recommend", tags=["Recommendations"])
@@ -176,11 +176,18 @@ def recommend_smart(n: int = 20, current_user: dict = Depends(get_current_user))
                 print(f"SMART_REC: process_candidate error for {mid}: {e}")
             
             # Fallback using whatever basic info we have
+            fallback_poster = cand.get("poster_path")
+            if not fallback_poster:
+                try:
+                    fallback_poster = get_movie_poster(mid)
+                except Exception:
+                    fallback_poster = None
+
             return {
                 "id": mid,
                 "movie_id": mid,
-                "title": cand["title"],
-                "poster_path": cand["poster_path"] or get_movie_poster(mid),
+                "title": cand.get("title", ""),
+                "poster_path": fallback_poster,
                 "vote_average": 0.0,
                 "release_date": "",
                 "score": round(cand["score"] / cand["count"], 4)
