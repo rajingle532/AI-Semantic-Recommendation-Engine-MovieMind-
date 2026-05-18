@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, User, LogOut, Film, Sun, Moon, Shield, HelpCircle, Headphones, Tv } from 'lucide-react';
+import { Search, User, LogOut, Film, Sun, Moon, Shield, HelpCircle, Headphones, Tv, Zap, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -93,17 +93,29 @@ const Navbar: React.FC = () => {
         {isAuthenticated && (
           <>
             <div className={styles.mediaToggle}>
-              <Link to="/" className={`${styles.toggleBtn} ${location.pathname === '/' ? styles.active : ''}`}>
-                <Film size={16} style={{ marginRight: '6px' }} /> Movies
+              <Link
+                to="/"
+                className={`${styles.toggleBtn} ${location.pathname === '/' ? styles.active : ''}`}
+              >
+                <Film size={15} /> Movies
               </Link>
-              <Link to="/tv" className={`${styles.toggleBtn} ${location.pathname.startsWith('/tv') ? styles.active : ''}`}>
-                <Tv size={16} style={{ marginRight: '6px' }} /> Web Series
+              <Link
+                to="/tv"
+                className={`${styles.toggleBtn} ${location.pathname.startsWith('/tv') ? styles.active : ''}`}
+              >
+                <Tv size={15} /> Web Series
               </Link>
-              <Link to="/cinematch" className={`${styles.toggleBtn} ${location.pathname.startsWith('/cinematch') ? styles.active : ''}`} style={{ border: '1px solid rgba(255, 75, 43, 0.4)', background: 'linear-gradient(135deg, rgba(255, 75, 43, 0.1), rgba(255, 9, 121, 0.1))' }}>
-                <span className="navbar-sparkle-icon" style={{ marginRight: '6px', color: '#ff4b2b', display: 'flex', alignItems: 'center' }}>🔥</span> CineMatch
+              <Link
+                to="/cinematch"
+                className={`${styles.toggleBtn} ${styles.chipCineMatch} ${location.pathname.startsWith('/cinematch') ? styles.active : ''}`}
+              >
+                <Zap size={14} style={{ strokeWidth: 2.5 }} /> CineMatch
               </Link>
-              <Link to="/cineshare" className={`${styles.toggleBtn} ${location.pathname.startsWith('/cineshare') ? styles.active : ''}`} style={{ border: '1px solid rgba(99, 102, 241, 0.4)', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1))' }}>
-                <span style={{ marginRight: '6px' }}>👥</span> CineShare
+              <Link
+                to="/cineshare"
+                className={`${styles.toggleBtn} ${styles.chipCineShare} ${location.pathname.startsWith('/cineshare') ? styles.active : ''}`}
+              >
+                <Users size={14} style={{ strokeWidth: 2.5 }} /> CineShare
               </Link>
             </div>
 

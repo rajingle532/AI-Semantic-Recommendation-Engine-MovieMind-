@@ -36,35 +36,80 @@
 
 .mediaToggle {
   display: flex;
-  gap: 0.5rem;
-  background: var(--bg-secondary, rgba(255, 255, 255, 0.05));
-  padding: 0.25rem;
-  border-radius: 50px;
-  border: 1px solid var(--glass-border);
+  gap: 6px;
+  align-items: center;
   margin: 0 1rem;
 }
 
+/* ── Base chip shared by all 4 nav buttons ── */
 .toggleBtn {
   display: flex;
   align-items: center;
-  padding: 0.4rem 1rem;
-  border-radius: 50px;
-  font-size: 0.9rem;
+  gap: 6px;
+  padding: 0 16px;
+  height: 36px;
+  border-radius: 99px;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-secondary);
   text-decoration: none;
+  white-space: nowrap;
   transition: all 0.2s ease;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .toggleBtn:hover {
   color: var(--text-primary);
   background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .toggleBtn.active {
   background: var(--accent);
   color: white;
+  border-color: transparent;
   box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);
+}
+
+/* ── CineMatch chip (red-orange gradient) ── */
+.chipCineMatch {
+  background: linear-gradient(135deg, rgba(255, 75, 43, 0.12), rgba(255, 9, 121, 0.12));
+  border: 1px solid rgba(255, 75, 43, 0.35);
+  color: #ff6b4a;
+  font-weight: 700;
+}
+.chipCineMatch:hover {
+  background: linear-gradient(135deg, rgba(255, 75, 43, 0.22), rgba(255, 9, 121, 0.22));
+  border-color: rgba(255, 75, 43, 0.55);
+  color: #ff4b2b;
+  box-shadow: 0 0 14px rgba(255, 75, 43, 0.25);
+}
+.chipCineMatch.active {
+  background: linear-gradient(135deg, #ff4b2b, #ff0979);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 4px 16px rgba(255, 75, 43, 0.45);
+}
+
+/* ── CineShare chip (indigo-pink gradient) ── */
+.chipCineShare {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(236, 72, 153, 0.12));
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  color: #818cf8;
+  font-weight: 700;
+}
+.chipCineShare:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.22), rgba(236, 72, 153, 0.22));
+  border-color: rgba(99, 102, 241, 0.55);
+  color: #6366f1;
+  box-shadow: 0 0 14px rgba(99, 102, 241, 0.25);
+}
+.chipCineShare.active {
+  background: linear-gradient(135deg, #6366f1, #ec4899);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.45);
 }
 
 .searchBar {
