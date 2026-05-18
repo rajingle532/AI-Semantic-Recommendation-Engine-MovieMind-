@@ -47,7 +47,7 @@ vi.mock('lucide-react', () => {
     // Profile / Account page icons
     'Bookmark', 'Brain', 'TrendingUp', 'Zap', 'RefreshCw',
     'Mail', 'Phone', 'Lock', 'Bell', 'Camera', 'Edit3',
-    'CheckCircle2', 'Crown', 'Sparkles',
+    'CheckCircle2', 'Crown', 'Sparkles', 'Users',
   ];
   const mockIcons: any = {};
   icons.forEach(icon => {
