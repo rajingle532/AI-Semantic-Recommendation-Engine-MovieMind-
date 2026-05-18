@@ -23,6 +23,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import AccountPage from './pages/AccountPage';
 import HelpPage from './pages/HelpPage';
+import CineMatchPage from './pages/CineMatchPage';
 
 const App: React.FC = () => {
   const location = useLocation();
@@ -62,6 +63,7 @@ const App: React.FC = () => {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/music" element={<MusicPage />} />
             <Route path="/account" element={<AccountPage />} />
+            <Route path="/cinematch" element={<CineMatchPage />} />
           </Route>
         </Routes>
       </AnimatePresence>

@@ -1,7 +1,7 @@
 """
 Movie routes — search, details, trending, and genre endpoints.
 """
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException, Depends
 from app.services import tmdb
 from app.services.tmdb import (
     get_movie_details,
@@ -13,6 +13,7 @@ from app.services.tmdb import (
     get_movies_by_genre,
 )
 from app.services.search import semantic_search
+from app.utils.security import get_current_user
 
 router = APIRouter(prefix="/api/movies", tags=["Movies"])
 
@@ -75,6 +76,62 @@ def movies_by_mood(mood: str, page: int = 1):
     genre_id = MOOD_MAPPING[mood][0] 
     results = get_movies_by_genre(genre_id, page)
     return {"results": results, "mood": mood, "count": len(results)}
+
+
+@router.get("/swipe-pool")
+def swipe_pool(current_user: dict = Depends(get_current_user)):
+    """
+    Get a diverse list of movies for the Tinder-style CineMatch swiper,
+    excluding movies that are already in the user's watchlist or rated.
+    """
+    user_id = current_user["user_id"]
+    from app.database import get_collection
+    
+    # 1. Gather all excluded movie IDs (watchlist + ratings)
+    watchlist_col = get_collection("watchlist")
+    ratings_col = get_collection("ratings")
+    
+    watchlist_ids = {int(x["movie_id"]) for x in watchlist_col.find({"user_id": user_id}) if x.get("movie_id")}
+    rating_ids = {int(x["movie_id"]) for x in ratings_col.find({"user_id": user_id}) if x.get("movie_id")}
+    exclude_ids = watchlist_ids.union(rating_ids)
+    
+    # 2. Fetch candidates from trending movies (pages 1 to 3 to get plenty of candidates)
+    candidates = []
+    seen_candidates = set()
+    
+    for page in range(1, 4):
+        try:
+            trending = get_trending_movies(page=page)
+            if not trending:
+                break
+            for m in trending:
+                mid = int(m["id"])
+                if mid not in exclude_ids and mid not in seen_candidates:
+                    candidates.append(m)
+                    seen_candidates.add(mid)
+            if len(candidates) >= 20:
+                break
+        except Exception:
+            break
+            
+    # 3. If we don't have enough candidates, append popular movies from some popular genres
+    if len(candidates) < 15:
+        # Action (28), Comedy (35), Drama (18)
+        for gid in [28, 35, 18]:
+            try:
+                genre_movies = get_movies_by_genre(gid, page=1)
+                for m in genre_movies:
+                    mid = int(m["id"])
+                    if mid not in exclude_ids and mid not in seen_candidates:
+                        candidates.append(m)
+                        seen_candidates.add(mid)
+                if len(candidates) >= 20:
+                    break
+            except Exception:
+                continue
+
+    # Return top 20 candidates
+    return {"results": candidates[:20], "count": len(candidates[:20])}
 
 
 @router.get("/{movie_id}")

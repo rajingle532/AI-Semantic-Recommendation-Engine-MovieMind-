@@ -99,6 +99,9 @@ const Navbar: React.FC = () => {
               <Link to="/tv" className={`${styles.toggleBtn} ${location.pathname.startsWith('/tv') ? styles.active : ''}`}>
                 <Tv size={16} style={{ marginRight: '6px' }} /> Web Series
               </Link>
+              <Link to="/cinematch" className={`${styles.toggleBtn} ${location.pathname.startsWith('/cinematch') ? styles.active : ''}`} style={{ border: '1px solid rgba(255, 75, 43, 0.4)', background: 'linear-gradient(135deg, rgba(255, 75, 43, 0.1), rgba(255, 9, 121, 0.1))' }}>
+                <span className="navbar-sparkle-icon" style={{ marginRight: '6px', color: '#ff4b2b', display: 'flex', alignItems: 'center' }}>🔥</span> CineMatch
+              </Link>
             </div>
 
             <div className={styles.searchWrapper} ref={searchRef}>
@@ -194,6 +197,9 @@ const Navbar: React.FC = () => {
                   >
                     <Link to="/music" onClick={() => setShowProfileMenu(false)}>
                       <Headphones size={16} /> MediaMind Hub
+                    </Link>
+                    <Link to="/cinematch" onClick={() => setShowProfileMenu(false)} style={{ color: 'var(--accent-primary)', fontWeight: '600' }}>
+                      <span style={{ marginRight: '8px' }}>🔥</span> CineMatch Deck
                     </Link>
                     <Link to="/profile" onClick={() => setShowProfileMenu(false)}>
                       <Film size={16} /> My Library

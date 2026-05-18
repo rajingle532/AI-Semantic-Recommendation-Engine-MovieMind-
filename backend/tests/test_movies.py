@@ -28,3 +28,21 @@ def test_get_movies_by_language(mock_lang, client):
     response = client.get("/api/movies/language/hi")
     assert response.status_code == 200
     assert "results" in response.json()
+
+
+@patch("app.routes.movies.get_trending_movies")
+def test_swipe_pool_authenticated(mock_trending, client, auth_headers):
+    mock_trending.return_value = [
+        {"id": 101, "title": "Movie 101", "poster_path": "/p1.jpg"},
+        {"id": 102, "title": "Movie 102", "poster_path": "/p2.jpg"},
+    ]
+    response = client.get("/api/movies/swipe-pool", headers=auth_headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert "results" in data
+    assert len(data["results"]) > 0
+
+
+def test_swipe_pool_unauthenticated(client):
+    response = client.get("/api/movies/swipe-pool")
+    assert response.status_code == 403
