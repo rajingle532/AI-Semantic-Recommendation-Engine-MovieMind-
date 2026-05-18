@@ -24,6 +24,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import AccountPage from './pages/AccountPage';
 import HelpPage from './pages/HelpPage';
 import CineMatchPage from './pages/CineMatchPage';
+import CineSharePage from './pages/CineSharePage';
 
 const App: React.FC = () => {
   const location = useLocation();
@@ -64,6 +65,7 @@ const App: React.FC = () => {
             <Route path="/music" element={<MusicPage />} />
             <Route path="/account" element={<AccountPage />} />
             <Route path="/cinematch" element={<CineMatchPage />} />
+            <Route path="/cineshare" element={<CineSharePage />} />
           </Route>
         </Routes>
       </AnimatePresence>

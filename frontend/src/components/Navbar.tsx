@@ -102,6 +102,9 @@ const Navbar: React.FC = () => {
               <Link to="/cinematch" className={`${styles.toggleBtn} ${location.pathname.startsWith('/cinematch') ? styles.active : ''}`} style={{ border: '1px solid rgba(255, 75, 43, 0.4)', background: 'linear-gradient(135deg, rgba(255, 75, 43, 0.1), rgba(255, 9, 121, 0.1))' }}>
                 <span className="navbar-sparkle-icon" style={{ marginRight: '6px', color: '#ff4b2b', display: 'flex', alignItems: 'center' }}>🔥</span> CineMatch
               </Link>
+              <Link to="/cineshare" className={`${styles.toggleBtn} ${location.pathname.startsWith('/cineshare') ? styles.active : ''}`} style={{ border: '1px solid rgba(99, 102, 241, 0.4)', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1))' }}>
+                <span style={{ marginRight: '6px' }}>👥</span> CineShare
+              </Link>
             </div>
 
             <div className={styles.searchWrapper} ref={searchRef}>
@@ -200,6 +203,9 @@ const Navbar: React.FC = () => {
                     </Link>
                     <Link to="/cinematch" onClick={() => setShowProfileMenu(false)} style={{ color: 'var(--accent-primary)', fontWeight: '600' }}>
                       <span style={{ marginRight: '8px' }}>🔥</span> CineMatch Deck
+                    </Link>
+                    <Link to="/cineshare" onClick={() => setShowProfileMenu(false)} style={{ color: '#6366f1', fontWeight: '600' }}>
+                      <span style={{ marginRight: '8px' }}>👥</span> CineShare Party
                     </Link>
                     <Link to="/profile" onClick={() => setShowProfileMenu(false)}>
                       <Film size={16} /> My Library

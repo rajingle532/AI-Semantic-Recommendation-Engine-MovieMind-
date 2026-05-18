@@ -365,6 +365,145 @@ def taste_dna(current_user: dict = Depends(get_current_user)):
         }
 
 
+@router.post("/cineshare")
+def cineshare(body: dict, current_user: dict = Depends(get_current_user)):
+    """
+    CineShare — Group Movie Matcher.
+    Compares two users' taste profiles and returns:
+    - Compatibility percentage
+    - Shared genre breakdown
+    - A curated common watchlist
+    """
+    from pydantic import EmailStr
+    friend_email = (body.get("friend_email") or "").strip().lower()
+    if not friend_email:
+        raise HTTPException(status_code=400, detail="friend_email is required")
+
+    users_col = get_collection("users")
+    ratings_col = get_collection("ratings")
+    watchlist_col = get_collection("watchlist")
+
+    # Resolve friend
+    friend = users_col.find_one({"email": friend_email})
+    if not friend:
+        raise HTTPException(status_code=404, detail="No MovieMind user found with that email. Ask your friend to sign up!")
+
+    my_id = current_user["user_id"]
+    friend_id = str(friend["_id"])
+
+    if my_id == friend_id:
+        raise HTTPException(status_code=400, detail="You can't match with yourself!")
+
+    def build_genre_profile(user_id: str) -> dict:
+        """Returns {genre: weight} dict for a user."""
+        ratings = list(ratings_col.find({"user_id": user_id}))
+        watchlist = list(watchlist_col.find({"user_id": user_id}))
+
+        movie_weights: dict[int, float] = {}
+        for r in ratings:
+            mid = r.get("movie_id")
+            if mid:
+                movie_weights[int(mid)] = (float(r.get("rating", 5)) / 5.0) * 1.5
+        for w in watchlist:
+            mid = w.get("movie_id")
+            if mid and int(mid) not in movie_weights:
+                movie_weights[int(mid)] = 0.8
+
+        genre_weights: dict[str, float] = {}
+        for mid, weight in movie_weights.items():
+            try:
+                details = get_movie_details(mid)
+                if not details:
+                    continue
+                raw_genres = details.get("genres") or []
+                for g in raw_genres:
+                    name = g["name"] if isinstance(g, dict) else g
+                    genre_weights[name] = genre_weights.get(name, 0.0) + weight
+            except Exception:
+                continue
+        return genre_weights, list(movie_weights.keys())
+
+    my_genres, my_movies = build_genre_profile(my_id)
+    friend_genres, friend_movies = build_genre_profile(friend_id)
+
+    # Compatibility score — cosine-style overlap
+    all_genres = set(my_genres) | set(friend_genres)
+    dot = sum(my_genres.get(g, 0) * friend_genres.get(g, 0) for g in all_genres)
+    mag_me = sum(v ** 2 for v in my_genres.values()) ** 0.5
+    mag_fr = sum(v ** 2 for v in friend_genres.values()) ** 0.5
+
+    if mag_me > 0 and mag_fr > 0:
+        raw_compat = dot / (mag_me * mag_fr)
+        compatibility = min(99, max(10, round(raw_compat * 100)))
+    else:
+        compatibility = 50  # default if no data
+
+    # Shared genres (intersection weighted average)
+    shared = {}
+    for g in all_genres:
+        if g in my_genres and g in friend_genres:
+            shared[g] = round((my_genres[g] + friend_genres[g]) / 2, 2)
+    sorted_shared = sorted(shared.items(), key=lambda x: x[1], reverse=True)
+
+    total_shared = sum(v for _, v in sorted_shared) or 1.0
+    shared_genre_list = [
+        {"name": name, "percentage": round((weight / total_shared) * 100, 1)}
+        for name, weight in sorted_shared[:6]
+    ]
+
+    # Common movie recommendations — pick movies both users haven't seen but would like
+    # Use top shared genres to filter candidate movies
+    top_shared_genre_names = [g for g, _ in sorted_shared[:3]]
+    
+    # Seed from both users' top-rated movie for content recs
+    candidate_ids: list[int] = []
+    for mid in (my_movies[:3] + friend_movies[:3]):
+        try:
+            recs = get_content_recommendations(mid, n=8)
+            candidate_ids += [r["id"] for r in recs if r.get("id")]
+        except Exception:
+            continue
+
+    # Deduplicate and exclude movies already seen by either user
+    seen = set(my_movies) | set(friend_movies)
+    unique_candidates = list({cid: True for cid in candidate_ids if cid not in seen}.keys())[:20]
+
+    # Enrich with details
+    common_picks = []
+    for mid in unique_candidates[:12]:
+        try:
+            details = get_movie_details(mid)
+            if not details:
+                continue
+            raw_genres = details.get("genres") or []
+            genres = [g["name"] if isinstance(g, dict) else g for g in raw_genres]
+            # Score by how many shared genres it overlaps
+            overlap = len(set(genres) & set(top_shared_genre_names))
+            common_picks.append({
+                "id": mid,
+                "title": details.get("title", "Unknown"),
+                "poster_path": get_movie_poster(details),
+                "vote_average": details.get("vote_average", 0),
+                "release_date": details.get("release_date", ""),
+                "genres": genres[:3],
+                "overlap_score": overlap,
+            })
+        except Exception:
+            continue
+
+    common_picks.sort(key=lambda x: (x["overlap_score"], x["vote_average"]), reverse=True)
+
+    return {
+        "compatibility": compatibility,
+        "friend_name": friend.get("name", friend_email),
+        "friend_email": friend_email,
+        "shared_genres": shared_genre_list,
+        "common_picks": common_picks[:10],
+        "my_genre_count": len(my_genres),
+        "friend_genre_count": len(friend_genres),
+    }
+
+
 # ── IMPORTANT: Keep this LAST — wildcard catches anything not matched above ──
 @router.get("/{movie_id}")
 def recommend_similar(movie_id: int, count: int = 10):
