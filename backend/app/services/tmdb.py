@@ -139,7 +139,7 @@ def _make_request(endpoint: str, params: dict = None) -> dict:
                 return {}
 
             if response.status_code != 200:
-                print(f"TMDB_API_ERROR: {endpoint} returned {response.status_code}. Response: {response.text}")
+                print(f"TMDB_API_ERROR: {endpoint} returned {response.status_code}. Response: {response.text[:200]}...")
                 return {}
                 
             return response.json()
