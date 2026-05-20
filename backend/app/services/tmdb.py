@@ -349,7 +349,7 @@ def get_movie_poster(movie_id: int) -> Optional[str]:
 
 
 def get_trending_movies(page: int = 1) -> list:
-    """Get globally trending movies (real-world trending) with a small Indian supplement for variety."""
+    """Get Indian-focused trending movies (real-world popular Indian films) mixed with globally trending blockbusters for variety."""
     # Check memory cache first
     if page in _trending_cache:
         timestamp, data = _trending_cache[page]
@@ -365,16 +365,16 @@ def get_trending_movies(page: int = 1) -> list:
     import concurrent.futures
     
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        # 1. Global Trending — PRIMARY source (real-world trending)
+        # 1. Global Trending — SECONDARY source (real-world trending)
         future_global = executor.submit(_make_request, "/trending/movie/day", {"page": page})
         
-        # 2. Small Indian supplement — only top popular Indian movies
+        # 2. Indian popular movies — PRIMARY source for Indian users
         future_indian = executor.submit(_make_request, "/discover/movie", {
             "page": page,
             "sort_by": "popularity.desc",
             "with_origin_country": "IN",
-            "vote_count.gte": 50,
-            "vote_average.gte": 5.0,
+            "vote_count.gte": 5,  # Relaxed from 50 to let brand-new trending Indian releases show up
+            "vote_average.gte": 4.5,
         })
         
         global_data = future_global.result()
@@ -395,29 +395,48 @@ def get_trending_movies(page: int = 1) -> list:
             "release_date": m.get("release_date"),
         }
 
-    # Build the final list: Global trending as primary, sprinkle in 3-4 Indian movies
+    # Build the final list: Indian-primary, blended with global trending
     seen_ids = set()
     final_results = []
 
-    # Add global trending movies first (the bulk — ~16 movies)
-    for m in global_results:
+    # Blend them: alternate Indian and Global movies to make it Indian-heavy (up to 12 Indian, 8 global)
+    indian_added = 0
+    global_added = 0
+
+    # Blending loop: Alternate 2 Indian movies then 1 Global movie
+    for _ in range(20):
+        # Add up to 2 Indian movies
+        added_in_turn = 0
+        while added_in_turn < 2 and indian_added < len(indian_results):
+            m = indian_results[indian_added]
+            indian_added += 1
+            if m.get("id") not in seen_ids and m.get("poster_path"):
+                seen_ids.add(m["id"])
+                final_results.append(format_movie(m))
+                added_in_turn += 1
+        
+        # Add 1 Global movie
+        if global_added < len(global_results):
+            m = global_results[global_added]
+            global_added += 1
+            if m.get("id") not in seen_ids and m.get("poster_path"):
+                seen_ids.add(m["id"])
+                final_results.append(format_movie(m))
+
+    # Fill remaining slots up to 20 if we ran out of one list
+    while len(final_results) < 20 and indian_added < len(indian_results):
+        m = indian_results[indian_added]
+        indian_added += 1
         if m.get("id") not in seen_ids and m.get("poster_path"):
             seen_ids.add(m["id"])
             final_results.append(format_movie(m))
-        if len(final_results) >= 16:
-            break
-
-    # Sprinkle in 3-4 Indian movies that aren't already in global trending
-    indian_added = 0
-    for m in indian_results:
+            
+    while len(final_results) < 20 and global_added < len(global_results):
+        m = global_results[global_added]
+        global_added += 1
         if m.get("id") not in seen_ids and m.get("poster_path"):
             seen_ids.add(m["id"])
-            # Insert at varied positions for natural mix
-            insert_pos = min(3 + (indian_added * 4), len(final_results))
-            final_results.insert(insert_pos, format_movie(m))
-            indian_added += 1
-        if indian_added >= 4:
-            break
+            final_results.append(format_movie(m))
 
     if not final_results:
         print("TMDB_API_ERROR: All TMDB requests failed. Checking disk cache or local fallback.")

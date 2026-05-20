@@ -17,6 +17,8 @@ const HomePage: React.FC = () => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [heroMovie, setHeroMovie] = useState<Movie | null>(null);
   const [heroVideo, setHeroVideo] = useState<string | null>(null);
+  const [heroCandidates, setHeroCandidates] = useState<Movie[]>([]);
+  const [currentHeroIndex, setCurrentHeroIndex] = useState<number>(0);
   const [genres, setGenres] = useState<{ id: number, name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -120,22 +122,66 @@ const HomePage: React.FC = () => {
    * Falls back to the first movie if none have trailers.
    */
   const selectHeroWithTrailer = async (movieList: Movie[]) => {
-    const candidates = movieList.slice(0, Math.min(6, movieList.length));
+    // Select the top 12 movies as potential hero candidates to ensure a rich list of choices
+    const candidates = [...movieList].slice(0, Math.min(12, movieList.length));
     
-    for (const candidate of candidates) {
-      setHeroMovie(candidate);
-      const trailerKey = await updateHeroMovie(candidate);
-      if (trailerKey) {
-        console.log(`Hero selected: "${candidate.title}" (has trailer)`);
-        return;
+    try {
+      // Fetch details in parallel to quickly gather working YouTube trailers
+      const detailsPromises = candidates.map(async (movie) => {
+        try {
+          const { data: details } = await api.get(`/movies/${movie.id}`);
+          if (details && details.trailer_key) {
+            return { ...movie, ...details };
+          }
+        } catch (e) {
+          console.error(`Failed to fetch candidate details for ${movie.title}`, e);
+        }
+        return null;
+      });
+      
+      const resolved = await Promise.all(detailsPromises);
+      const validMovies = resolved.filter(m => m !== null) as Movie[];
+      
+      if (validMovies.length > 0) {
+        setHeroCandidates(validMovies);
+        // Start at a random index for variety on every load
+        const startIndex = Math.floor(Math.random() * validMovies.length);
+        setCurrentHeroIndex(startIndex);
+        setHeroMovie(validMovies[startIndex]);
+        setHeroVideo((validMovies[startIndex] as any).trailer_key || null);
+        console.log(`Hero Carousel initialized with ${validMovies.length} movies. Starting at index ${startIndex}`);
+      } else {
+        // Fallback: use first movie from list
+        setHeroMovie(movieList[0]);
+        await updateHeroMovie(movieList[0]);
       }
+    } catch (err) {
+      console.error("Error setting up hero carousel", err);
+      setHeroMovie(movieList[0]);
+      await updateHeroMovie(movieList[0]);
     }
-    
-    // Fallback: use first movie even without trailer
-    console.log(`Hero fallback: "${movieList[0].title}" (no trailer found in top candidates)`);
-    setHeroMovie(movieList[0]);
-    await updateHeroMovie(movieList[0]);
   };
+
+  // Automatic Hero Carousel Rotation (15s interval)
+  useEffect(() => {
+    if (heroCandidates.length <= 1) return;
+    
+    const rotationInterval = setInterval(() => {
+      setCurrentHeroIndex((prevIndex) => {
+        const nextIndex = (prevIndex + 1) % heroCandidates.length;
+        const nextMovie = heroCandidates[nextIndex];
+        
+        // Update hero states
+        setHeroMovie(nextMovie);
+        setHeroVideo((nextMovie as any).trailer_key || null);
+        console.log(`Hero Carousel rotating to: "${nextMovie.title}"`);
+        
+        return nextIndex;
+      });
+    }, 15000); // Rotate every 15 seconds for a premium, dynamic feel
+    
+    return () => clearInterval(rotationInterval);
+  }, [heroCandidates]);
 
   const [retryCount, setRetryCount] = useState(0);
   const [backendWaking, setBackendWaking] = useState(false);
@@ -272,7 +318,7 @@ const HomePage: React.FC = () => {
             <Skeleton width="100%" height="80vh" borderRadius="0" />
           </section>
         ) : heroMovie && (
-          <section className={styles.hero}>
+          <section className={styles.hero} key={heroMovie.id}>
             <div className={styles.heroBg}>
               {heroVideo ? (
                 <div className={styles.videoWrapper}>
