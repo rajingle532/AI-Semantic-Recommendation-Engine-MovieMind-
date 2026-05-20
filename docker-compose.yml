@@ -34,8 +34,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        - VITE_API_URL=/api # Routes requests via Nginx reverse proxy to avoid CORS
+
     container_name: moviemind_frontend
     ports:
       - "3000:80" # Maps port 80 in container to http://localhost:3000 on host

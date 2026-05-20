@@ -13,9 +13,7 @@ RUN npm install
 # Copy the rest of the frontend code
 COPY . .
 
-# Set Vite build argument (defaults to /api due to Nginx reverse proxy)
-ARG VITE_API_URL=/api
-ENV VITE_API_URL=$VITE_API_URL
+
 
 # Build the production bundle
 RUN npm run build
