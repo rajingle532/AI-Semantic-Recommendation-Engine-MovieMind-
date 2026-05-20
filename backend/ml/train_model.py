@@ -18,7 +18,8 @@ from app.services.tmdb import get_movie_details, get_trending_movies, _make_requ
 try:
     from sentence_transformers import SentenceTransformer
     HAS_BERT = True
-except ImportError:
+except Exception as e:
+    print(f"BERT loading bypassed (falling back to standard vectorizer): {e}")
     HAS_BERT = False
 
 # Download NLTK data
@@ -33,8 +34,112 @@ MODELS_DIR = os.path.join(os.path.dirname(__file__), '..', 'saved_models')
 ps = PorterStemmer()
 
 
+# TMDB Numeric Genre ID to Genre Name mapping
+GENRE_MAP = {
+    28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy", 
+    80: "Crime", 99: "Documentary", 18: "Drama", 10751: "Family", 
+    14: "Fantasy", 36: "History", 27: "Horror", 10402: "Music", 
+    9648: "Mystery", 10749: "Romance", 878: "Science Fiction", 
+    10770: "TV Movie", 53: "Thriller", 10752: "War", 37: "Western"
+}
+
+
+def load_local_indian_movies():
+    """Loads and converts tmdb_indian_movies.csv to the standard schema as a fallback."""
+    indian_path = os.path.join(DATA_DIR, 'tmdb_indian_movies.csv')
+    if not os.path.exists(indian_path):
+        print("Warning: tmdb_indian_movies.csv backup not found.")
+        return pd.DataFrame()
+        
+    try:
+        df = pd.read_csv(indian_path)
+        
+        # Convert genre IDs list "[35, 18]" to list of [{"name": "Comedy"}, {"name": "Drama"}]
+        def parse_and_map_genres(genre_str):
+            try:
+                import ast
+                ids = ast.literal_eval(genre_str)
+                return str([{"name": GENRE_MAP.get(gid, "Unknown")} for gid in ids])
+            except Exception:
+                return str([])
+
+        processed = pd.DataFrame()
+        processed['movie_id'] = df['id']
+        processed['title'] = df['title']
+        processed['overview'] = df['overview'].fillna("")
+        processed['genres'] = df['genres'].apply(parse_and_map_genres)
+        processed['keywords'] = str([])
+        processed['cast'] = str([])
+        processed['crew'] = str([])
+        
+        print(f"Loaded {len(processed)} Indian movies from local CSV backup")
+        return processed
+    except Exception as e:
+        print(f"Warning: Failed to load local Indian movies backup: {e}")
+        return pd.DataFrame()
+
+
+def get_live_movie_data(num_pages=50):
+    """Fetch popular Indian movies across multiple languages from TMDB API to build a rich dataset."""
+    print("Starting TMDB Live Indian Movies Discover...")
+    all_movies = []
+    
+    # We fetch popular Indian movies for the following languages:
+    # Hindi (hi), Telugu (te), Tamil (ta), Malayalam (ml), Kannada (kn)
+    languages = {
+        "hi": 25,  # 500 movies
+        "te": 15,  # 300 movies
+        "ta": 15,  # 300 movies
+        "ml": 10,  # 200 movies
+        "kn": 5    # 100 movies
+    }
+    
+    for lang, pages in languages.items():
+        print(f"   Fetching popular {lang.upper()} movies ({pages} pages)...")
+        fetched_for_lang = 0
+        for page in range(1, pages + 1):
+            try:
+                # Use discover/movie to filter by original language and sort by popularity
+                params = {
+                    "sort_by": "popularity.desc",
+                    "with_original_language": lang,
+                    "page": page
+                }
+                data = _make_request("/discover/movie", params)
+                if not data:
+                    break
+                    
+                results = data.get("results", [])
+                if not results:
+                    break
+                    
+                for m in results:
+                    genre_ids = m.get("genre_ids", [])
+                    mapped_genres = [{"name": GENRE_MAP.get(gid, "Unknown")} for gid in genre_ids]
+                    all_movies.append({
+                        "movie_id": m.get("id"),
+                        "title": m.get("title"),
+                        "overview": m.get("overview", ""),
+                        "genres": str(mapped_genres),
+                        "keywords": str([]),
+                        "cast": str([]),
+                        "crew": str([])
+                    })
+                    fetched_for_lang += 1
+            except Exception as e:
+                print(f"      Error fetching {lang.upper()} page {page}: {e}")
+                break
+        print(f"   Finished {lang.upper()}: Fetched {fetched_for_lang} movies")
+            
+    df = pd.DataFrame(all_movies)
+    if not df.empty:
+        df.dropna(subset=['movie_id', 'title'], inplace=True)
+    print(f"TMDB Live Fetch complete! Total movies fetched: {len(df)}")
+    return df
+
+
 def load_and_merge_data():
-    """Load TMDB CSV files and merge movies + credits."""
+    """Load TMDB CSV files, fetch live Indian movies, and merge them all together."""
     movies_path = os.path.join(DATA_DIR, 'tmdb_5000_movies.csv')
     credits_path = os.path.join(DATA_DIR, 'tmdb_5000_credits.csv')
 
@@ -54,40 +159,34 @@ def load_and_merge_data():
 
     # Keep only needed columns
     movies = movies[['movie_id', 'title', 'overview', 'genres', 'keywords', 'cast', 'crew']]
-    movies.dropna(inplace=True)
+    movies.dropna(subset=['movie_id', 'title'], inplace=True)
 
-    print(f"Loaded {len(movies)} movies from CSV")
+    print(f"Loaded {len(movies)} movies from local TMDB 5000 CSV")
+
+    # Fetch and Merge Live Indian movies
+    try:
+        live_indian = get_live_movie_data()
+        if not live_indian.empty:
+            movies = pd.concat([movies, live_indian], ignore_index=True)
+            print(f"Successfully merged {len(live_indian)} live Indian movies into dataset!")
+        else:
+            # Fallback to local Indian movies CSV if API returned nothing
+            print("Live fetch returned empty. Using local Indian CSV backup...")
+            local_indian = load_local_indian_movies()
+            if not local_indian.empty:
+                movies = pd.concat([movies, local_indian], ignore_index=True)
+    except Exception as e:
+        print(f"Warning: TMDB Live API Fetch failed ({e}). Using local Indian CSV backup...")
+        local_indian = load_local_indian_movies()
+        if not local_indian.empty:
+            movies = pd.concat([movies, local_indian], ignore_index=True)
+
+    # Deduplicate in case a movie exists in both local CSV and API results
+    movies.drop_duplicates(subset=['movie_id'], keep='first', inplace=True)
+    movies['overview'] = movies['overview'].fillna("")
+
+    print(f"Total merged dataset size: {len(movies)} movies")
     return movies
-
-
-def get_live_movie_data(num_pages=50):
-    """Fetch popular movies from TMDB API to build a fresh dataset."""
-    print(f"Fetching {num_pages * 20} movies from TMDB API...")
-    all_movies = []
-    
-    for page in range(1, num_pages + 1):
-        try:
-            data = _make_request("/movie/popular", {"page": page})
-            results = data.get("results", [])
-            for m in results:
-                all_movies.append({
-                    "movie_id": m.get("id"),
-                    "title": m.get("title"),
-                    "overview": m.get("overview", ""),
-                    "genres": str([{"name": "Unknown"}]), # Simplified for live fetch
-                    "keywords": str([]),
-                    "cast": str([]),
-                    "crew": str([])
-                })
-            if page % 10 == 0:
-                print(f"   Progress: {page}/{num_pages} pages fetched")
-        except Exception as e:
-            print(f"   Error fetching page {page}: {e}")
-            
-    df = pd.DataFrame(all_movies)
-    df.dropna(inplace=True)
-    print(f"Fetched {len(df)} live movies")
-    return df
 
 
 def extract_names(obj_str):
