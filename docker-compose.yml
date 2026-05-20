@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # 1. Local Database Server (MongoDB)
+  mongodb:
+    image: mongo:latest
+    container_name: moviemind_mongodb
+    ports:
+      - "27017:27017" # Exposes database for host GUI tools (e.g., Compass)
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - moviemind_net
+    restart: unless-stopped
+
+  # 2. FastAPI Backend Server
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: moviemind_backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env # Loads API keys and configurations automatically
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/movie_recommender # Redirects to docker container
+    depends_on:
+      - mongodb
+    networks:
+      - moviemind_net
+    restart: unless-stopped
+
+  # 3. React/Vite Frontend Web App (Nginx Production-Grade)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=/api # Routes requests via Nginx reverse proxy to avoid CORS
+    container_name: moviemind_frontend
+    ports:
+      - "3000:80" # Maps port 80 in container to http://localhost:3000 on host
+    depends_on:
+      - backend
+    networks:
+      - moviemind_net
+    restart: unless-stopped
+
+networks:
+  moviemind_net:
+    driver: bridge
+
+volumes:
+  mongo_data:
+    driver: local
