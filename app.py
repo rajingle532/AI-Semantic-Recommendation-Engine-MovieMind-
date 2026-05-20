@@ -24,9 +24,19 @@ def recommend(movie):
     return recommended_movie_names,recommended_movie_posters
 
 
+import os
+
+# Robust path loading for pickle files
+def load_pickle(filenames):
+    for fn in filenames:
+        for path in [fn, os.path.join('backend', 'saved_models', fn), os.path.join('..', 'backend', 'saved_models', fn)]:
+            if os.path.exists(path):
+                return pickle.load(open(path, 'rb'))
+    raise FileNotFoundError(f"Could not find any of the files: {filenames}")
+
 st.header('Movie Recommender System')
-movies = pickle.load(open('model/movie_list.pkl','rb'))
-similarity = pickle.load(open('model/similarity.pkl','rb'))
+movies = load_pickle(['movie_list.pkl'])
+similarity = load_pickle(['similarity.pkl'])
 
 movie_list = movies['title'].values
 selected_movie = st.selectbox(
@@ -36,7 +46,7 @@ selected_movie = st.selectbox(
 
 if st.button('Show Recommendation'):
     recommended_movie_names,recommended_movie_posters = recommend(selected_movie)
-    col1, col2, col3, col4, col5 = st.beta_columns(5)
+    col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
         st.text(recommended_movie_names[0])
         st.image(recommended_movie_posters[0])
