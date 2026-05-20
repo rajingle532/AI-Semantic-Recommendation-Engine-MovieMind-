@@ -42,6 +42,8 @@ EMERGENCY_MOVIES = [
 
 # Circuit breaker for TMDB API
 _tmdb_disabled = False
+_tmdb_failures = 0
+
 
 # Force IPv4 preference for TMDB as some ISPs/regions have broken IPv6 routing to their API
 try:
@@ -105,8 +107,8 @@ threading.Thread(target=_get_fallback_data, daemon=True).start()
 
 
 def _make_request(endpoint: str, params: dict = None) -> dict:
-    """Make a GET request to TMDB API with automatic API key injection and retries."""
-    global _tmdb_disabled
+    """Make a GET request to TMDB API with automatic API key injection, Sophos block detection, and circuit breaker."""
+    global _tmdb_disabled, _tmdb_failures
     if _tmdb_disabled:
         return {}
 
@@ -134,16 +136,37 @@ def _make_request(endpoint: str, params: dict = None) -> dict:
                 print(f"TMDB_SSL_FALLBACK: Attempting insecure request for {endpoint}")
                 response = _session.get(url, params=full_params, headers=headers, timeout=5, verify=False)
             
+            # Check for Sophos block page or local firewall intercept page
+            if response.status_code == 403 or (response.text and any(x in response.text.lower() for x in ["sophos", "blocked site", "restricted access", "category: entertainment"])):
+                print("=========================================================================")
+                print("!!! CRITICAL WARNING: TMDB API is BLOCKED by Sophos Firewall/Antivirus! !!!")
+                print("Reason: Network category restrictions (Entertainment).")
+                print("Tripping circuit breaker: Bypassing TMDB API completely and using local dataset.")
+                print("=========================================================================")
+                _tmdb_disabled = True
+                return {}
+
             if response.status_code == 429:
                 print(f"TMDB_API_RATE_LIMIT: {endpoint}")
                 return {}
 
             if response.status_code != 200:
                 print(f"TMDB_API_ERROR: {endpoint} returned {response.status_code}. Response: {response.text[:200]}...")
+                _tmdb_failures += 1
+                if _tmdb_failures >= 3:
+                    print("!!! TMDB_CIRCUIT_BREAKER: 3 consecutive failures. Disabling TMDB API requests for this session. !!!")
+                    _tmdb_disabled = True
                 return {}
                 
+            # Success! Reset failure counter
+            _tmdb_failures = 0
             return response.json()
         except Exception as e:
+            _tmdb_failures += 1
+            if _tmdb_failures >= 3:
+                print("!!! TMDB_CIRCUIT_BREAKER: 3 consecutive failures. Disabling TMDB API requests for this session. !!!")
+                _tmdb_disabled = True
+                return {}
             if attempt == max_retries - 1:
                 print(f"TMDB API Error after {max_retries} attempts for {endpoint}: {e}")
                 return {}
@@ -153,7 +176,6 @@ def _make_request(endpoint: str, params: dict = None) -> dict:
 
 
 def _save_disk_cache(filename: str, data: any):
-    """Save data to a JSON file on disk."""
     try:
         path = os.path.join(CACHE_DIR, filename)
         with open(path, 'w', encoding='utf-8') as f:
