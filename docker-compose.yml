@@ -37,7 +37,7 @@ services:
 
     container_name: moviemind_frontend
     ports:
-      - "3000:80" # Maps port 80 in container to http://localhost:3000 on host
+      - "5173:80" # Maps port 80 in container to http://localhost:5173 on host (Google OAuth pre-verified)
     depends_on:
       - backend
     networks:
