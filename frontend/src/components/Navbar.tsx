@@ -121,7 +121,9 @@ const Navbar: React.FC = () => {
 
             <div className={styles.searchWrapper} ref={searchRef}>
               <form className={styles.searchBar} onSubmit={handleSearch}>
-                <Search size={18} className={styles.searchIcon} />
+                <button type="submit" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', position: 'absolute', left: '1.1rem', top: '50%', transform: 'translateY(-50%)', zIndex: 10 }}>
+                  <Search size={18} className={styles.searchIcon} style={{ position: 'static', transform: 'none' }} />
+                </button>
                 <input
                   type="text"
                   placeholder="Search movies, actors, or genres..."
