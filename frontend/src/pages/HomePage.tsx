@@ -272,6 +272,7 @@ const HomePage: React.FC = () => {
 
   // We don't return a blocking loader here anymore. 
   // Instead, we show skeletons in the components below.
+  const heroImage = heroMovie ? ((heroMovie as any).backdrop_path || heroMovie.poster_path) : null;
 
   return (
     <PageTransition>
@@ -321,8 +322,10 @@ const HomePage: React.FC = () => {
                     allowFullScreen
                   ></iframe>
                 </div>
+              ) : heroImage ? (
+                <img src={heroImage} alt={heroMovie.title} />
               ) : (
-                <img src={(heroMovie as any).backdrop_path || heroMovie.poster_path || ''} alt={heroMovie.title} />
+                <div className={styles.heroFallback} aria-hidden="true" />
               )}
               <div className={styles.heroOverlay}></div>
             </div>

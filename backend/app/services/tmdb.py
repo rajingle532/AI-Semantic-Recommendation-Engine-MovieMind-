@@ -40,6 +40,51 @@ EMERGENCY_MOVIES = [
     {"id": 671, "title": "Harry Potter and the Philosopher's Stone", "overview": "Harry Potter has lived under the stairs at his aunt and uncle's house his whole life. But on his 11th birthday, he learns he's a powerful wizard.", "poster_path": "https://image.tmdb.org/t/p/w500/wuMc08IPKEatv9rn9XvBfCUyWHp.jpg", "vote_average": 7.9, "release_date": "2001-11-16", "backdrop_path": "https://image.tmdb.org/t/p/original/hziiv1YVatUcYqllIoxvBr7oQC9.jpg"}
 ]
 
+# Image paths for the most common local CSV fallback movies.
+# These keep the UI rich even when TMDB API requests are temporarily unavailable.
+FALLBACK_IMAGE_OVERRIDES = {
+    211672: {"poster": "/dr02BdCNAUPVU07aOodwPYv6HCf.jpg", "backdrop": "/wKrxeY6lbu7KFBsWVcMH6M8avwr.jpg"},
+    157336: {"poster": "/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg", "backdrop": "/2ssWTSVklAEc98frZUQhgtGHx7s.jpg"},
+    293660: {"poster": "/3E53WEZJqP6aM84D8CckXx4pIHw.jpg", "backdrop": "/en971MEXui9diirXlogOrPKmsEn.jpg"},
+    118340: {"poster": "/r7vmZjiyZw9rpJMQJdXpjgiCOk9.jpg", "backdrop": "/uLtVbjvS1O7gXL8lUOwsFOH4man.jpg"},
+    76341: {"poster": "/hA2ple9q4qnwxp3hKVNhroipsir.jpg", "backdrop": "/uT895WNwm0aIJRtGizcQhrejWUo.jpg"},
+    135397: {"poster": "/rhr4y79GpxQF9IsfJItRXVaoGs4.jpg", "backdrop": "/s5QfDFqRO6sjgPtKkjxD0WqXQef.jpg"},
+    22: {"poster": "/kvDwL2gTf6yxujbsWbsGQB3Z9Wa.jpg", "backdrop": "/zXMGAtDqJ58P8G3W4bwKyYffPhn.jpg"},
+    119450: {"poster": "/mSmAc9G25fhOHH45SLEeagR0qi7.jpg", "backdrop": "/3SozaNPOYUadcmTPgndDibMyDNC.jpg"},
+    131631: {"poster": "/4FAA18ZIja70d1Tu5hr5cj2q1sB.jpg", "backdrop": "/lV1P1Q5gLDXVG1ZYCxZHStkcQC3.jpg"},
+    177572: {"poster": "/2mxS4wUimwlLmI1xp6QW6NSU361.jpg", "backdrop": "/4s2d3xdyqotiVNHTlTlJjrr3q0H.jpg"},
+    87101: {"poster": "/oZRVDpNtmHk8M1VYy1aeOWUXgbC.jpg", "backdrop": "/g4a5YLWwi6OCp8TcvxsUNrXMbN5.jpg"},
+    271110: {"poster": "/rAGiXaUfPzY7CDEyNKUofk3Kw2e.jpg", "backdrop": "/7FWlcZq3r6525LWOcvO9kNWurN1.jpg"},
+    244786: {"poster": "/7fn624j5lj3xTme2SgiLCeuedmO.jpg", "backdrop": "/wbQa0EnWUyRzQ5d1pHLNRlmsCUP.jpg"},
+    155: {"poster": "/qJ2tW6WMUDux911r6m7haRef0WH.jpg", "backdrop": "/cfT29Im5VDvjE0RpyKOSdCKZal7.jpg"},
+    286217: {"poster": "/3ndAx3weG6KDkJIRMCi5vXX6Dyb.jpg", "backdrop": "/lzMS0CI3FLQYC5EgJoWeIaEt0lm.jpg"},
+    27205: {"poster": "/xlaY2zyzMfkhk0HSC5VUwzoZPU1.jpg", "backdrop": "/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg"},
+    109445: {"poster": "/kgwjIb2JDHRhNk13lmSxiClFjVk.jpg", "backdrop": "/rj58WQ9ImI0mYDptXdM7euX1Wjt.jpg"},
+    209112: {"poster": "/5UsK3grJvtQrtzEgqNlDljJW96w.jpg", "backdrop": "/5fX1oSGuYdKgwWmUTAN5MNSQGzr.jpg"},
+    19995: {"poster": "/gKY6q7SjCkAU6FqvqWybDYgUKIF.jpg", "backdrop": "/vL5LR6WdxWPjLPFRLe133jXWsh5.jpg"},
+    550: {"poster": "/jSziioSwPVrOy9Yow3XhWIBDjq1.jpg", "backdrop": "/xRyINp9KfMLVjRiO5nCsoRDdvvF.jpg"},
+    58: {"poster": "/uXEqmloGyP7UXAiphJUu2v2pcuE.jpg", "backdrop": "/vr6n6ZFUZvedvIlhfYcbCWcaKyW.jpg"},
+    205596: {"poster": "/zSqJ1qFq8NXFfi7JeIYMlzyR0dx.jpg", "backdrop": "/4vf5Fv6OVXXrNqEXqiJnWxnNSyV.jpg"},
+    24428: {"poster": "/RYMX2wcKCBAr24UyPD7xwmjaTn.jpg", "backdrop": "/9BBTo63ANSmhC4e6r62OJFuK2GL.jpg"},
+    238: {"poster": "/3bhkrj58Vtu7enYsRolD1fZdja1.jpg", "backdrop": "/tSPT36ZKlP2WVHJLM4cQPLSzv3b.jpg"},
+    98566: {"poster": "/azL2ThbJMIkts3ZMt3j1YgBUeDB.jpg", "backdrop": "/eezsbzYPbYKjjh6E1XHDBNlLynh.jpg"},
+    210577: {"poster": "/ts996lKsxvjkO2yiYG0ht4qAicO.jpg", "backdrop": "/iWak7wT0j6ycCc8lKr4NBz9c7n5.jpg"},
+    257344: {"poster": "/d26S5EfVXLNxRXqyFy1yyl3qRq3.jpg", "backdrop": "/41Y3h2FVfoU4baFdTZwRrlD4MDM.jpg"},
+    228150: {"poster": "/pfte7wdMobMF4CVHuOxyu6oqeeA.jpg", "backdrop": "/95ckrV6wQgbffurAVmETQ5YKASL.jpg"},
+    246655: {"poster": "/2mtQwJKVKQrZgTz49Dizb25eOQQ.jpg", "backdrop": "/sTQNRqLbfCXolrb5CizAW1dj528.jpg"},
+    285: {"poster": "/jGWpG4YhpQwVmjyHEGkxEkeRf0S.jpg", "backdrop": "/1jHxkVXMI5s3vRiyiZooUy1shB5.jpg"},
+    61791: {"poster": "/oqA45qMyyo1TtrnVEBKxqmTPhbN.jpg", "backdrop": "/6cCF0KMUO2QmrVsQFujkQduREXX.jpg"},
+    13: {"poster": "/Cw4hIUIAmSYfK9QfaUW5igp9La.jpg", "backdrop": "/66Kn4XWhkuPkJxOJyPEx4U2CUfN.jpg"},
+    120: {"poster": "/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg", "backdrop": "/a0lfia8tk8ifkrve0Tn8wkISUvs.jpg"},
+    93456: {"poster": "/5Fh4NdoEnCjCK9wLjdJ9DJNFl2b.jpg", "backdrop": "/uD267eSiACfWLxp47t3gYymOQRj.jpg"},
+    278: {"poster": "/9cqNxx0GxF0bflZmeSMuL5tnGzr.jpg", "backdrop": "/zfbjgQE1uSd9wiPTX4VzsLi0rGG.jpg"},
+    1865: {"poster": "/keGfSvCmYj7CvdRx36OdVrAEibE.jpg", "backdrop": "/v1dh11Yox9uMRNtE5lTe9WkXJeR.jpg"},
+    99861: {"poster": "/4ssDuvEDkSArWEdyBl2X5EHvYKU.jpg", "backdrop": "/kIBK5SKwgqIIuRKhhWrJn3XkbPq.jpg"},
+    672: {"poster": "/sdEOH0992YZ0QSxgXNIGLq1ToUi.jpg", "backdrop": "/1stUIsjawROZxjiCMtqqXqgfZWC.jpg"},
+    198663: {"poster": "/ode14q7WtDugFDp78fo9lCsmay9.jpg", "backdrop": "/eTlcNXGv32zkVI7ZDHhfeaKHXKQ.jpg"},
+    158852: {"poster": "/kziYpr5Nfw60P0My8aj1sgCEqed.jpg", "backdrop": "/udYOmbW1JEZjVd726PWHlmptxPi.jpg"},
+}
+
 # Circuit breaker for TMDB API
 _tmdb_disabled = False
 _tmdb_failures = 0
@@ -100,6 +145,39 @@ def _get_fallback_data():
     except Exception as e:
         print(f"ERROR loading fallback dataset: {e}")
         return []
+
+
+def _fallback_image_urls(movie_id: int) -> dict:
+    """Return full poster/backdrop URLs for curated local fallback movies."""
+    image_paths = FALLBACK_IMAGE_OVERRIDES.get(int(movie_id)) if movie_id else None
+    if not image_paths:
+        return {"poster_path": None, "backdrop_path": None}
+
+    return {
+        "poster_path": f"{settings.TMDB_IMAGE_URL}{image_paths['poster']}" if image_paths.get("poster") else None,
+        "backdrop_path": (
+            f"https://image.tmdb.org/t/p/original{image_paths['backdrop']}"
+            if image_paths.get("backdrop")
+            else None
+        ),
+    }
+
+
+def _format_local_movie(movie: dict, overview_limit: int = 150) -> dict:
+    """Format a local CSV movie using curated images when available."""
+    movie_id = int(movie["id"])
+    image_urls = _fallback_image_urls(movie_id)
+    overview = movie.get("overview") or ""
+
+    return {
+        "id": movie_id,
+        "title": movie.get("title") or movie.get("original_title") or "Untitled",
+        "overview": overview[:overview_limit],
+        "poster_path": image_urls["poster_path"],
+        "backdrop_path": image_urls["backdrop_path"],
+        "vote_average": movie.get("vote_average", 0),
+        "release_date": movie.get("release_date", ""),
+    }
 
 # Trigger background load on import
 import threading
@@ -208,12 +286,13 @@ def get_movie_details(movie_id: int) -> dict:
             movies = _get_fallback_data()
             target = next((m for m in movies if m['id'] == movie_id), None)
             if target:
+                local_movie = _format_local_movie(target, overview_limit=1000)
                 fallback_data = {
                     "id": target['id'],
                     "title": target['title'],
                     "overview": target['overview'],
-                    "poster_path": None,
-                    "backdrop_path": None,
+                    "poster_path": local_movie["poster_path"],
+                    "backdrop_path": local_movie["backdrop_path"],
                     "release_date": target['release_date'],
                     "vote_average": target['vote_average'],
                     "vote_count": 0,
@@ -496,15 +575,7 @@ def _get_fallback_movies(page: int = 1) -> list:
         
         fallback = []
         for m in page_movies:
-            fallback.append({
-                "id": m['id'],
-                "title": m['title'],
-                "overview": m['overview'][:150] if m['overview'] else "",
-                "poster_path": None,
-                "backdrop_path": None,
-                "vote_average": m['vote_average'],
-                "release_date": m['release_date'],
-            })
+            fallback.append(_format_local_movie(m))
         
         return fallback
     except Exception as e:
@@ -621,14 +692,7 @@ def _search_fallback_movies(query: str) -> list:
         results = []
         for m in movies:
             if query in m['title'].lower():
-                results.append({
-                    "id": m['id'],
-                    "title": m['title'],
-                    "overview": m['overview'][:150] if m['overview'] else "",
-                    "poster_path": None,
-                    "vote_average": m['vote_average'],
-                    "release_date": m['release_date'],
-                })
+                results.append(_format_local_movie(m))
                 if len(results) >= 20:
                     break
         return results
@@ -650,17 +714,7 @@ def get_movies_by_language(language_code: str, page: int = 1) -> list[dict]:
         try:
             movies = _get_fallback_data()
             results = [m for m in movies if m['original_language'] == language_code][:20]
-            return [
-                {
-                    "id": m['id'],
-                    "title": m['title'],
-                    "overview": m['overview'][:150] if m['overview'] else "",
-                    "poster_path": None,
-                    "vote_average": m['vote_average'],
-                    "release_date": m['release_date'],
-                }
-                for m in results
-            ]
+            return [_format_local_movie(m) for m in results]
         except: pass
         return []
 
@@ -719,17 +773,7 @@ def get_all_languages_movies(page: int = 1, language: str = None, year: str = No
                 mr = float(min_rating)
                 filtered = [m for m in filtered if m['vote_average'] >= mr]
             
-            return [
-                {
-                    "id": m['id'],
-                    "title": m['title'],
-                    "overview": m['overview'][:150] if m['overview'] else "",
-                    "poster_path": None,
-                    "vote_average": m['vote_average'],
-                    "release_date": m['release_date'],
-                }
-                for m in filtered[:20]
-            ]
+            return [_format_local_movie(m) for m in filtered[:20]]
         except: pass
         return []
 
@@ -761,17 +805,7 @@ def get_movies_by_genre(genre_id: int, page: int = 1) -> list[dict]:
             movies = _get_fallback_data()
             gid_str = f'"id": {genre_id}'
             results = [m for m in movies if gid_str in m['genres']][:20]
-            return [
-                {
-                    "id": m['id'],
-                    "title": m['title'],
-                    "overview": m['overview'][:150] if m['overview'] else "",
-                    "poster_path": None,
-                    "vote_average": m['vote_average'],
-                    "release_date": m['release_date'],
-                }
-                for m in results
-            ]
+            return [_format_local_movie(m) for m in results]
         except: pass
         return []
 
