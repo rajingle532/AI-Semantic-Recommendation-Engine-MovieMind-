@@ -69,7 +69,7 @@ const SignupPage: React.FC = () => {
       login(data.access_token, data.user);
       toast.success('Signed in with Google!');
       navigate('/');
-    } catch (err: any) {
+    } catch {
       toast.error('Google sign-in failed');
     } finally {
       setLoading(false);

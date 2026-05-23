@@ -4,7 +4,9 @@ const baseURL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/api` 
   : '/api';
 
-console.log(`API Base URL: ${baseURL}`);
+if (import.meta.env.DEV) {
+  console.log(`API Base URL: ${baseURL}`);
+}
 
 const api = axios.create({
   baseURL,

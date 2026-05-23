@@ -10,8 +10,9 @@ import { startKeepAlive } from './utils/keepAlive'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
-// Start keep-alive pings to prevent Render free tier from sleeping
-startKeepAlive();
+if (import.meta.env.VITE_ENABLE_KEEP_ALIVE === 'true') {
+  startKeepAlive();
+}
 
 const container = document.getElementById('root');
 const root = createRoot(container!);

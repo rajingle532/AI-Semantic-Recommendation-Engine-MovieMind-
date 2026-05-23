@@ -10,7 +10,6 @@ import Loader from '../components/Loader';
 import Skeleton from '../components/Skeleton';
 import PageTransition from '../components/PageTransition';
 import MoodSelector from '../components/MoodSelector';
-import FilterBar from '../components/FilterBar';
 import styles from './HomePage.module.css';
 
 const HomePage: React.FC = () => {
@@ -18,7 +17,7 @@ const HomePage: React.FC = () => {
   const [heroMovie, setHeroMovie] = useState<Movie | null>(null);
   const [heroVideo, setHeroVideo] = useState<string | null>(null);
   const [heroCandidates, setHeroCandidates] = useState<Movie[]>([]);
-  const [currentHeroIndex, setCurrentHeroIndex] = useState<number>(0);
+  const [, setCurrentHeroIndex] = useState<number>(0);
   const [genres, setGenres] = useState<{ id: number, name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -70,7 +69,7 @@ const HomePage: React.FC = () => {
       }
 
       const res = await api.get(endpoint, { params });
-      let newMovies = Array.isArray(res.data) ? res.data : (res.data.results || []);
+      const newMovies = Array.isArray(res.data) ? res.data : (res.data.results || []);
 
       setMovies(prev => {
         const combined = isLoadMore ? [...prev, ...newMovies] : newMovies;
@@ -271,14 +270,6 @@ const HomePage: React.FC = () => {
     fetchMovies(1, false, { year: '', minRating: '0', language: 'all' }, null, null);
   };
 
-  const onFilterChange = (newFilters: any) => {
-    setFilters(newFilters);
-    setActiveGenre(null);
-    setActiveMood(null);
-    setPage(1);
-    fetchMovies(1, false, newFilters, null, null);
-  };
-
   // We don't return a blocking loader here anymore. 
   // Instead, we show skeletons in the components below.
 
@@ -307,7 +298,7 @@ const HomePage: React.FC = () => {
             </p>
             <p style={{ color: '#aaa', fontSize: '0.95rem' }}>
               {retryCount > 0
-                ? `Server is waking up — retry ${retryCount}/${MAX_RETRIES}...`
+                ? `Server is waking up - retry ${retryCount}/${MAX_RETRIES}...`
                 : 'Connecting to server...'}
             </p>
           </div>

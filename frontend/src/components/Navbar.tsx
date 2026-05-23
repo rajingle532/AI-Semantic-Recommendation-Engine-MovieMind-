@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, User, LogOut, Film, Sun, Moon, Shield, HelpCircle, Headphones, Tv, Zap, Users } from 'lucide-react';
+import { Search, LogOut, Film, Sun, Moon, Shield, HelpCircle, Headphones, Tv, Zap, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';

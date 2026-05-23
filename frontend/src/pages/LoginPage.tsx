@@ -36,7 +36,7 @@ const LoginPage: React.FC = () => {
       login(data.access_token, data.user);
       toast.success('Signed in with Google!');
       navigate('/');
-    } catch (err: any) {
+    } catch {
       toast.error('Google sign-in failed');
     } finally {
       setLoading(false);
@@ -76,7 +76,7 @@ const LoginPage: React.FC = () => {
               id="password"
               name="password"
               type="password"
-              placeholder="••••••••"
+              placeholder="********"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

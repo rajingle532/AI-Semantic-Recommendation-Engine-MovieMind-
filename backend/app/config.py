@@ -1,5 +1,5 @@
 """
-Configuration module — loads environment variables from .env file.
+Configuration module - loads environment variables from .env file.
 """
 import os
 from dotenv import load_dotenv
@@ -16,11 +16,27 @@ for path in env_paths:
         load_dotenv(path)
         break
 else:
-    load_dotenv() # Fallback to default
+    load_dotenv()  # Fallback to default
+
+
+def _is_enabled(name: str, default: str = "false") -> bool:
+    return os.getenv(name, default).lower() in {"1", "true", "yes", "on"}
+
+
+def _required_in_production(name: str, dev_default: str) -> str:
+    value = os.getenv(name)
+    environment = os.getenv("ENVIRONMENT", os.getenv("APP_ENV", "development")).lower()
+    if value:
+        return value
+    if environment in {"production", "prod"}:
+        raise RuntimeError(f"{name} must be set when ENVIRONMENT=production.")
+    return dev_default
 
 
 class Settings:
     """Application settings loaded from environment variables."""
+
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", os.getenv("APP_ENV", "development")).lower()
 
     # TMDB API
     TMDB_API_KEY: str = os.getenv("TMDB_API_KEY", "")
@@ -30,9 +46,10 @@ class Settings:
     # MongoDB
     MONGODB_URI: str = os.getenv("MONGODB_URI") or "mongodb://localhost:27017/movie_recommender"
     DB_NAME: str = "movie_recommender"
+    MONGODB_TLS_ALLOW_INVALID_CERTIFICATES: bool = _is_enabled("MONGODB_TLS_ALLOW_INVALID_CERTIFICATES")
 
     # JWT Authentication
-    JWT_SECRET: str = os.getenv("JWT_SECRET", "change-this-in-production")
+    JWT_SECRET: str = _required_in_production("JWT_SECRET", "dev-only-insecure-jwt-secret")
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRY_HOURS: int = 24
 

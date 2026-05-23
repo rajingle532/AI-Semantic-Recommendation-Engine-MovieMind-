@@ -1,5 +1,5 @@
 """
-Database module — MongoDB connection using PyMongo.
+Database module - MongoDB connection using PyMongo.
 """
 import certifi
 from pymongo import MongoClient
@@ -27,7 +27,12 @@ def get_database() -> Database:
         
         if is_atlas:
             client_kwargs["tlsCAFile"] = certifi.where()
-            client_kwargs["tlsAllowInvalidCertificates"] = True
+            if settings.MONGODB_TLS_ALLOW_INVALID_CERTIFICATES:
+                if settings.ENVIRONMENT in {"production", "prod"}:
+                    raise RuntimeError(
+                        "MONGODB_TLS_ALLOW_INVALID_CERTIFICATES cannot be enabled in production."
+                    )
+                client_kwargs["tlsAllowInvalidCertificates"] = True
             
         _client = MongoClient(**client_kwargs)
         _db = _client[settings.DB_NAME]

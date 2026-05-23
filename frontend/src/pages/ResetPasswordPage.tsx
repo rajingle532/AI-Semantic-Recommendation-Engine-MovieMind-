@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import styles from './Auth.module.css';

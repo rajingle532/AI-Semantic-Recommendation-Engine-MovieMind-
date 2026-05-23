@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Star, ArrowLeft } from 'lucide-react';
+import { Calendar, MapPin, ArrowLeft } from 'lucide-react';
 import api from '../services/api';
 import MovieGrid from '../components/MovieGrid';
 import PageTransition from '../components/PageTransition';

@@ -6,7 +6,6 @@ import toast from 'react-hot-toast';
 import api from '../services/api';
 import { Movie } from '../types';
 import MovieGrid from '../components/MovieGrid';
-import Loader from '../components/Loader';
 import Skeleton from '../components/Skeleton';
 import PageTransition from '../components/PageTransition';
 import styles from './HomePage.module.css';
@@ -78,7 +77,7 @@ const TVPage: React.FC = () => {
     else setLoading(true);
 
     try {
-      let endpoint = language === 'all' ? `/tv/trending?page=${pageToLoad}` : `/tv/language/${language}?page=${pageToLoad}`;
+      const endpoint = language === 'all' ? `/tv/trending?page=${pageToLoad}` : `/tv/language/${language}?page=${pageToLoad}`;
       const res = await api.get(endpoint);
       const newShows = Array.isArray(res.data) ? res.data : (res.data.results || []);
 

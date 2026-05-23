@@ -1,16 +1,29 @@
-import requests
-import pandas as pd
 import os
+from pathlib import Path
 import time
 import urllib3
 
-# Simple fetch without complex SSL if possible
-urllib3.disable_warnings()
+import pandas as pd
+import requests
+
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - optional convenience for local runs
+    load_dotenv = None
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if load_dotenv:
+    load_dotenv(PROJECT_ROOT / ".env")
 
 # Configuration
-API_KEY = "8265bd1679663a7ea12ac168da84d2e8"
+API_KEY = os.getenv("TMDB_API_KEY")
 BASE_URL = "https://api.themoviedb.org/3"
-OUTPUT_FILE = "backend/data/tmdb_indian_movies.csv"
+OUTPUT_FILE = PROJECT_ROOT / "backend" / "data" / "tmdb_indian_movies.csv"
+VERIFY_SSL = os.getenv("TMDB_VERIFY_SSL", "true").lower() not in {"0", "false", "no"}
+
+if not VERIFY_SSL:
+    urllib3.disable_warnings()
+
 
 def fetch_hindi_movies(pages=10):
     all_movies = []
@@ -27,8 +40,7 @@ def fetch_hindi_movies(pages=10):
         }
         
         try:
-            # Try with verify=False for simple bypass
-            response = requests.get(url, params=params, verify=False, timeout=10)
+            response = requests.get(url, params=params, verify=VERIFY_SSL, timeout=10)
             if response.status_code == 200:
                 results = response.json().get("results", [])
                 for m in results:
@@ -52,11 +64,14 @@ def fetch_hindi_movies(pages=10):
             
     return all_movies
 
+
 if __name__ == "__main__":
-    if not os.path.exists("backend/data"):
-        os.makedirs("backend/data")
+    if not API_KEY:
+        raise RuntimeError("TMDB_API_KEY must be set in the environment before generating the dataset.")
+
+    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
         
-    movies = fetch_hindi_movies(15) # Fetch ~300 movies
+    movies = fetch_hindi_movies(15)  # Fetch about 300 movies
     if movies:
         df = pd.DataFrame(movies)
         df.to_csv(OUTPUT_FILE, index=False)

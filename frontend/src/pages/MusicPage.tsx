@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Headphones, Search, ArrowRight } from 'lucide-react';
+import { Sparkles, Headphones, ArrowRight } from 'lucide-react';
 import api from '../services/api';
 import PageTransition from '../components/PageTransition';
 import styles from './MusicPage.module.css';

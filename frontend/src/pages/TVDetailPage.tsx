@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Check, Star, Calendar, Play, X, Share2, Tv, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Check, Star, Calendar, Share2, Tv, ChevronDown, ChevronUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
-import { Movie } from '../types';
 import Loader from '../components/Loader';
 import RatingStars from '../components/RatingStars';
 import PageTransition from '../components/PageTransition';
@@ -22,7 +21,6 @@ const TVDetailPage: React.FC = () => {
   const [openSeason, setOpenSeason] = useState<number | null>(null);
   const [seasonDetails, setSeasonDetails] = useState<Record<number, any>>({});
   const [loadingSeason, setLoadingSeason] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTVData = async () => {
@@ -44,7 +42,7 @@ const TVDetailPage: React.FC = () => {
         if (existingRating) {
           setUserRating(existingRating.rating);
         }
-      } catch (err) {
+      } catch {
         toast.error("Failed to load TV show details");
       } finally {
         setLoading(false);
@@ -74,7 +72,7 @@ const TVDetailPage: React.FC = () => {
         setInWatchlist(true);
         toast.success("Added to watchlist");
       }
-    } catch (err) {
+    } catch {
       toast.error("Please login to manage watchlist");
     }
   };
@@ -92,8 +90,8 @@ const TVDetailPage: React.FC = () => {
         media_type: 'tv'
       });
       setUserRating(rating);
-      toast.success(`Rated ${rating} ⭐`);
-    } catch (err) {
+      toast.success(`Rated ${rating} stars`);
+    } catch {
       toast.error("Please login to rate shows");
     }
   };
@@ -110,7 +108,7 @@ const TVDetailPage: React.FC = () => {
       try {
         const res = await api.get(`/tv/${id}/season/${seasonNumber}`);
         setSeasonDetails(prev => ({ ...prev, [seasonNumber]: res.data.episodes }));
-      } catch (err) {
+      } catch {
         toast.error("Failed to load episodes");
       } finally {
         setLoadingSeason(false);

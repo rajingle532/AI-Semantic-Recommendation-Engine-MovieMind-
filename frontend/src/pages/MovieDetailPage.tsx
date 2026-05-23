@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Check, Star, Clock, Calendar, Play, X, Share2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -48,7 +48,7 @@ const MovieDetailPage: React.FC = () => {
         if (existingRating) {
           setUserRating(existingRating.rating);
         }
-      } catch (err) {
+      } catch {
         toast.error("Failed to load movie details");
       } finally {
         setLoading(false);
@@ -77,7 +77,7 @@ const MovieDetailPage: React.FC = () => {
         setInWatchlist(true);
         toast.success("Added to watchlist");
       }
-    } catch (err) {
+    } catch {
       toast.error("Please login to manage watchlist");
     }
   };
@@ -94,8 +94,8 @@ const MovieDetailPage: React.FC = () => {
         vote_average: movie.vote_average
       });
       setUserRating(rating);
-      toast.success(`Rated ${rating} ⭐`);
-    } catch (err) {
+      toast.success(`Rated ${rating} stars`);
+    } catch {
       toast.error("Please login to rate movies");
     }
   };

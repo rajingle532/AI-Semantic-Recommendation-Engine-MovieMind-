@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Twitter, Link as LinkIcon, Share2 } from 'lucide-react';
+import { X, Link as LinkIcon, Share2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import styles from './ShareModal.module.css';
 

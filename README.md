@@ -1,79 +1,64 @@
-# 🎬 MovieMind AI — The Intelligent Movie Discovery Ecosystem
+# MovieMind AI
 
 ![MovieMind AI Banner](https://raw.githubusercontent.com/rajingle532/AI-Semantic-Recommendation-Engine-MovieMind-/main/docs/assets/banner.png)
 
-**MovieMind AI** is a state-of-the-art, full-stack movie recommendation platform that bridges the gap between traditional Machine Learning and modern Generative AI. It delivers hyper-personalized film suggestions through a sophisticated hybrid engine, featuring a premium glassmorphism UI and a multilingual AI assistant.
+MovieMind AI is a full-stack movie discovery platform with a React/Vite frontend, FastAPI backend, MongoDB persistence, TMDB metadata, and AI-assisted recommendations.
 
----
+## Features
 
-## 🚀 The Innovation: Why MovieMind?
+- Personalized movie recommendations based on user ratings and watchlist activity.
+- TMDB-powered movie, TV, cast, trailer, and provider metadata.
+- JWT authentication with optional Google OAuth.
+- Watchlist, ratings, profile, account, and recommendation flows.
+- Optional Gemini, search, YouTube, Spotify, and email integrations.
+- Docker Compose setup for local MongoDB, backend, and frontend services.
 
-Unlike standard recommendation engines, MovieMind AI employs a **multi-layered intelligence strategy**:
-1.  **Hybrid Filtering**: Synergizing Content-Based (TF-IDF) and Collaborative Filtering (SVD) for data-driven accuracy.
-2.  **Generative AI (Gemini Pro)**: Powering an intelligent chatbot that understands context, mood, and multilingual queries.
-3.  **RAG (Retrieval-Augmented Generation)**: Enhancing AI responses with real-time metadata (cast, plot, reviews) from the TMDB API.
-4.  **Resilience**: A custom **Circuit Breaker** mechanism that gracefully pivots to semantic search data when AI quotas are reached.
+## Stack
 
----
+- Frontend: React 18, Vite, TypeScript, Framer Motion, Lucide React, CSS modules.
+- Backend: FastAPI, Uvicorn, PyMongo, JWT, bcrypt.
+- Data and ML: Pandas, NumPy, scikit-learn, NLTK, saved recommendation models.
+- Testing: Vitest, Testing Library, Playwright, pytest.
 
-## ✨ Core Features
+## Local Setup
 
-### 🧠 Advanced AI & ML
-- **Hybrid Recommendation Engine**: Delivers "Picked for You" suggestions by analyzing genres, keywords, and global user rating patterns.
-- **NLP Semantic Search**: Discover movies by describing a vibe (e.g., *"Dark psychological thrillers with a plot twist"*).
-- **Context-Aware Chatbot**: A multilingual assistant (English, Hindi, Marathi) powered by Gemini and RAG for deep film trivia and suggestions.
+1. Copy `.env.example` to `.env` for local backend runs.
+2. For Docker Compose, copy `.env.example` to `backend/.env`.
+3. Copy `frontend/.env.example` to `frontend/.env`.
+4. Fill in your API keys and secrets. Use a strong `JWT_SECRET`.
+5. Install dependencies:
 
-### 🌗 Premium UI/UX
-- **Glassmorphism Design**: A sleek, Netflix-inspired dark mode built with Vanilla CSS for high performance.
-- **Interactive Animations**: Smooth transitions and micro-animations powered by **Framer Motion**.
-- **Responsive Architecture**: Fully optimized for Desktop, Tablet, and Mobile experiences.
-
-### 🔐 Robust Infrastructure
-- **Secure Authentication**: JWT-based security with encrypted password hashing and Google OAuth integration.
-- **Real-time Sync**: Live integration with **TMDB API** for up-to-the-minute movie metadata, trailers, and posters.
-- **Personalized Space**: Users can manage a dynamic Watchlist and track their rating history.
-
----
-
-## 🛠️ Technical Architecture
-
-### **The Stack**
-- **Frontend**: React 18, Vite, Framer Motion, Lucide Icons, Vanilla CSS.
-- **Backend**: FastAPI (Asynchronous Python), Uvicorn.
-- **Database**: MongoDB Atlas (NoSQL) for scalable user data and interaction storage.
-- **AI/ML**: Google Gemini Pro, Scikit-learn, Pandas, NLTK.
-- **DevOps**: Docker ready, Render/Vercel deployment configurations.
-
----
-
-## 📊 System Design
-
-```mermaid
-graph TD
-    A[React Frontend] -->|API Requests| B[FastAPI Gateway]
-    B -->|Auth| C[JWT / MongoDB]
-    B -->|Hybrid ML| D[Scikit-Learn Engine]
-    B -->|Generative AI| E[Gemini Pro + RAG]
-    E -->|Metadata| F[TMDB API]
-    B -->|Cache/Fallback| G[Local Semantic Data]
+```bash
+npm install
+npm install --prefix frontend
+pip install -r backend/requirements.txt
 ```
 
----
+## Useful Commands
 
+```bash
+npm run build --prefix frontend
+npm test --prefix frontend
+npm run lint --prefix frontend
+npm run test:backend
+npm run test:e2e
+docker compose up --build
+```
 
----
+## Environment Safety
 
+- `TMDB_API_KEY` must come from the environment, not source code.
+- Set `ENVIRONMENT=production` in production so missing critical secrets fail fast.
+- Keep `MONGODB_TLS_ALLOW_INVALID_CERTIFICATES=false` except for temporary local troubleshooting.
+- Keep `VITE_ENABLE_KEEP_ALIVE=false` unless you intentionally want the browser to ping the configured backend.
 
----
+## License
 
-## 📄 License
 All rights reserved. Unauthorized copying, distribution, or use of this project and its source code is strictly prohibited.
 
----
+## Author
 
-### 👨‍💻 Developed By
-**Omkar Ingle**
-[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/rajingle532)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/omkar1535)
+Developed by Omkar Ingle.
 
-*Built with ❤️ for the Cinematic Community*
+- GitHub: https://github.com/rajingle532
+- LinkedIn: https://linkedin.com/in/omkar1535
