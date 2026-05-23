@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 api_key = os.getenv("TMDB_API_KEY")
-url = f"https://api.themoviedb.org/3/movie/popular?api_key={api_key}"
+url = f"https://api.tmdb.org/3/movie/popular?api_key={api_key}"
 
 print(f"Testing TMDB API Key: {api_key[:5]}...")
 try:

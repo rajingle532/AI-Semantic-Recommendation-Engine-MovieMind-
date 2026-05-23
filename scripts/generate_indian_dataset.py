@@ -17,7 +17,7 @@ if load_dotenv:
 
 # Configuration
 API_KEY = os.getenv("TMDB_API_KEY")
-BASE_URL = "https://api.themoviedb.org/3"
+BASE_URL = "https://api.tmdb.org/3"
 OUTPUT_FILE = PROJECT_ROOT / "backend" / "data" / "tmdb_indian_movies.csv"
 VERIFY_SSL = os.getenv("TMDB_VERIFY_SSL", "true").lower() not in {"0", "false", "no"}
 

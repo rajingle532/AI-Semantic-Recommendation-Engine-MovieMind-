@@ -11,7 +11,7 @@ def test_tmdb():
     api_key = settings.TMDB_API_KEY
     print(f"Testing TMDB API Key: {api_key[:5]}... (hidden)")
     
-    url = "https://api.themoviedb.org/3/trending/movie/week"
+    url = f"{settings.TMDB_BASE_URL}/trending/movie/week"
     params = {"api_key": api_key, "language": "en-US"}
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
     

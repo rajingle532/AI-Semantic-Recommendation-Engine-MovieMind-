@@ -1,6 +1,6 @@
 import requests
 api_key = "10e41e2a0017057f445fe9ba08c5ca24"
-url = f"https://api.themoviedb.org/3/genre/movie/list?api_key={api_key}"
+url = f"https://api.tmdb.org/3/movie/popular?api_key={api_key}"
 headers = {"User-Agent": "Mozilla/5.0"}
 try:
     response = requests.get(url, headers=headers)

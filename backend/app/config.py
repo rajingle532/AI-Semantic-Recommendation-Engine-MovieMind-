@@ -40,7 +40,7 @@ class Settings:
 
     # TMDB API
     TMDB_API_KEY: str = os.getenv("TMDB_API_KEY", "")
-    TMDB_BASE_URL: str = "https://api.themoviedb.org/3"
+    TMDB_BASE_URL: str = "https://api.tmdb.org/3"
     TMDB_IMAGE_URL: str = "https://image.tmdb.org/t/p/w500"
 
     # MongoDB
