@@ -5,25 +5,15 @@ Registers all route modules and configures CORS middleware.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from contextlib import asynccontextmanager
 from app.config import settings
 
 # Import route modules
 from app.routes import auth, movies, recommend, ratings, watchlist, admin, chat, music, music_ai, tv
 
-# ═══════════════════════════════════════════
-# Create FastAPI App
-# ═══════════════════════════════════════════
-app = FastAPI(
-    title="🎬 Movie Recommender System API",
-    description="Full-stack ML-powered movie recommendation engine with hybrid filtering, NLP search, JWT auth, and user interactions.",
-    version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
-)
-
-@app.on_event("startup")
-async def startup_event():
-    """Warm up caches on startup."""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan events for startup and shutdown."""
     from app.services.tmdb import get_genres, get_trending_movies
     import asyncio
     try:
@@ -36,6 +26,19 @@ async def startup_event():
         print("Warm-up complete.")
     except Exception as e:
         print(f"Warm-up failed: {e}")
+    yield
+
+# ═══════════════════════════════════════════
+# Create FastAPI App
+# ═══════════════════════════════════════════
+app = FastAPI(
+    title="🎬 Movie Recommender System API",
+    description="Full-stack ML-powered movie recommendation engine with hybrid filtering, NLP search, JWT auth, and user interactions.",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    lifespan=lifespan
+)
 
 # ═══════════════════════════════════════════
 # CORS Middleware (allow React frontend)

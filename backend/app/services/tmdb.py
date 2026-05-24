@@ -115,7 +115,7 @@ def _get_fallback_data():
         import os
         data_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data')
         # Check for smaller, faster unified dataset first
-        movies_path = os.path.join(data_dir, 'unified_indian_movies.csv')
+        movies_path = os.path.join(data_dir, 'tmdb_indian_movies.csv')
         if not os.path.exists(movies_path):
             movies_path = os.path.join(data_dir, 'tmdb_5000_movies.csv')
         

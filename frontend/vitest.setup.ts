@@ -29,7 +29,10 @@ Object.defineProperty(window, 'IntersectionObserver', { value: IntersectionObser
 vi.mock('framer-motion', () => ({
   motion: new Proxy({}, {
     get: (target, prop) => {
-      return ({ children, ...props }: any) => React.createElement(prop as string, props, children);
+      return ({ children, whileHover, whileTap, whileFocus, whileDrag, whileInView, initial, animate, exit, transition, variants, style, layout, layoutId, ...props }: any) => {
+        // Also sanitize style if it's an object with custom properties that might cause warnings, but let's just pass valid props
+        return React.createElement(prop as string, { ...props, style }, children);
+      };
     }
   }),
   AnimatePresence: ({ children }: any) => children,
