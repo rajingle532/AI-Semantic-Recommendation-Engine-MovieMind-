@@ -159,53 +159,188 @@ def _fallback_movie_info(movie_data: dict) -> str:
     return response
 
 
-def search_nearby_theaters(location: str, movie_name: str = None):
-    """Find nearby theaters and showtimes."""
-    booking_links = _get_booking_links(location, movie_name)
-    
-    if settings.SERP_API_KEY:
-        try:
-            search_query = f"movie theaters near {location}"
-            if movie_name:
-                search_query = f"{movie_name} showtimes near {location}"
-            
-            params = {
-                "engine": "google",
-                "q": search_query,
-                "api_key": settings.SERP_API_KEY,
-                "hl": "en",
-                "gl": "in"
-            }
+def search_nearby_theaters(location: str, movie_name: str = None) -> str:
+    """
+    Smart theater & showtime search.
+    - Phase 1: Try SerpApi google_showtimes engine (rich data)
+    - Phase 2: Fallback to google local_results engine
+    - Always: Append BookMyShow deep link + smart offers
+    """
+    from app.services.offers import format_offers_response, get_bms_deep_link, get_paytm_deep_link
 
-            response = requests.get("https://serpapi.com/search", params=params, timeout=10)
-            data = response.json()
-            theaters = data.get("local_results", [])
-            
-            if theaters:
-                resp_text = "🎬 **Nearby Theaters:**\n\n"
-                for t in theaters[:5]:
-                    name = t.get("title", "Unknown")
-                    rating = t.get("rating", "N/A")
-                    address = t.get("address", "")
-                    resp_text += f"🏛️ **{name}** ({rating}⭐)\n📍 {address}\n\n"
-                resp_text += booking_links
-                return resp_text
-        except Exception as e:
-            print(f"SERP_ERROR: {e}")
-    
-    return f"🎫 **Book Tickets Online:**\n\n{booking_links}"
+    city = location.strip() if location and location != "me" else "Pune"
+    bms_link = get_bms_deep_link(city, movie_name)
+    paytm_link = get_paytm_deep_link(city)
+    google_link = f"https://www.google.com/search?q={(movie_name or 'movies').replace(' ', '+')}+showtimes+{city.replace(' ', '+')}"
+
+    if not settings.SERP_API_KEY:
+        return _fallback_booking_response(city, movie_name, bms_link, paytm_link)
+
+    # ── Phase 1: Try google_showtimes engine (best data) ─────────────────
+    try:
+        showtime_params = {
+            "engine": "google_showtimes",
+            "q": f"{movie_name or 'movies'} in {city}",
+            "api_key": settings.SERP_API_KEY,
+            "hl": "en",
+            "gl": "in",
+            "location": city + ", India"
+        }
+        st_resp = requests.get("https://serpapi.com/search", params=showtime_params, timeout=10)
+        st_data = st_resp.json()
+        showtimes = st_data.get("showtimes", [])
+
+        if showtimes:
+            return _format_showtimes_response(showtimes, movie_name, city, bms_link, paytm_link)
+
+    except Exception as e:
+        print(f"SERP_SHOWTIMES_ERROR: {e}")
+
+    # ── Phase 2: Fallback to google local_results (theater list) ─────────
+    try:
+        search_query = f"{movie_name} showtimes near {city}" if movie_name else f"movie theaters near {city}"
+        local_params = {
+            "engine": "google",
+            "q": search_query,
+            "api_key": settings.SERP_API_KEY,
+            "hl": "en",
+            "gl": "in"
+        }
+        local_resp = requests.get("https://serpapi.com/search", params=local_params, timeout=10)
+        local_data = local_resp.json()
+        theaters = local_data.get("local_results", [])
+
+        if theaters:
+            return _format_local_theaters_response(theaters, movie_name, city, bms_link, paytm_link)
+
+    except Exception as e:
+        print(f"SERP_LOCAL_ERROR: {e}")
+
+    # ── Phase 3: Static fallback ─────────────────────────────────────────
+    return _fallback_booking_response(city, movie_name, bms_link, paytm_link)
 
 
-def _get_booking_links(location: str, movie_name: str = None) -> str:
-    """Generate BookMyShow and Paytm Movies booking links."""
-    bms_query = movie_name or "movies"
-    city = location.replace(" ", "-").lower() if location != "me" else "pune"
-    
-    links = f"🔗 **Quick Booking Links:**\n"
-    links += f"• [BookMyShow](https://in.bookmyshow.com/explore/movies-{city})\n"
-    links += f"• [Paytm Movies](https://paytm.com/movies/{city})\n"
-    links += f"• [Google Movies](https://www.google.com/search?q={bms_query.replace(' ', '+')}+tickets+{city})\n"
-    return links
+def _format_showtimes_response(showtimes: list, movie_name: str, city: str,
+                               bms_link: str, paytm_link: str) -> str:
+    """Format SerpApi google_showtimes data into a premium chat response."""
+    title = movie_name or "Movies"
+    resp = f"🎬 **{title} — Showtimes near {city.title()}:**\n\n"
+
+    shown = 0
+    for day_block in showtimes[:2]:                     # up to 2 days
+        day_label = day_block.get("day", "Today")
+        for theater in day_block.get("theaters", [])[:5]:   # up to 5 theaters
+            t_name = theater.get("name", "Theater")
+            t_link = theater.get("link", bms_link)
+            shows = theater.get("showing", [])
+
+            if not shows:
+                continue
+
+            resp += f"🏛️ **{t_name}**\n"
+
+            for show in shows[:1]:   # first showing variant (e.g., Hindi 2D)
+                show_type = show.get("type", "")
+                times = show.get("time", [])
+
+                # Availability detection
+                available_times = []
+                filling_times = []
+                sold_out_times = []
+                for t in times:
+                    t_str = t.get("time", "")
+                    seats = t.get("seat_status", "").lower() if isinstance(t, dict) else ""
+                    if "sold" in seats or "houseful" in seats:
+                        sold_out_times.append(t_str)
+                    elif "fast" in seats or "filling" in seats:
+                        filling_times.append(f"{t_str} 🔴")
+                    else:
+                        available_times.append(f"{t_str} 🟢")
+
+                all_display = available_times + filling_times + [f"{t} ⚫" for t in sold_out_times]
+                if all_display:
+                    if show_type:
+                        resp += f"   🎭 {show_type}\n"
+                    resp += f"   ⏰ {' | '.join(all_display[:6])}\n"
+
+            resp += f"   🔗 [Book Now]({t_link})\n\n"
+            shown += 1
+            if shown >= 5:
+                break
+        if shown >= 5:
+            break
+
+    resp += f"\n💡 *🟢 Available  🔴 Filling Fast  ⚫ Sold Out*\n\n"
+    resp += f"📱 **Quick Book:** [BookMyShow]({bms_link}) | [Paytm Movies]({paytm_link})"
+    return resp
+
+
+def _format_local_theaters_response(theaters: list, movie_name: str, city: str,
+                                    bms_link: str, paytm_link: str) -> str:
+    """Format google local_results theater list into chat response."""
+    title = movie_name or "Movies"
+    resp = f"🎬 **{title} — Theaters near {city.title()}:**\n\n"
+
+    for t in theaters[:5]:
+        name = t.get("title", "Unknown Theater")
+        rating = t.get("rating", "")
+        address = t.get("address", "")
+        rating_str = f" ⭐ {rating}" if rating else ""
+
+        # Generate BMS deeplink per theater
+        theater_bms = get_theater_bms_link(name, city, movie_name)
+        resp += f"🏛️ **{name}**{rating_str}\n"
+        if address:
+            resp += f"   📍 {address}\n"
+        resp += f"   🎟️ Availability: Check on [BookMyShow]({theater_bms})\n"
+        resp += f"   🔗 [Book Tickets]({theater_bms})\n\n"
+
+    resp += f"📱 **All Shows:** [BookMyShow {city.title()}]({bms_link}) | [Paytm Movies]({paytm_link})"
+    return resp
+
+
+def _fallback_booking_response(city: str, movie_name: str, bms_link: str, paytm_link: str) -> str:
+    """Static fallback response when all APIs fail."""
+    title = movie_name or "Movies"
+    city_t = city.title()
+    google_link = f"https://www.google.com/search?q={title.replace(' ', '+')}+showtimes+{city.replace(' ', '+')}"
+
+    resp = f"🎬 **{title} in {city_t}:**\n\n"
+    resp += f"Abhi live showtime data nahi hai, lekin yahan se seedha book kar sakte ho:\n\n"
+    resp += f"🔗 [BookMyShow — {city_t}]({bms_link})\n"
+    resp += f"🔗 [Paytm Movies — {city_t}]({paytm_link})\n"
+    resp += f"🔗 [Google Showtimes]({google_link})\n"
+    return resp
+
+
+def get_theater_bms_link(theater_name: str, city: str, movie_name: str = None) -> str:
+    """Generate a theater-specific BookMyShow search link."""
+    from app.services.offers import get_city_slug
+    slug = get_city_slug(city)
+    if movie_name:
+        clean_movie = movie_name.lower().replace(" ", "-").replace(":", "").replace("'", "")
+        return f"https://in.bookmyshow.com/buytickets/{clean_movie}/{slug}"
+    clean_theater = theater_name.lower().replace(" ", "+")
+    return f"https://in.bookmyshow.com/explore/movies-{slug}?q={clean_theater}"
+
+
+def analyze_theater_vibe(theaters: list) -> str:
+    """Use Gemini to classify theaters by vibe from their review snippets."""
+    if not theaters:
+        return ""
+    theater_texts = []
+    for t in theaters[:5]:
+        name = t.get("title", "")
+        reviews = t.get("reviews", [])
+        snippet = reviews[0].get("snippet", "") if reviews else t.get("description", "")
+        if name and snippet:
+            theater_texts.append(f"{name}: {snippet[:150]}")
+
+    if not theater_texts:
+        return ""
+
+    # Return raw data for Gemini to process (called from chat route)
+    return "\n".join(theater_texts)
 
 
 async def get_movie_suggestions_by_vibe(query: str) -> list:

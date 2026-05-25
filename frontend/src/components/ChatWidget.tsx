@@ -1,11 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, X, Send, Sparkles, ChevronRight, RotateCcw } from 'lucide-react';
+import { MessageSquare, X, Send, Sparkles, ChevronRight, RotateCcw, Ticket, Calendar, CloudRain } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import api from '../services/api';
 import { Movie } from '../types';
 import styles from './ChatWidget.module.css';
+
+interface BookingData {
+  city: string;
+  movie?: string;
+  bms_link: string;
+  paytm_link: string;
+}
+
+interface WeatherData {
+  city: string;
+  condition: string;
+  emoji: string;
+}
 
 interface ChatMessage {
   id: string;
@@ -13,6 +26,9 @@ interface ChatMessage {
   isAi: boolean;
   movies?: (Movie & { reason?: string })[];
   suggestions?: string[];
+  booking?: BookingData;
+  weather?: WeatherData;
+  intent?: string;
 }
 
 const ChatWidget: React.FC = () => {
@@ -74,7 +90,10 @@ const ChatWidget: React.FC = () => {
         text: data.response,
         isAi: true,
         movies: data.movies,
-        suggestions: data.suggestions
+        suggestions: data.suggestions,
+        booking: data.booking,
+        weather: data.weather,
+        intent: data.intent,
       };
 
       setMessages(prev => [...prev, aiMsg]);
@@ -175,6 +194,14 @@ const ChatWidget: React.FC = () => {
                     )}
                   </div>
                   
+                  {/* ── Weather Badge ── */}
+                  {msg.isAi && msg.weather && (
+                    <div className={styles.weatherBadge}>
+                      <span className={styles.weatherEmoji}>{msg.weather.emoji}</span>
+                      <span className={styles.weatherText}>{msg.weather.city} — {msg.weather.condition}</span>
+                    </div>
+                  )}
+
                   {msg.isAi && msg.movies && msg.movies.length > 0 && (
                     <div className={styles.movieResults}>
                       {msg.movies.slice(0, 4).map((movie) => (
@@ -197,6 +224,49 @@ const ChatWidget: React.FC = () => {
                           <ChevronRight size={16} style={{ marginLeft: 'auto', opacity: 0.5, flexShrink: 0 }} />
                         </Link>
                       ))}
+                    </div>
+                  )}
+
+                  {/* ── Book Now Buttons (for theater/offers intent) ── */}
+                  {msg.isAi && msg.booking && (
+                    <div className={styles.bookingBar}>
+                      <a
+                        href={msg.booking.bms_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={styles.bookBtn}
+                        id={`bms-btn-${msg.id}`}
+                      >
+                        <Ticket size={14} />
+                        BookMyShow
+                      </a>
+                      <a
+                        href={msg.booking.paytm_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`${styles.bookBtn} ${styles.paytmBtn}`}
+                        id={`paytm-btn-${msg.id}`}
+                      >
+                        <Ticket size={14} />
+                        Paytm Movies
+                      </a>
+                      {msg.booking.movie && (
+                        <button
+                          className={`${styles.bookBtn} ${styles.calBtn}`}
+                          id={`cal-btn-${msg.id}`}
+                          onClick={() => {
+                            const title = encodeURIComponent(msg.booking!.movie || 'Movie');
+                            const details = encodeURIComponent(`Watch at ${msg.booking!.city}`);
+                            window.open(
+                              `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}`,
+                              '_blank'
+                            );
+                          }}
+                        >
+                          <Calendar size={14} />
+                          Add to Calendar
+                        </button>
+                      )}
                     </div>
                   )}
 

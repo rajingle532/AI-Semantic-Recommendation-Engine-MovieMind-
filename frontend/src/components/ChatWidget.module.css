@@ -430,3 +430,82 @@
     height: 56px;
   }
 }
+
+/* ═══ Booking Bar (Book Now Buttons) ═══ */
+.bookingBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.bookBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  border: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(135deg, #e50914 0%, #c40812 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(229, 9, 20, 0.3);
+  white-space: nowrap;
+}
+
+.bookBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(229, 9, 20, 0.45);
+  filter: brightness(1.1);
+}
+
+.paytmBtn {
+  background: linear-gradient(135deg, #00baf2 0%, #0095d0 100%);
+  box-shadow: 0 4px 12px rgba(0, 186, 242, 0.3);
+}
+
+.paytmBtn:hover {
+  box-shadow: 0 6px 20px rgba(0, 186, 242, 0.45);
+}
+
+.calBtn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ccc;
+  box-shadow: none;
+}
+
+.calBtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: white;
+  box-shadow: none;
+  transform: translateY(-2px);
+}
+
+/* ═══ Weather Badge ═══ */
+.weatherBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: rgba(0, 186, 242, 0.1);
+  border: 1px solid rgba(0, 186, 242, 0.25);
+  font-size: 0.78rem;
+  color: #80d9f5;
+  width: fit-content;
+}
+
+.weatherEmoji {
+  font-size: 1rem;
+}
+
+.weatherText {
+  font-weight: 500;
+}

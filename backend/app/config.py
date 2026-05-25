@@ -69,6 +69,9 @@ class Settings:
     SPOTIFY_CLIENT_ID: str = os.getenv("SPOTIFY_CLIENT_ID", "")
     SPOTIFY_CLIENT_SECRET: str = os.getenv("SPOTIFY_CLIENT_SECRET", "")
 
+    # Weather API (OpenWeatherMap — free tier)
+    OPENWEATHER_API_KEY: str = os.getenv("OPENWEATHER_API_KEY", "")
+
     # Email Settings
     RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
 

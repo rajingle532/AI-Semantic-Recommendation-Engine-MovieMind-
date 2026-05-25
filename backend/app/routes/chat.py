@@ -6,6 +6,8 @@ Uses Gemini AI for intelligent responses with TMDB data as context.
 from fastapi import APIRouter
 from app.services.recommender import get_semantic_search_results
 from app.services import tmdb, ai_assistant
+from app.services.offers import format_offers_response, get_bms_deep_link, get_paytm_deep_link
+from app.services.weather import get_weather_context, format_weather_chat_response
 from typing import Optional, Dict, Any
 import random
 import re
@@ -142,9 +144,22 @@ def detect_intent(query: str) -> str:
     if any(q.strip() == g or q.startswith(g + " ") or q.startswith(g + ",") for g in greet_words):
         if len(q.split()) <= 4:
             return "greeting"
+
+    offer_words = ["offer", "discount", "coupon", "deal", "cheap", "sasta", "saving",
+                   "bank offer", "icici", "sbi", "hdfc", "paytm offer", "cashback",
+                   "price", "kitne ka", "kitna ticket", "ticket price", "rate"]
+    if any(w in q for w in offer_words):
+        return "offers"
+
+    weather_words = ["mausam", "barish", "baarish", "rain", "weather", "garmi", "sardi",
+                     "hot", "cold", "aaj kaisa", "rainy day", "mood movie", "aaj kya"]
+    if any(w in q for w in weather_words):
+        return "weather_recommend"
     
-    theater_words = ["theater", "theatre", "cinema", "showtime", "ticket", "bookmyshow", 
-                     "book ticket", "pass ka", "booking", "screen", "multiplex", "pvr", "inox", "kuthe", "lavlay"]
+    theater_words = ["theater", "theatre", "cinema", "showtime", "show time", "ticket",
+                     "bookmyshow", "book ticket", "booking", "screen", "multiplex",
+                     "pvr", "inox", "cinepolis", "kuthe", "lavlay", "chal rha", "kab se",
+                     "kab hai", "kab aayegi", "dekh sakte", "available hai"]
     if any(w in q for w in theater_words):
         return "theater"
     
@@ -197,26 +212,82 @@ async def chat_response(payload: Dict[str, Any]):
                 resp = random.choice(GREETINGS)
             return {"response": resp, "movies": [], "suggestions": QUICK_PROMPTS, "intent": "greeting"}
 
-        # 2. THEATER / TICKET BOOKING
+        # 2. OFFERS / PRICE / DISCOUNT
+        if intent == "offers":
+            # Extract city from query
+            city = _extract_city(raw_lower) or "Pune"
+            movie_name = _extract_movie_from_history(history)
+            resp = format_offers_response(city, movie_name)
+            return {
+                "response": resp,
+                "movies": [],
+                "suggestions": [
+                    f"Showtimes in {city}",
+                    "Best theaters near me",
+                    "Theater vibe analysis"
+                ],
+                "intent": "offers"
+            }
+
+        # 3. WEATHER-BASED RECOMMENDATION
+        if intent == "weather_recommend":
+            city = _extract_city(raw_lower) or "Mumbai"
+            weather = get_weather_context(city)
+            weather_msg = format_weather_chat_response(weather)
+
+            genre_ids = weather.get("genres", [35, 28, 18])
+            movies = []
+            for gid in genre_ids[:2]:
+                try:
+                    genre_movies = tmdb.get_movies_by_genre(gid, page=1)
+                    movies.extend(genre_movies[:3])
+                except Exception:
+                    pass
+
+            if not weather_msg:
+                weather_msg = "🎬 Perfect movie time! Yeh movies try karo:"
+
+            return {
+                "response": weather_msg,
+                "movies": movies[:6],
+                "suggestions": [
+                    f"Showtimes in {city}",
+                    f"Offers in {city}",
+                    "Best thriller movies"
+                ],
+                "intent": "weather_recommend",
+                "weather": {
+                    "city": weather.get("city", city),
+                    "condition": weather.get("condition", ""),
+                    "emoji": weather.get("emoji", "🎬")
+                }
+            }
+
+        # 4. THEATER / TICKET BOOKING
         if intent == "theater":
-            location = "me"
-            movie_name = None
-            words = raw_lower.split()
-            for keyword in ["in", "near", "at"]:
-                if keyword in words:
-                    idx = words.index(keyword)
-                    if idx + 1 < len(words):
-                        location = " ".join(words[idx + 1:])
-                        break
-            if history:
-                for msg in reversed(history):
-                    if msg.get('role') == 'assistant' and '**' in msg.get('content', ''):
-                        bold_match = re.search(r'\*\*(.*?)\*\*', msg['content'])
-                        if bold_match:
-                            movie_name = bold_match.group(1)
-                            break
-            resp = ai_assistant.search_nearby_theaters(location, movie_name)
-            return {"response": resp, "movies": [], "suggestions": ["Theaters in Mumbai", "Theaters in Pune"], "intent": "theater_search"}
+            city = _extract_city(raw_lower) or "Pune"
+            movie_name = _extract_movie_from_query(raw_lower) or _extract_movie_from_history(history)
+            resp = ai_assistant.search_nearby_theaters(city, movie_name)
+
+            bms_link = get_bms_deep_link(city, movie_name)
+            paytm_link = get_paytm_deep_link(city)
+
+            return {
+                "response": resp,
+                "movies": [],
+                "suggestions": [
+                    f"Offers in {city}",
+                    f"Theater vibe in {city}",
+                    "Group booking help"
+                ],
+                "intent": "theater_search",
+                "booking": {
+                    "city": city,
+                    "movie": movie_name,
+                    "bms_link": bms_link,
+                    "paytm_link": paytm_link,
+                }
+            }
 
         # 3. MOVIE CHAT (PHASE 2: KNOWLEDGE AUGMENTED)
         if intent == "movie_chat":
@@ -263,6 +334,57 @@ async def chat_response(payload: Dict[str, Any]):
             "suggestions": QUICK_PROMPTS, 
             "intent": "error_fallback"
         }
+
+
+def _extract_city(query: str) -> str:
+    """Extract Indian city name from a query string."""
+    INDIAN_CITIES = [
+        "mumbai", "delhi", "bangalore", "bengaluru", "hyderabad", "chennai",
+        "kolkata", "pune", "ahmedabad", "jaipur", "lucknow", "nagpur",
+        "surat", "indore", "bhopal", "patna", "chandigarh", "kochi", "goa",
+        "noida", "gurgaon", "gurugram", "navi mumbai", "thane",
+    ]
+    q = query.lower()
+    for city in sorted(INDIAN_CITIES, key=len, reverse=True):
+        if city in q:
+            return city.title()
+    # Check for "in <word>" / "near <word>" / "at <word>" pattern
+    m = re.search(r'(?:in|near|at|mein)\s+([a-z]+(?:\s[a-z]+)?)', q)
+    if m:
+        candidate = m.group(1).strip()
+        if len(candidate) >= 3 and candidate not in ["the", "my", "me", "a"]:
+            return candidate.title()
+    return ""
+
+
+def _extract_movie_from_query(query: str) -> str:
+    """Try to extract a movie name embedded in a showtime/booking query."""
+    q = query.lower()
+    # Patterns like "pushpa 2 ticket", "show for pushpa 2"
+    for pattern in [
+        r'(?:ticket|show|showtime|booking)\s+(?:for|of)?\s*(.+?)\s*(?:in|near|at|city|theater|$)',
+        r'(.+?)\s+(?:ka ticket|ki show|showtime|chal rha|available|book karo)',
+    ]:
+        m = re.search(pattern, q)
+        if m:
+            title = m.group(1).strip()
+            if 2 <= len(title) <= 40:
+                return title.title()
+    return ""
+
+
+def _extract_movie_from_history(history: list) -> Optional[str]:
+    """Extract last mentioned movie title from conversation history."""
+    for msg in reversed(history or []):
+        content = msg.get('content', '')
+        match = re.search(r'\*\*([^*]{2,40})\*\*', content)
+        if match:
+            candidate = match.group(1).strip()
+            # Avoid matching things like "Book Now", "Quick Book", etc.
+            skip = {"book now", "quick book", "nearby theaters", "showtimes", "all shows"}
+            if candidate.lower() not in skip:
+                return candidate
+    return None
 
 
 def _get_movie_suggestions(details: dict, lang: str) -> list:

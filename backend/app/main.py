@@ -16,6 +16,24 @@ async def lifespan(app: FastAPI):
     """Lifespan events for startup and shutdown."""
     from app.services.tmdb import get_genres, get_trending_movies
     import asyncio
+    import httpx
+    
+    # Keep-alive background task
+    async def keep_alive_task():
+        # Only run on production/cloud environments if configured, or just run silently
+        import os
+        if os.getenv("ENVIRONMENT", "").lower() not in {"production", "prod"}:
+            return
+            
+        async with httpx.AsyncClient() as client:
+            while True:
+                await asyncio.sleep(600)  # 10 minutes
+                try:
+                    port = os.getenv("PORT", "8000")
+                    await client.get(f"http://127.0.0.1:{port}/api/health")
+                except Exception:
+                    pass
+
     try:
         # Pre-fetch genres and first page of trending movies
         print("Warm-up: Fetching genres and trending movies...")
@@ -24,9 +42,15 @@ async def lifespan(app: FastAPI):
             asyncio.to_thread(get_trending_movies, 1)
         )
         print("Warm-up complete.")
+        
+        task = asyncio.create_task(keep_alive_task())
     except Exception as e:
         print(f"Warm-up failed: {e}")
     yield
+    try:
+        task.cancel()
+    except Exception:
+        pass
 
 # ═══════════════════════════════════════════
 # Create FastAPI App
