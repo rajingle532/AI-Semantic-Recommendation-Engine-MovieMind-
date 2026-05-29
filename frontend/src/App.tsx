@@ -25,6 +25,7 @@ import AccountPage from './pages/AccountPage';
 import HelpPage from './pages/HelpPage';
 import CineMatchPage from './pages/CineMatchPage';
 import CineSharePage from './pages/CineSharePage';
+import TicketsPage from './pages/TicketsPage';
 
 const App: React.FC = () => {
   const location = useLocation();
@@ -66,6 +67,7 @@ const App: React.FC = () => {
             <Route path="/account" element={<AccountPage />} />
             <Route path="/cinematch" element={<CineMatchPage />} />
             <Route path="/cineshare" element={<CineSharePage />} />
+            <Route path="/tickets" element={<TicketsPage />} />
           </Route>
         </Routes>
       </AnimatePresence>

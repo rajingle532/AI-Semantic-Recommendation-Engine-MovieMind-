@@ -6,7 +6,14 @@ Provides legal static bank offers, price tier ranges, and BookMyShow deep links.
 # ─── City slug mapping for BookMyShow URLs ───────────────────────────────────
 CITY_BMS_SLUGS = {
     "mumbai": "mumbai",
+    "navi mumbai": "mumbai",
+    "thane": "mumbai",
     "delhi": "delhi-ncr",
+    "delhi ncr": "delhi-ncr",
+    "noida": "delhi-ncr",
+    "gurgaon": "delhi-ncr",
+    "ghaziabad": "delhi-ncr",
+    "faridabad": "delhi-ncr",
     "bangalore": "bangalore",
     "bengaluru": "bangalore",
     "pune": "pune",
@@ -24,6 +31,46 @@ CITY_BMS_SLUGS = {
     "chandigarh": "chandigarh",
     "kochi": "kochi",
     "goa": "goa",
+    "visakhapatnam": "vizag",
+    "vadodara": "baroda",
+    "ludhiana": "ludhiana",
+    "agra": "agra",
+    "nashik": "nashik",
+    "meerut": "meerut",
+    "rajkot": "rajkot",
+    "varanasi": "varanasi",
+    "srinagar": "srinagar",
+    "aurangabad": "aurangabad",
+    "amritsar": "amritsar",
+    "ranchi": "ranchi",
+    "coimbatore": "coimbatore",
+    "vijayawada": "vijayawada",
+    "jodhpur": "jodhpur",
+    "madurai": "madurai",
+    "raipur": "raipur",
+    "kota": "kota",
+    "guwahati": "guwahati",
+    "solapur": "solapur",
+    "mysore": "mysore",
+    "bareilly": "bareilly",
+    "aligarh": "aligarh",
+    "jalandhar": "jalandhar",
+    "bhubaneswar": "bhubaneswar",
+    "thiruvananthapuram": "trivandrum",
+    "cuttack": "cuttack",
+    "shimla": "shimla",
+    "dehradun": "dehradun",
+    "rourkela": "rourkela",
+    "jammu": "jammu",
+    "udaipur": "udaipur",
+    "jhansi": "jhansi",
+    "nellore": "nellore",
+    "mangalore": "mangalore",
+    "belgaum": "belgaum",
+    "kharagpur": "kharagpur",
+    "kolhapur": "kolhapur",
+    "nanded": "nanded",
+    "amravati": "amravati"
 }
 
 # ─── Ticket Price Tiers (government/industry standard) ───────────────────────
@@ -137,18 +184,23 @@ def get_price_tier(city: str) -> dict:
     return {"tier": "tier3", **PRICE_TIERS["tier3"]}
 
 
+import re
+
 def get_bms_deep_link(city: str, movie_name: str = None) -> str:
-    """Generate BookMyShow deep link for a city and optional movie."""
+    """
+    Generate BookMyShow deep link for a city.
+    The user requested direct BookMyShow links instead of Google Search fallback.
+    """
     slug = get_city_slug(city)
     if movie_name:
-        # Clean movie name for URL
-        clean = movie_name.lower().replace(" ", "-").replace(":", "").replace("'", "")
-        return f"https://in.bookmyshow.com/buytickets/{clean}/{slug}"
-    return f"https://in.bookmyshow.com/explore/movies-{slug}"
+        # Create a basic slug for the movie (e.g. "Pati Patni Aur Woh" -> "pati-patni-aur-woh")
+        movie_slug = re.sub(r'[^a-z0-9]+', '-', movie_name.lower()).strip('-')
+        return f"https://in.bookmyshow.com/{slug}/movies/{movie_slug}"
+    return f"https://in.bookmyshow.com/{slug}/movies"
 
 
 def get_paytm_deep_link(city: str) -> str:
-    slug = city.lower().strip()
+    slug = get_city_slug(city)
     return f"https://paytm.com/movies/{slug}"
 
 

@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from app.config import settings
 
 # Import route modules
-from app.routes import auth, movies, recommend, ratings, watchlist, admin, chat, music, music_ai, tv
+from app.routes import auth, movies, recommend, ratings, watchlist, admin, chat, music, music_ai, tv, tickets
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -34,6 +34,7 @@ async def lifespan(app: FastAPI):
                 except Exception:
                     pass
 
+    task = None
     try:
         # Pre-fetch genres and first page of trending movies
         print("Warm-up: Fetching genres and trending movies...")
@@ -47,10 +48,11 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"Warm-up failed: {e}")
     yield
-    try:
-        task.cancel()
-    except Exception:
-        pass
+    if task is not None:
+        try:
+            task.cancel()
+        except Exception:
+            pass
 
 # ═══════════════════════════════════════════
 # Create FastAPI App
@@ -100,6 +102,7 @@ app.include_router(chat.router)
 app.include_router(music.router)
 app.include_router(music_ai.router)
 app.include_router(tv.router)
+app.include_router(tickets.router)
 
 
 # ═══════════════════════════════════════════

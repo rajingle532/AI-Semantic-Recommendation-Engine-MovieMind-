@@ -134,15 +134,6 @@ def swipe_pool(current_user: dict = Depends(get_current_user)):
     return {"results": candidates[:20], "count": len(candidates[:20])}
 
 
-@router.get("/{movie_id}")
-def movie_detail(movie_id: int):
-    """Get detailed information for a specific movie."""
-    details = get_movie_details(movie_id)
-    if not details:
-        return {"error": "Movie not found"}
-    return details
-
-
 @router.get("/language/{language_code}")
 def movies_by_language(language_code: str, page: int = 1):
     return get_movies_by_language(language_code, page)
@@ -152,6 +143,13 @@ def movies_by_language(language_code: str, page: int = 1):
 def all_languages_movies(page: int = 1, language: str = None, year: str = None, min_rating: float = None):
     return get_all_languages_movies(page, language, year, min_rating)
 
+
+@router.get("/person/{person_id}/movies")
+async def person_movies(person_id: int):
+    """Get all movies for a person."""
+    return tmdb.get_person_movie_credits(person_id)
+
+
 @router.get("/person/{person_id}")
 async def person_details(person_id: int):
     """Get person biography and details."""
@@ -160,7 +158,12 @@ async def person_details(person_id: int):
         raise HTTPException(status_code=404, detail="Person not found")
     return details
 
-@router.get("/person/{person_id}/movies")
-async def person_movies(person_id: int):
-    """Get all movies for a person."""
-    return tmdb.get_person_movie_credits(person_id)
+
+# ── IMPORTANT: Keep this LAST — wildcard catches anything not matched above ──
+@router.get("/{movie_id}")
+def movie_detail(movie_id: int):
+    """Get detailed information for a specific movie."""
+    details = get_movie_details(movie_id)
+    if not details:
+        return {"error": "Movie not found"}
+    return details

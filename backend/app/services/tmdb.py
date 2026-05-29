@@ -99,10 +99,6 @@ try:
 except Exception as e:
     print(f"TMDB_SERVICE: Could not force IPv4 preference: {e}")
 
-_tmdb_disabled = False
-_details_cache = {}
-_poster_cache = {}
-_fallback_movies = None
 
 def _get_fallback_data():
     """Load the fallback CSV into a lightweight list of dicts once."""

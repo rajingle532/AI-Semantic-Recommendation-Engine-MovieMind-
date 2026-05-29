@@ -80,7 +80,6 @@ async def get_movie_soundtrack(title: str):
 async def search_youtube_videos(q: str) -> Dict[str, List[Dict[str, str]]]:
     """Search YouTube with aggressive fallbacks."""
     query = q
-    """Search YouTube with aggressive fallbacks."""
     if not settings.YOUTUBE_API_KEY:
         print("YOUTUBE_ERROR: Missing API Key")
         return {"results": []}

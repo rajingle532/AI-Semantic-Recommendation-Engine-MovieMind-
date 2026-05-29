@@ -8,6 +8,7 @@ export interface Movie {
   genres?: string[];
   cast?: string[];
   director?: string;
+  runtime?: number;
   similarity_score?: number;
   relevance_score?: number;
   media_type?: string;

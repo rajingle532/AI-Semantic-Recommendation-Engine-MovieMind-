@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, LogOut, Film, Sun, Moon, Shield, HelpCircle, Headphones, Tv, Zap, Users } from 'lucide-react';
+import { Search, LogOut, Film, Sun, Moon, Shield, HelpCircle, Headphones, Tv, Zap, Users, Ticket } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -116,6 +116,12 @@ const Navbar: React.FC = () => {
                 className={`${styles.toggleBtn} ${styles.chipCineShare} ${location.pathname.startsWith('/cineshare') ? styles.active : ''}`}
               >
                 <Users size={14} style={{ strokeWidth: 2.5 }} /> CineShare
+              </Link>
+              <Link
+                to="/tickets"
+                className={`${styles.toggleBtn} ${styles.chipTickets} ${location.pathname.startsWith('/tickets') ? styles.active : ''}`}
+              >
+                <Ticket size={14} style={{ strokeWidth: 2.5 }} /> Tickets
               </Link>
             </div>
 

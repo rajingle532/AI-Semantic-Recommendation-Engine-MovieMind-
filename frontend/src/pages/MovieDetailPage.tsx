@@ -179,7 +179,7 @@ const MovieDetailPage: React.FC = () => {
                   {movie.vote_average?.toFixed(1) || 'N/A'}
                 </span>
                 <span className={styles.metaItem}>
-                  <Clock size={16} /> 124 min
+                  <Clock size={16} /> {(movie as any).runtime ? `${(movie as any).runtime} min` : 'N/A'}
                 </span>
                 <span className={styles.metaItem}>
                   <Calendar size={16} /> {movie.release_date || 'N/A'}

@@ -112,6 +112,26 @@
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.45);
 }
 
+/* ── Tickets chip (gold-crimson gradient) ── */
+.chipTickets {
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.12), rgba(229, 9, 20, 0.12));
+  border: 1px solid rgba(255, 193, 7, 0.35);
+  color: #ffb300;
+  font-weight: 700;
+}
+.chipTickets:hover {
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.22), rgba(229, 9, 20, 0.22));
+  border-color: rgba(255, 193, 7, 0.55);
+  color: #ff9800;
+  box-shadow: 0 0 14px rgba(255, 193, 7, 0.25);
+}
+.chipTickets.active {
+  background: linear-gradient(135deg, #ff9800, #e50914);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 4px 16px rgba(255, 152, 0, 0.45);
+}
+
 .searchBar {
   flex: 0 1 500px;
   position: relative;
