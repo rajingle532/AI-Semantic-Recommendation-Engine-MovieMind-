@@ -51,6 +51,8 @@ vi.mock('lucide-react', () => {
     'Bookmark', 'Brain', 'TrendingUp', 'Zap', 'RefreshCw',
     'Mail', 'Phone', 'Lock', 'Bell', 'Camera', 'Edit3',
     'CheckCircle2', 'Crown', 'Sparkles', 'Users',
+    // Tickets / misc
+    'Ticket', 'MapPin', 'CreditCard', 'Tag', 'QrCode',
   ];
   const mockIcons: any = {};
   icons.forEach(icon => {
