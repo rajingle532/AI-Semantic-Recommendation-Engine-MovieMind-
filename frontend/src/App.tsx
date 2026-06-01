@@ -27,6 +27,9 @@ const CineMatchPage    = React.lazy(() => import('./pages/CineMatchPage'));
 const CineSharePage    = React.lazy(() => import('./pages/CineSharePage'));
 const TicketsPage      = React.lazy(() => import('./pages/TicketsPage'));
 
+// Auth-only pages where ChatWidget and full nav should be hidden
+const AUTH_ONLY_PATHS = ['/login', '/signup', '/forgot-password', '/reset-password'];
+
 // Minimal full-screen spinner shown while a lazy chunk is downloading
 const PageLoader = () => (
   <div style={{
@@ -50,6 +53,9 @@ const PageLoader = () => (
 
 const App: React.FC = () => {
   const location = useLocation();
+
+  // Don't show ChatWidget on login/signup/auth pages
+  const isAuthPage = AUTH_ONLY_PATHS.some(path => location.pathname === path);
 
   return (
     <>
@@ -95,7 +101,8 @@ const App: React.FC = () => {
         </AnimatePresence>
       </Suspense>
 
-      <ChatWidget />
+      {/* Only show ChatWidget when user is on a protected/non-auth page */}
+      {!isAuthPage && <ChatWidget />}
     </>
   );
 };

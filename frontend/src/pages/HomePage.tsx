@@ -117,49 +117,59 @@ const HomePage: React.FC = () => {
   };
 
   /**
-   * Try multiple movies until we find one with a trailer for the hero section.
+   * Try a small sample of movies to find one with a trailer for the hero section.
+   * Limited to 3 candidates to avoid blocking the initial page render.
    * Falls back to the first movie if none have trailers.
    */
   const selectHeroWithTrailer = async (movieList: Movie[]) => {
-    // Select the top 12 movies as potential hero candidates to ensure a rich list of choices
-    const candidates = [...movieList].slice(0, Math.min(12, movieList.length));
-    
+    // Show the first movie immediately so the page renders fast
+    setHeroMovie(movieList[0]);
+
+    // Only check the top 3 movies to avoid hammering the API
+    const candidates = movieList.slice(0, 3);
+
     try {
-      // Fetch details in parallel to quickly gather working YouTube trailers
+      // Race with a 4-second timeout so we don't delay the page indefinitely
+      const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> =>
+        Promise.race([
+          promise,
+          new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+        ]);
+
       const detailsPromises = candidates.map(async (movie) => {
         try {
-          const { data: details } = await api.get(`/movies/${movie.id}`);
+          const { data: details } = await withTimeout(api.get(`/movies/${movie.id}`), 4000);
           if (details && details.trailer_key) {
             return { ...movie, ...details };
           }
         } catch (e) {
-          console.error(`Failed to fetch candidate details for ${movie.title}`, e);
+          // Timeout or error — skip this candidate
         }
         return null;
       });
-      
+
       const resolved = await Promise.all(detailsPromises);
       const validMovies = resolved.filter(m => m !== null) as Movie[];
-      
+
       if (validMovies.length > 0) {
         setHeroCandidates(validMovies);
-        // Start at a random index for variety on every load
         const startIndex = Math.floor(Math.random() * validMovies.length);
         setCurrentHeroIndex(startIndex);
         setHeroMovie(validMovies[startIndex]);
         setHeroVideo((validMovies[startIndex] as any).trailer_key || null);
         console.log(`Hero Carousel initialized with ${validMovies.length} movies. Starting at index ${startIndex}`);
       } else {
-        // Fallback: use first movie from list
+        // Fallback: use first movie without trailer
         setHeroMovie(movieList[0]);
-        await updateHeroMovie(movieList[0]);
+        setHeroVideo(null);
       }
     } catch (err) {
       console.error("Error setting up hero carousel", err);
       setHeroMovie(movieList[0]);
-      await updateHeroMovie(movieList[0]);
+      setHeroVideo(null);
     }
   };
+
 
   // Automatic Hero Carousel Rotation (15s interval)
   useEffect(() => {

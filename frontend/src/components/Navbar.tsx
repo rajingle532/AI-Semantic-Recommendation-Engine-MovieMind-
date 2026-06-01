@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Search, LogOut, Film, Sun, Moon, Shield, HelpCircle, Headphones, Tv, Zap, Users, Ticket } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import styles from './Navbar.module.css';
+
+// Pages where full navbar (search, nav links, profile) should be hidden
+const AUTH_ONLY_PATHS = ['/login', '/signup', '/forgot-password', '/reset-password'];
 
 const Navbar: React.FC = () => {
   const [query, setQuery] = useState('');
@@ -20,7 +23,11 @@ const Navbar: React.FC = () => {
   const { user, logout, isAuthenticated, loading } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
-  const location = window.location;
+  const location = useLocation();
+
+  // Is this a pure auth page? If so, hide nav/search/profile
+  const isAuthPage = AUTH_ONLY_PATHS.includes(location.pathname);
+
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -60,7 +67,8 @@ const Navbar: React.FC = () => {
     setShowSearchSuggestions(true);
   };
 
-  if (loading) return null;
+  // Only hide navbar entirely during loading if we're NOT on an auth page
+  if (loading && !isAuthPage) return null;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,7 +98,7 @@ const Navbar: React.FC = () => {
           <span>MovieMind</span>
         </Link>
 
-        {isAuthenticated && (
+        {isAuthenticated && !isAuthPage && (
           <>
             <div className={styles.mediaToggle}>
               <Link
