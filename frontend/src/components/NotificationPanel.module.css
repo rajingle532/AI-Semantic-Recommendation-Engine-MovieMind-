@@ -1,0 +1,428 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   NOTIFICATION PANEL  — Netflix / Spotify / iOS-style
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Wrapper ─────────────────────────────────────────────────────────────── */
+.wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* ── Bell button ─────────────────────────────────────────────────────────── */
+.bellBtn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;           /* perfect circle like platform icons */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.15s;
+}
+
+.bellBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
+  transform: scale(1.06);
+}
+
+.bellBtn.bellOpen {
+  background: rgba(229, 9, 20, 0.15);
+  border-color: rgba(229, 9, 20, 0.45);
+  color: #e50914;
+}
+
+/* pulse ring when there are unread notifs */
+.bellBtn:has(.badge)::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1.5px solid #e50914;
+  opacity: 0;
+  animation: bellPulse 2.6s ease-out infinite;
+}
+@keyframes bellPulse {
+  0%   { transform: scale(0.9);  opacity: 0.6; }
+  70%  { transform: scale(1.35); opacity: 0;   }
+  100% { opacity: 0; }
+}
+
+/* ── Unread badge ────────────────────────────────────────────────────────── */
+.badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 99px;
+  background: #e50914;
+  color: #fff;
+  font-size: 0.58rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* white ring separator — just like iOS */
+  box-shadow: 0 0 0 2px var(--bg-primary), 0 2px 8px rgba(229, 9, 20, 0.55);
+  pointer-events: none;
+  line-height: 1;
+}
+
+/* ── Dropdown panel ──────────────────────────────────────────────────────── */
+.panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 380px;
+  max-height: 560px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  overflow: hidden;
+  z-index: 2000;
+
+  /* Netflix-dark frosted glass */
+  background: rgba(18, 18, 18, 0.97);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+/* ── Panel header ────────────────────────────────────────────────────────── */
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.1rem 0.7rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  flex-shrink: 0;
+}
+
+.panelTitle {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.panelActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Text + icon action button (like "Mark all read") */
+.actionBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.actionBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+.actionBtnDanger:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+/* ── Unread banner ───────────────────────────────────────────────────────── */
+.unreadBanner {
+  padding: 6px 1.1rem;
+  display: flex;
+}
+
+.unreadPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+/* ── Body ────────────────────────────────────────────────────────────────── */
+.body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.body::-webkit-scrollbar { width: 3px; }
+.body::-webkit-scrollbar-track { background: transparent; }
+.body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+}
+
+/* ── Center states (loading / empty) ────────────────────────────────────── */
+.centerState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid rgba(255,255,255,0.08);
+  border-top-color: #e50914;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin-bottom: 4px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.emptyBell {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.25);
+  margin-bottom: 4px;
+}
+
+.emptyTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+.emptySubtitle {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   NOTIFICATION ROW  —  the star of the show
+   Layout: [circular app icon] [text block] [right controls]
+   Exactly like Spotify / Netflix notification rows
+   ════════════════════════════════════════════════════════════════════════════ */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.15s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  /* no border on last child */
+}
+.row:last-child { border-bottom: none; }
+.row:hover { background: rgba(255, 255, 255, 0.04); }
+
+.rowUnread {
+  background: rgba(229, 9, 20, 0.04);
+}
+.rowUnread:hover {
+  background: rgba(229, 9, 20, 0.07);
+}
+
+/* ── Left column ─────────────────────────────────────────────────────────── */
+.leftCol {
+  flex-shrink: 0;
+}
+
+/* ── Circular app icon (no poster) — iOS / Android style ─────────────────── */
+.appIcon {
+  border-radius: 50%;           /* perfect circle */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* inset highlight gives it the iOS raised-button look */
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle inner highlight on top to mimic iOS icon glossiness */
+.appIcon::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 100%);
+  border-radius: 50% 50% 0 0;
+  pointer-events: none;
+}
+
+/* ── Poster + mini icon overlay ──────────────────────────────────────────── */
+.posterWrap {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;        /* poster is rounded-rect */
+  overflow: visible;
+  flex-shrink: 0;
+}
+
+.posterImg {
+  width: 46px;
+  height: 46px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: block;
+}
+
+/* The small circular app icon sitting on bottom-right corner of poster */
+/* Looks exactly like WhatsApp / Instagram notification icons over avatar */
+.miniAppIcon {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(18, 18, 18, 0.95); /* dark ring = separation from poster */
+}
+
+/* ── Middle column (text) ────────────────────────────────────────────────── */
+.middleCol {
+  flex: 1;
+  min-width: 0;
+}
+
+/* label + time in one row */
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+/* Colored category label (e.g. "Trending", "AI Pick") — no pill, just text */
+.label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+
+.time {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.35);
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+/* Bold title — movie name */
+.title {
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.3;
+  margin: 0 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+}
+
+/* Softer description */
+.msg {
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+}
+
+/* ── Right column (dot + dismiss) ────────────────────────────────────────── */
+.rightCol {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 20px;
+}
+
+/* Unread dot — small circle, color matches type accent */
+.unreadDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Dismiss "×" — only visible on hover */
+.dismissBtn {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.3);
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+.row:hover .dismissBtn { opacity: 1; }
+.dismissBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.panelFooter {
+  padding: 8px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: center;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .panel {
+    width: calc(100vw - 1rem);
+    right: -0.5rem;
+    border-radius: 16px;
+  }
+}

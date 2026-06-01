@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
+import NotificationPanel from './NotificationPanel';
 import styles from './Navbar.module.css';
 
 // Pages where full navbar (search, nav links, profile) should be hidden
@@ -16,6 +17,7 @@ const Navbar: React.FC = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const searchRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -189,6 +191,14 @@ const Navbar: React.FC = () => {
         )}
 
         <div className={styles.actions}>
+          {/* Smart Notification Bell — only for authenticated users */}
+          {isAuthenticated && !isAuthPage && (
+            <NotificationPanel
+              isOpen={showNotifications}
+              onClose={() => setShowNotifications(prev => !prev)}
+            />
+          )}
+
           <div
             className={styles.themeTogglePill}
             onClick={toggleTheme}
