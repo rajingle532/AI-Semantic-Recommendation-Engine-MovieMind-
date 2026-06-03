@@ -1,6 +1,7 @@
-/* ════════════════════════════════════════════════════════════════════════════
-   NOTIFICATION PANEL  — Netflix / Spotify / iOS-style
-   ════════════════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════════════
+   NOTIFICATION PANEL  — Advanced Edition
+   Features: Bell shake, Swipe-to-dismiss, Push banner, Scheduler footer
+   ══════════════════════════════════════════════════════════════════════════ */
 
 /* ── Wrapper ─────────────────────────────────────────────────────────────── */
 .wrapper {
@@ -14,7 +15,7 @@
   position: relative;
   width: 36px;
   height: 36px;
-  border-radius: 50%;           /* perfect circle like platform icons */
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -22,14 +23,14 @@
   border: 1.5px solid rgba(255, 255, 255, 0.1);
   color: var(--text-secondary);
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.15s;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  transform-origin: top center; /* shake rotates from top like a real bell */
 }
 
 .bellBtn:hover {
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.2);
   color: var(--text-primary);
-  transform: scale(1.06);
 }
 
 .bellBtn.bellOpen {
@@ -38,7 +39,7 @@
   color: #e50914;
 }
 
-/* pulse ring when there are unread notifs */
+/* Pulse ring when unread notifications exist */
 .bellBtn:has(.badge)::after {
   content: '';
   position: absolute;
@@ -54,7 +55,7 @@
   100% { opacity: 0; }
 }
 
-/* ── Unread badge ────────────────────────────────────────────────────────── */
+/* ── Badge ───────────────────────────────────────────────────────────────── */
 .badge {
   position: absolute;
   top: -4px;
@@ -70,37 +71,34 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  /* white ring separator — just like iOS */
   box-shadow: 0 0 0 2px var(--bg-primary), 0 2px 8px rgba(229, 9, 20, 0.55);
   pointer-events: none;
   line-height: 1;
 }
 
-/* ── Dropdown panel ──────────────────────────────────────────────────────── */
+/* ── Panel ───────────────────────────────────────────────────────────────── */
 .panel {
   position: absolute;
   top: calc(100% + 10px);
   right: 0;
-  width: 380px;
-  max-height: 560px;
+  width: 385px;
+  max-height: 580px;
   display: flex;
   flex-direction: column;
   border-radius: 20px;
   overflow: hidden;
   z-index: 2000;
-
-  /* Netflix-dark frosted glass */
-  background: rgba(18, 18, 18, 0.97);
+  background: rgba(14, 14, 14, 0.98);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.09);
   box-shadow:
-    0 30px 80px rgba(0, 0, 0, 0.7),
+    0 32px 80px rgba(0, 0, 0, 0.75),
     0 0 0 1px rgba(255, 255, 255, 0.04),
     inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
 
-/* ── Panel header ────────────────────────────────────────────────────────── */
+/* ── Panel Header ────────────────────────────────────────────────────────── */
 .panelHeader {
   display: flex;
   align-items: center;
@@ -108,6 +106,12 @@
   padding: 1rem 1.1rem 0.7rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   flex-shrink: 0;
+}
+
+.panelHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .panelTitle {
@@ -118,13 +122,41 @@
   margin: 0;
 }
 
+/* "Live" pill — shown when push is granted */
+.livePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 99px;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #22c55e;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.liveDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+  animation: livePulse 1.4s ease-in-out infinite;
+}
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
 .panelActions {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-/* Text + icon action button (like "Mark all read") */
 .actionBtn {
   display: flex;
   align-items: center;
@@ -150,10 +182,102 @@
   color: #ef4444;
 }
 
+/* ── Push Permission Banner ──────────────────────────────────────────────── */
+.pushBanner {
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.pushBannerInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 10px 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.18) 0%, rgba(139, 92, 246, 0.12) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.pushBannerLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pushIconWrap {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+}
+
+.pushTitle {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 1px;
+}
+
+.pushSub {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+
+.pushBannerActions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.pushAllowBtn {
+  padding: 5px 12px;
+  border-radius: 99px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.35);
+}
+.pushAllowBtn:hover { opacity: 0.88; }
+
+.pushDenyBtn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+}
+.pushDenyBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
 /* ── Unread banner ───────────────────────────────────────────────────────── */
 .unreadBanner {
-  padding: 6px 1.1rem;
+  padding: 5px 1.1rem;
   display: flex;
+  flex-shrink: 0;
 }
 
 .unreadPill {
@@ -166,13 +290,23 @@
   letter-spacing: 0.02em;
 }
 
+/* ── Swipe hint ──────────────────────────────────────────────────────────── */
+.swipeHint {
+  padding: 0 1.1rem 4px;
+  font-size: 0.67rem;
+  color: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
 /* ── Body ────────────────────────────────────────────────────────────────── */
 .body {
   flex: 1;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
-
 .body::-webkit-scrollbar { width: 3px; }
 .body::-webkit-scrollbar-track { background: transparent; }
 .body::-webkit-scrollbar-thumb {
@@ -180,7 +314,7 @@
   border-radius: 99px;
 }
 
-/* ── Center states (loading / empty) ────────────────────────────────────── */
+/* ── Center states ───────────────────────────────────────────────────────── */
 .centerState {
   display: flex;
   flex-direction: column;
@@ -189,7 +323,6 @@
   padding: 3rem 1.5rem;
   text-align: center;
 }
-
 .spinner {
   width: 28px;
   height: 28px;
@@ -213,85 +346,93 @@
   color: rgba(255, 255, 255, 0.25);
   margin-bottom: 4px;
 }
-
 .emptyTitle {
   font-size: 0.95rem;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.7);
   margin: 0;
 }
-
 .emptySubtitle {
   font-size: 0.78rem;
   color: rgba(255, 255, 255, 0.35);
 }
 
-/* ════════════════════════════════════════════════════════════════════════════
-   NOTIFICATION ROW  —  the star of the show
-   Layout: [circular app icon] [text block] [right controls]
-   Exactly like Spotify / Netflix notification rows
-   ════════════════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════════════
+   SWIPEABLE NOTIFICATION ROW
+   ══════════════════════════════════════════════════════════════════════════ */
 
+.rowOuter {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.rowOuter:last-child { border-bottom: none; }
+
+/* Red delete background (revealed on swipe left) */
+.swipeBg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  padding-right: 20px;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+/* The actual draggable row */
 .row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
   cursor: pointer;
-  position: relative;
+  background: rgba(14, 14, 14, 0.98);
   transition: background 0.15s ease;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  /* no border on last child */
-}
-.row:last-child { border-bottom: none; }
-.row:hover { background: rgba(255, 255, 255, 0.04); }
-
-.rowUnread {
-  background: rgba(229, 9, 20, 0.04);
-}
-.rowUnread:hover {
-  background: rgba(229, 9, 20, 0.07);
+  touch-action: pan-y; /* allow vertical scroll, capture horizontal drag */
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-/* ── Left column ─────────────────────────────────────────────────────────── */
-.leftCol {
-  flex-shrink: 0;
-}
+.row:hover { background: rgba(255, 255, 255, 0.03); }
 
-/* ── Circular app icon (no poster) — iOS / Android style ─────────────────── */
+.rowUnread { background: rgba(229, 9, 20, 0.04); }
+.rowUnread:hover { background: rgba(229, 9, 20, 0.07); }
+
+/* ── Left col ────────────────────────────────────────────────────────────── */
+.leftCol { flex-shrink: 0; }
+
 .appIcon {
-  border-radius: 50%;           /* perfect circle */
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* inset highlight gives it the iOS raised-button look */
   position: relative;
   overflow: hidden;
 }
-
-/* Subtle inner highlight on top to mimic iOS icon glossiness */
 .appIcon::after {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0; left: 0; right: 0;
   height: 50%;
   background: linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 100%);
   border-radius: 50% 50% 0 0;
   pointer-events: none;
 }
 
-/* ── Poster + mini icon overlay ──────────────────────────────────────────── */
 .posterWrap {
   position: relative;
   width: 46px;
   height: 46px;
-  border-radius: 12px;        /* poster is rounded-rect */
+  border-radius: 12px;
   overflow: visible;
   flex-shrink: 0;
 }
-
 .posterImg {
   width: 46px;
   height: 46px;
@@ -300,9 +441,6 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   display: block;
 }
-
-/* The small circular app icon sitting on bottom-right corner of poster */
-/* Looks exactly like WhatsApp / Instagram notification icons over avatar */
 .miniAppIcon {
   position: absolute;
   bottom: -4px;
@@ -313,24 +451,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid rgba(18, 18, 18, 0.95); /* dark ring = separation from poster */
+  border: 2px solid rgba(14, 14, 14, 0.95);
 }
 
-/* ── Middle column (text) ────────────────────────────────────────────────── */
-.middleCol {
-  flex: 1;
-  min-width: 0;
-}
+/* ── Middle col ──────────────────────────────────────────────────────────── */
+.middleCol { flex: 1; min-width: 0; }
 
-/* label + time in one row */
 .topRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 2px;
 }
-
-/* Colored category label (e.g. "Trending", "AI Pick") — no pill, just text */
 .label {
   font-size: 0.68rem;
   font-weight: 800;
@@ -338,7 +470,6 @@
   letter-spacing: 0.06em;
   line-height: 1;
 }
-
 .time {
   font-size: 0.68rem;
   color: rgba(255, 255, 255, 0.35);
@@ -346,8 +477,6 @@
   flex-shrink: 0;
   margin-left: 6px;
 }
-
-/* Bold title — movie name */
 .title {
   font-size: 0.83rem;
   font-weight: 700;
@@ -359,8 +488,6 @@
   text-overflow: ellipsis;
   letter-spacing: -0.01em;
 }
-
-/* Softer description */
 .msg {
   font-size: 0.74rem;
   color: rgba(255, 255, 255, 0.45);
@@ -372,7 +499,7 @@
   margin: 0;
 }
 
-/* ── Right column (dot + dismiss) ────────────────────────────────────────── */
+/* ── Right col ───────────────────────────────────────────────────────────── */
 .rightCol {
   flex-shrink: 0;
   display: flex;
@@ -381,16 +508,12 @@
   gap: 6px;
   min-width: 20px;
 }
-
-/* Unread dot — small circle, color matches type accent */
 .unreadDot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
 }
-
-/* Dismiss "×" — only visible on hover */
 .dismissBtn {
   width: 20px;
   height: 20px;
@@ -408,14 +531,27 @@
   color: #fff;
 }
 
-/* ── Footer ──────────────────────────────────────────────────────────────── */
+/* ── Panel Footer ────────────────────────────────────────────────────────── */
 .panelFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 8px 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
-  text-align: center;
   font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.25);
   flex-shrink: 0;
+  gap: 8px;
+}
+
+/* ── Scheduler row ───────────────────────────────────────────────────────── */
+.schedulerRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.25);
+  white-space: nowrap;
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */

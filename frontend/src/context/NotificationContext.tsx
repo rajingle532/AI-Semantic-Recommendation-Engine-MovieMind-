@@ -14,6 +14,7 @@ export interface Notification {
   posterPath?: string;
   timestamp: number;
   isRead: boolean;
+  isPinned?: boolean;
 }
 
 interface NotificationContextType {
@@ -25,44 +26,99 @@ interface NotificationContextType {
   clearAll: () => void;
   addNotification: (notif: Omit<Notification, 'id' | 'timestamp' | 'isRead'>) => void;
   isLoading: boolean;
+  // New: bell shake state
+  isBellShaking: boolean;
+  // New: browser push permission
+  pushPermission: NotificationPermission | 'unsupported';
+  requestPushPermission: () => Promise<void>;
+  // New: scheduler — next scheduled fetch time
+  nextScheduledTime: Date | null;
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'moviemind_notifications';
-const MAX_NOTIFS   = 20;
-const REFRESH_MS   = 10 * 60 * 1000; // 10 min
+const STORAGE_KEY    = 'moviemind_notifications';
+const PERM_KEY       = 'moviemind_push_perm_asked';
+const SCHED_KEY      = 'moviemind_notif_last_sched';
+const MAX_NOTIFS     = 20;
+const REFRESH_MS     = 10 * 60 * 1000; // 10 min regular refresh
+const MORNING_HOUR   = 9;              // 9 AM daily scheduler
+const EVENING_HOUR   = 20;            // 8 PM daily scheduler
 
 const genId = () => `n_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+
+// ─── Browser Push helper ──────────────────────────────────────────────────────
+
+function sendBrowserPush(title: string, body: string, icon?: string) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    new Notification(title, {
+      body,
+      icon: icon || '/logo.png',
+      badge: '/logo.png',
+      silent: false,
+    });
+  } catch { /* some browsers block programmatic push */ }
+}
 
 // ─── Provider ────────────────────────────────────────────────────────────────
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading]         = useState(false);
-  const intervalRef  = useRef<ReturnType<typeof setInterval> | null>(null);
-  const fetchedOnce  = useRef(false);
+  const [isBellShaking, setIsBellShaking] = useState(false);
+  const [nextScheduledTime, setNextScheduledTime] = useState<Date | null>(null);
+  const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unsupported'>(
+    'Notification' in window ? Notification.permission : 'unsupported'
+  );
 
-  // ── Restore from localStorage (filter out >48h old) ─────────────────────
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const schedRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fetchedOnce = useRef(false);
+  const prevCount   = useRef(0);
+
+  // ── Restore from localStorage ─────────────────────────────────────────────
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed: Notification[] = JSON.parse(raw);
         const cutoff = Date.now() - 48 * 60 * 60 * 1000;
-        setNotifications(parsed.filter(n => n.timestamp > cutoff));
+        const valid = parsed.filter(n => n.timestamp > cutoff);
+        setNotifications(valid);
+        prevCount.current = valid.filter(n => !n.isRead).length;
       }
     } catch { /* ignore */ }
   }, []);
 
-  // ── Persist whenever notifications change ────────────────────────────────
+  // ── Persist on change ─────────────────────────────────────────────────────
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications));
   }, [notifications]);
 
-  // ── Core add helper (deduplicates within 30 min) ─────────────────────────
+  // ── Bell shake + browser push when new notifications arrive ──────────────
+  useEffect(() => {
+    const unread = notifications.filter(n => !n.isRead).length;
+    if (unread > prevCount.current) {
+      // Shake the bell
+      setIsBellShaking(true);
+      setTimeout(() => setIsBellShaking(false), 820);
+
+      // Browser push for the newest notification
+      const newest = notifications[0];
+      if (newest && !newest.isRead) {
+        const posterUrl = newest.posterPath
+          ? `https://image.tmdb.org/t/p/w92${newest.posterPath}`
+          : undefined;
+        sendBrowserPush(newest.title, newest.message, posterUrl);
+      }
+    }
+    prevCount.current = unread;
+  }, [notifications]);
+
+  // ── Add helper (deduplicates within 30 min) ───────────────────────────────
   const addNotification = useCallback(
     (notif: Omit<Notification, 'id' | 'timestamp' | 'isRead'>) => {
       setNotifications(prev => {
@@ -83,19 +139,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     []
   );
 
-  // ── Main fetch — uses CORRECT backend endpoints ──────────────────────────
+  // ── Main fetch ────────────────────────────────────────────────────────────
   const fetchNotifications = useCallback(async () => {
     const token = localStorage.getItem('token');
-    if (!token) {
-      console.log('[Notif] No token — skipping fetch');
-      return;
-    }
+    if (!token) return;
 
     setIsLoading(true);
     console.log('[Notif] Fetching smart notifications…');
 
     try {
-      // ── 1. Trending movies (public endpoint, always works) ────────────
+      // 1. Trending
       const trendRes = await api.get('/movies/trending', { params: { page: 1 } });
       const trending: any[] = Array.isArray(trendRes.data)
         ? trendRes.data
@@ -110,9 +163,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           posterPath: m.poster_path || m.backdrop_path || undefined,
         });
       });
-      console.log('[Notif] ✅ Trending:', trending.slice(0, 3).map((m:any) => m.title));
 
-      // ── 2. Smart AI recommendations (/recommend/smart/me) ────────────
+      // 2. AI Recommendations
       try {
         const recRes = await api.get('/recommend/smart/me');
         const recs: any[] = recRes.data?.recommendations ?? [];
@@ -125,13 +177,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             movieId: pick.id ?? pick.movie_id,
             posterPath: pick.poster_path || undefined,
           });
-          console.log('[Notif] ✅ AI Pick:', pick.title);
         }
-      } catch (e) {
-        console.warn('[Notif] AI recommendations skipped:', e);
-      }
+      } catch { /* skip */ }
 
-      // ── 3. Watchlist update (/watchlist/my) ───────────────────────────
+      // 3. Watchlist
       try {
         const wlRes = await api.get('/watchlist/my');
         const items: any[] = wlRes.data?.watchlist ?? [];
@@ -145,13 +194,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             movieId: pick.movie_id || pick.id,
             posterPath: pick.poster_path || undefined,
           });
-          console.log('[Notif] ✅ Watchlist pick:', title);
         }
-      } catch (e) {
-        console.warn('[Notif] Watchlist skipped:', e);
-      }
+      } catch { /* skip */ }
 
-      // ── 4. System welcome (one-time only) ────────────────────────────
+      // 4. System welcome (once only)
       setNotifications(prev => {
         if (prev.some(n => n.type === 'system')) return prev;
         const welcome: Notification = {
@@ -165,6 +211,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         return [welcome, ...prev].slice(0, MAX_NOTIFS);
       });
 
+      // Record last scheduled fetch time
+      localStorage.setItem(SCHED_KEY, String(Date.now()));
+
     } catch (err) {
       console.error('[Notif] Fetch failed:', err);
     } finally {
@@ -172,59 +221,83 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   }, [addNotification]);
 
-  // ── Watch for token changes (login/logout) and re-trigger fetch ──────────
+  // ── Daily Scheduler — fetch at 9AM and 8PM ───────────────────────────────
+  const scheduleNextFetch = useCallback(() => {
+    if (schedRef.current) clearTimeout(schedRef.current);
+
+    const now = new Date();
+    const candidates = [MORNING_HOUR, EVENING_HOUR].map(h => {
+      const d = new Date();
+      d.setHours(h, 0, 0, 0);
+      if (d <= now) d.setDate(d.getDate() + 1); // push to tomorrow if past
+      return d;
+    });
+
+    // Pick the soonest upcoming slot
+    const next = candidates.reduce((a, b) => (a < b ? a : b));
+    const msUntil = next.getTime() - now.getTime();
+
+    setNextScheduledTime(next);
+    console.log(`[Notif] Next scheduled fetch at ${next.toLocaleTimeString()} (in ${Math.round(msUntil / 60000)} min)`);
+
+    schedRef.current = setTimeout(() => {
+      fetchNotifications();
+      scheduleNextFetch(); // re-schedule after firing
+    }, msUntil);
+  }, [fetchNotifications]);
+
+  // ── Token watcher + initial fetch + scheduler setup ───────────────────────
   useEffect(() => {
     const checkAndFetch = () => {
       const token = localStorage.getItem('token');
-
-      // Clear old interval
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
 
       if (token && !fetchedOnce.current) {
         fetchedOnce.current = true;
-        // Small delay so auth state settles
         setTimeout(fetchNotifications, 1500);
-        // Periodic refresh
         intervalRef.current = setInterval(fetchNotifications, REFRESH_MS);
+        scheduleNextFetch();
       } else if (!token) {
-        // User logged out — reset so next login fetches fresh
         fetchedOnce.current = false;
+        if (schedRef.current) clearTimeout(schedRef.current);
+        setNextScheduledTime(null);
       }
     };
 
-    // Run on mount
     checkAndFetch();
 
-    // Also listen for storage events (token added after login)
     const onStorage = (e: StorageEvent) => {
-      if (e.key === 'token') {
-        fetchedOnce.current = false;
-        checkAndFetch();
-      }
+      if (e.key === 'token') { fetchedOnce.current = false; checkAndFetch(); }
     };
     window.addEventListener('storage', onStorage);
 
-    // Poll every 3s briefly in case storage event doesn't fire (same-tab login)
     const pollId = setInterval(() => {
       const token = localStorage.getItem('token');
-      if (token && !fetchedOnce.current) {
-        fetchedOnce.current = false;
-        checkAndFetch();
-      }
+      if (token && !fetchedOnce.current) { fetchedOnce.current = false; checkAndFetch(); }
     }, 3000);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+      if (schedRef.current) clearTimeout(schedRef.current);
       window.removeEventListener('storage', onStorage);
       clearInterval(pollId);
     };
-  }, [fetchNotifications]);
+  }, [fetchNotifications, scheduleNextFetch]);
+
+  // ── Request browser push permission ──────────────────────────────────────
+  const requestPushPermission = useCallback(async () => {
+    if (!('Notification' in window)) return;
+    try {
+      const result = await Notification.requestPermission();
+      setPushPermission(result);
+      localStorage.setItem(PERM_KEY, 'asked');
+      if (result === 'granted') {
+        sendBrowserPush('MovieMind Notifications Enabled!', 'You\'ll now get movie alerts from MovieMind AI.');
+      }
+    } catch { /* ignore */ }
+  }, []);
 
   // ── Actions ───────────────────────────────────────────────────────────────
-
   const markAsRead = useCallback((id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
   }, []);
@@ -249,13 +322,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       markAsRead, markAllAsRead,
       clearNotification, clearAll,
       addNotification, isLoading,
+      isBellShaking,
+      pushPermission,
+      requestPushPermission,
+      nextScheduledTime,
     }}>
       {children}
     </NotificationContext.Provider>
   );
 };
-
-// ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export const useNotifications = () => {
   const ctx = useContext(NotificationContext);

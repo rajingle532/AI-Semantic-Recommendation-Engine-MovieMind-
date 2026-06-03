@@ -36,6 +36,10 @@ vi.mock('../context/NotificationContext', () => ({
     clearAll: vi.fn(),
     addNotification: vi.fn(),
     isLoading: false,
+    isBellShaking: false,
+    pushPermission: 'default' as NotificationPermission,
+    requestPushPermission: vi.fn(),
+    nextScheduledTime: null,
   }),
 }));
 
