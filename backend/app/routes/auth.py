@@ -140,7 +140,8 @@ def google_auth(data: GoogleLogin):
             user=UserResponse(id=user_id, name=name, email=email)
         )
 
-    except ValueError:
+    except ValueError as e:
+        print(f"Google Token Verification Error: {e}")
         # Invalid token
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

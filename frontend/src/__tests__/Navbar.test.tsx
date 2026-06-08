@@ -46,6 +46,7 @@ vi.mock('../context/NotificationContext', () => ({
 // Mock NotificationPanel itself — keeps Navbar tests focused and avoids
 // pulling in the entire notification dependency tree.
 vi.mock('../components/NotificationPanel', () => ({
+  __esModule: true,
   default: () => <div data-testid="notification-panel-mock" />,
 }));
 
